@@ -24,6 +24,8 @@ step certificate create identity.linkerd.cluster.local \
   --insecure \
   --ca "${CERT_ROOT}/ca.crt" --ca-key "${CERT_ROOT}/ca.key"
 
+kubectl label namespace kube-system config.linkerd.io/admission-webhooks=disabled
+
 helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
