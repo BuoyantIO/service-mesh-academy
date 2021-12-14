@@ -75,6 +75,8 @@ kubectl label namespace kube-system config.linkerd.io/admission-webhooks=disable
 
 # kubectl apply -f ./cert-manager.yml
 
+helm repo add linkerd https://helm.linkerd.io/stable
+
 helm install linkerd2 \
   --set-file identityTrustAnchorsPEM=${CERT_ROOT}/ca.crt \
   --set-file identity.issuer.tls.crtPEM=${CERT_ROOT}/issuer.crt \
