@@ -1,1 +1,3 @@
 controllerLogLevel: trace
+policyController:
+  logLevel: linkerd=trace,warn
