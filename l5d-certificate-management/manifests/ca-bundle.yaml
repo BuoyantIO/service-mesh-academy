@@ -1,0 +1,13 @@
+## Use trust to redistribute certificate from cert-manager namespace to linkerd
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: linkerd-identity-trust-roots
+spec:
+  sources:
+  - secret:
+      name: "linkerd-identity-trust-roots"
+      key: "ca.crt"
+  target:
+    configMap:
+      key: "ca-bundle.crt"
