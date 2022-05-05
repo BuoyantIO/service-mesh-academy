@@ -1,0 +1,16 @@
+apiVersion: split.smi-spec.io/v1alpha2
+kind: TrafficSplit
+metadata:
+    name: web-svc
+    namespace: emojivoto
+    annotations:
+        failover.linkerd.io/primary-service: web-svc
+    labels:
+        failover.linkerd.io/controlled-by: linkerd-failover
+spec:
+    service: web-svc
+    backends:
+        - service: web-svc
+          weight: 1
+        - service: web-svc-east
+          weight: 0
