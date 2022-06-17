@@ -1,0 +1,23 @@
+# linkerd-trust-anchor.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-trust-anchor
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: root.linkerd.cluster.local
+  secretName: linkerd-identity-trust-roots
+  duration: 720h
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+  usages:
+  - cert sign
+  - crl sign
+  - server auth
+  - client auth
+  issuerRef:
+    name: tpp-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
