@@ -12,10 +12,10 @@ external PKI, and use it to bootstrap zero-trust across all cluster boundaries.
 
 There are two similar demos that make use of different external issuers. The
 presenter's recommendation is that you first go through the materials in the
-pki-workshop-venafi-tpp directory to get an idea for how cert-manager and
+[pki-workshop-venafi-tpp] directory to get an idea for how cert-manager and
 Linkerd can be used together to bootstrap identity and mTLS in a Kubernetes
 environment. A good follow-up that the reader can use as a hands-on exercise
-can be found in the steps substantiated in the pki-workshop-vault directory.
+can be found in the steps substantiated in the [pki-workshop-vault] directory.
 
 [pki-workshop-vault]: ./pki-workshop-vault/STEPS.md
 [pki-workshop-venafi-tpp]: ./pki-workshop-venafi-tpp/README.md
