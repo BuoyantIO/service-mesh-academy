@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: vault-issuer
+  namespace: cert-manager
+spec:
+  vault:
+    path: pki/root/sign-intermediate
+    server: http://<hostIP>:8200 # resolve host.k3d.internal to get your hostIP
+    auth:
+      tokenSecretRef:
+         name: my-secret-token
+         key: token
