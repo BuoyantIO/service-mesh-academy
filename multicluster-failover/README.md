@@ -172,7 +172,7 @@ kubectl --context=east -n emojivoto label svc/web-svc mirror.linkerd.io/exported
 Deploy the failover resources
 
 ```bash
-kubectl apply --context east \
+kubectl apply --context west \
   -f https://raw.githubusercontent.com/BuoyantIO/service-mesh-academy/main/multicluster-failover/failover-config/emoji-deploy-2.yml \
   -f https://raw.githubusercontent.com/BuoyantIO/service-mesh-academy/main/multicluster-failover/failover-config/emoji-svc-2.yml \
   -f https://raw.githubusercontent.com/BuoyantIO/service-mesh-academy/main/multicluster-failover/failover-config/emoji-failover.yml
@@ -183,7 +183,7 @@ kubectl apply --context east \
 Scale the primary service to 0 replicas
 
 ```bash
-kubectl --context east scale deploy emoji --replicas=0
+kubectl --context west scale deploy emoji --replicas=0
 ```
 
 [^1]: Alternatively, you can use `kubectl config rename-context` to rename your
