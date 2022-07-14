@@ -110,6 +110,18 @@ for ctx in west east; do
 done
 ```
 
+Inject emojivoto into our Linkerd mesh
+
+```bash
+for ctx in west east; do
+  echo "Installing emojivoto on cluster: ${ctx} ........."
+  kubectl get deploy -n emojivoto -o yaml  --context ${ctx} | \
+    linkerd inject --context ${ctx} | \
+    kubectl apply --context ${ctx} -f -
+  echo "-------------"
+done
+```
+
 ### Step 7
 
 
@@ -164,7 +176,7 @@ linkerd --context=east multicluster link --cluster-name east |
 Export a service
 
 ```bash
-kubectl --context=east -n emojivoto label svc/web-svc mirror.linkerd.io/exported=true
+kubectl --context=east -n emojivoto label svc/emoji-svc mirror.linkerd.io/exported=true
 ```
 
 ### Step 11
