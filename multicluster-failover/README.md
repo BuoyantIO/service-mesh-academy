@@ -176,7 +176,7 @@ linkerd --context=east multicluster link --cluster-name east |
 Export a service
 
 ```bash
-kubectl --context=east -n emojivoto label svc/web-svc mirror.linkerd.io/exported=true
+kubectl --context=east -n emojivoto label svc/emoji-svc mirror.linkerd.io/exported=true
 ```
 
 ### Step 11
