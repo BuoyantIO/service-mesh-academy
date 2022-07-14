@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emoji-2
+  namespace: emojivoto
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: emoji-svc-2
+      version: v11
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: emoji-svc-2
+        version: v11
+    spec:
+      containers:
+      - env:
+        - name: GRPC_PORT
+          value: "8080"
+        - name: PROM_PORT
+          value: "8801"
+        image: docker.l5d.io/buoyantio/emojivoto-emoji-svc:v11
+        imagePullPolicy: IfNotPresent
+        name: emoji-svc
+        ports:
+        - containerPort: 8080
+          name: grpc
+          protocol: TCP
+        - containerPort: 8801
+          name: prom
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: emoji
+      serviceAccountName: emoji
+      terminationGracePeriodSeconds: 30
