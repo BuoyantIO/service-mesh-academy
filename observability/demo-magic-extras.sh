@@ -1,5 +1,11 @@
 # Extra functions to make my life a little easier with demo-magic.
 
+# "p" is exactly like demo-magic except that it uses new variable PROMPT_WAIT
+# to control whether you have to hit ENTER to start the command, and NO_WAIT
+# for whether you hit ENTER after showing the command.
+#
+# (I don't like to have to hit ENTER to run one command, then hit ENTER
+# again right after to start the next one.)
 function p() {
   if [[ ${1:0:1} == "#" ]]; then
     cmd=$DEMO_COMMENT_COLOR$1$COLOR_RESET
@@ -35,17 +41,12 @@ function p() {
   echo ""
 }
 
-# Print and execute immediately.
-pei () {
-	NO_WAIT=true pe "$@"
-}
-
 # Print immediately.
 pi () {
   NO_WAIT=true DEMO_PROMPT= p "$@"
 }
 
-# Like echo but prettier.
+# Like echo, but let demo-magic colorize it maybe.
 show () {
   NO_WAIT=true DEMO_PROMPT= TYPE_SPEED= p "$@"
 }
