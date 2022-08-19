@@ -1,0 +1,11 @@
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: viz-mapping
+spec:
+  prefix: /
+  hostname: viz.example.com
+  service: web.linkerd-viz.svc.cluster.local:8084
+  allow_upgrade:
+  - websocket

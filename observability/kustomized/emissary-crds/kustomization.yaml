@@ -1,0 +1,5 @@
+resources:
+- emissary-crds.yaml
+patchesStrategicMerge:
+- replicas-patch.yaml
+

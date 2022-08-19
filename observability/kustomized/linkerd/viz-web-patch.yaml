@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: linkerd-viz
+spec:
+  template:
+    spec:
+      containers:
+      - name: web
+        args:
+        - -linkerd-metrics-api-addr=metrics-api.linkerd-viz.svc.cluster.local:8085
+        - -cluster-domain=cluster.local
+        - -grafana-addr=grafana.linkerd-viz.svc.cluster.local:3000
+        - -controller-namespace=linkerd
+        - -viz-namespace=linkerd-viz
+        - -log-level=info
+        - -log-format=plain
+        - -enforced-host=^.*
+        - -enable-pprof=false
+

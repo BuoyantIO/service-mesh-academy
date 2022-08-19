@@ -1,0 +1,103 @@
+---
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  creationTimestamp: null
+  name: webapp.booksapp.svc.cluster.local
+  namespace: booksapp
+spec:
+  routes:
+  - condition:
+      method: GET
+      pathRegex: /
+    name: GET /
+  - condition:
+      method: POST
+      pathRegex: /authors
+    name: POST /authors
+  - condition:
+      method: GET
+      pathRegex: /authors/[^/]*
+    name: GET /authors/{id}
+  - condition:
+      method: POST
+      pathRegex: /authors/[^/]*/delete
+    name: POST /authors/{id}/delete
+  - condition:
+      method: POST
+      pathRegex: /authors/[^/]*/edit
+    name: POST /authors/{id}/edit
+  - condition:
+      method: POST
+      pathRegex: /books
+    name: POST /books
+  - condition:
+      method: GET
+      pathRegex: /books/[^/]*
+    name: GET /books/{id}
+  - condition:
+      method: POST
+      pathRegex: /books/[^/]*/delete
+    name: POST /books/{id}/delete
+  - condition:
+      method: POST
+      pathRegex: /books/[^/]*/edit
+    name: POST /books/{id}/edit
+---
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  creationTimestamp: null
+  name: authors.booksapp.svc.cluster.local
+  namespace: booksapp
+spec:
+  routes:
+  - condition:
+      method: GET
+      pathRegex: /authors\.json
+    name: GET /authors.json
+  - condition:
+      method: POST
+      pathRegex: /authors\.json
+    name: POST /authors.json
+  - condition:
+      method: DELETE
+      pathRegex: /authors/[^/]*\.json
+    name: DELETE /authors/{id}.json
+  - condition:
+      method: GET
+      pathRegex: /authors/[^/]*\.json
+    name: GET /authors/{id}.json
+  - condition:
+      method: HEAD
+      pathRegex: /authors/[^/]*\.json
+    name: HEAD /authors/{id}.json
+---
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  creationTimestamp: null
+  name: books.booksapp.svc.cluster.local
+  namespace: booksapp
+spec:
+  routes:
+  - condition:
+      method: GET
+      pathRegex: /books\.json
+    name: GET /books.json
+  - condition:
+      method: POST
+      pathRegex: /books\.json
+    name: POST /books.json
+  - condition:
+      method: DELETE
+      pathRegex: /books/[^/]*\.json
+    name: DELETE /books/{id}.json
+  - condition:
+      method: GET
+      pathRegex: /books/[^/]*\.json
+    name: GET /books/{id}.json
+  - condition:
+      method: PUT
+      pathRegex: /books/[^/]*\.json
+    name: PUT /books/{id}.json

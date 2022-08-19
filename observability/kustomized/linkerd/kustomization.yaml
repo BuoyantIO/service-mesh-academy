@@ -1,0 +1,5 @@
+resources:
+- linkerd.yaml
+patchesStrategicMerge:
+- viz-web-patch.yaml
+
