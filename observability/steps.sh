@@ -54,7 +54,9 @@ pe "linkerd viz tap deployment/web -n emojivoto --to deployment/voting --path /e
 clear
 
 # Adding ServiceProfiles can make this much faster.
-show "This was slower than it should have been, because linkerd wasn't already tracking things."
+show "# This was slower than it should have been, because linkerd wasn't already tracking things."
+show ""
+wait
 
 # Getting ServiceProfiles from protobuf is really easy.
 pe "linkerd profile --proto protos/Emoji.proto emoji-svc -n emojivoto"
@@ -76,7 +78,9 @@ clear
 
 # Go look at everything at http://viz.example.com. Drill in and click on the
 # "Route Metrics" tabs.
-show "Let's go check out the dashboard!"
+show "# Let's go check out the dashboard!"
+show
+wait
 
 # OK. Now it's books' turn.
 clear
@@ -84,6 +88,7 @@ clear
 show "# OH NO NOW SOMETHING IS WRONG WITH BOOKS!"
 show ""
 pi "# ...so what shall we do this time?"
+wait
 clear
 
 # Here we can start with routes metrics from the CLI. Note that if you don't
@@ -104,10 +109,13 @@ wait
 # again. Also check out https://linkerd.io/2.11/features/service-profiles/ for
 # docs on ServiceProfile, which will lead you to...
 clear
+show "# Let's go check out the dashboard!"
+show
 wait
+clear
 
 # ...adding isRetryable for the failing HEAD request.
-show "Add isRetryable: true to the books ServiceProfile"
+show "# Add isRetryable: true to the books ServiceProfile"
 pe "kubectl -n booksapp edit sp/authors.booksapp.svc.cluster.local"
 wait
 clear
@@ -123,3 +131,4 @@ pe "watch linkerd viz -n booksapp routes deploy/webapp --to svc/books"
 clear
 
 # Done! Thanks for reading!
+show "# Thanks!"
