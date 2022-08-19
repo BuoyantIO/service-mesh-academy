@@ -1,0 +1,29 @@
+syntax = "proto3";
+option go_package = "github.com/buoyantio/emojivoto/proto";
+
+package emojivoto.v1;
+
+message Emoji {
+    string unicode = 1;
+    string shortcode = 2;
+}
+
+message ListAllEmojiRequest {
+}
+
+message ListAllEmojiResponse {
+    repeated Emoji list = 1;
+}
+
+message FindByShortcodeRequest {
+    string Shortcode =1;
+}
+
+message FindByShortcodeResponse {
+    Emoji Emoji = 1;
+}
+
+service EmojiService {
+    rpc ListAll (ListAllEmojiRequest) returns (ListAllEmojiResponse);
+    rpc FindByShortcode (FindByShortcodeRequest) returns (FindByShortcodeResponse);
+}
