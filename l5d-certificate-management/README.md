@@ -1,5 +1,9 @@
 # Certificate Management with Linkerd
 
+> **NOTE**: if you want more of a guided tour on rails, just run
+> `bash guided-tour.sh` -- that's the script you may have seen driving
+> the CNCF livestream on 24 August 2022.
+
 Three different ways to manage your certificates with Linkerd. What we will be doing today:
 
 * Generate and inspect a certificate with `step`.
@@ -8,6 +12,13 @@ Three different ways to manage your certificates with Linkerd. What we will be d
 * Rotate issuer and CA.
 * Re-install Linkerd using CA managed by cert-manager.
 
+To follow these steps, you'll need
+
+* a Kubernetes cluster and the `kubectl` command
+   * you can run `cycle-cluster.sh` to create a suitable `k3d` cluster
+* the `linkerd` CLI — https://linkerd.io/2.12/getting-started/
+* the `step` CLI — https://smallstep.com/docs/step-cli/installation
+* the `helm` CLI — https://helm.sh/docs/intro/quickstart/
 
 ### 1) Generating certificates with `step`
 ---
@@ -70,6 +81,8 @@ the issuer?
 * Install Linkerd and don't worry about certificate rotation until 2050 at the very least!
 
 ```sh
+$ linkerd install --crds | kubectl apply -f -
+
 $ linkerd install \
  --identity-trust-anchors-file ca.crt \
  --identity-issuer-certificate-file identity.crt \
@@ -238,6 +251,8 @@ $ kubectl get secrets -n linkerd
 
 $ kubectl apply -f manifests/ca-bundle.yaml
 $ kubectl get cm -n linkerd
+
+$ linkerd install --crds | kubectl apply -f -
 
 $ linkerd install \
   --identity-external-issuer \
