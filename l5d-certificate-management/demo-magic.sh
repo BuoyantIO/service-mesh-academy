@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# This is from https://github.com/paxtonhare/demo-magic/ at commit 10abf53.
+
 ###############################################################################
 #
 # demo-magic.sh

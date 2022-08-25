@@ -1,4 +1,9 @@
 #!/bin/env bash
+
+# This uses demo-magic by Paxton Hare: https://github.com/paxtonhare/demo-magic/
+# A copy of demo-magic.sh from there is included here; demo-magic-extras.sh is
+# from Flynn (GitHub @kflynn).
+
 # shellcheck source=demo-magic.sh
 . demo-magic.sh
 . demo-magic-extras.sh
