@@ -1,0 +1,32 @@
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: webapp-ingress-edit-route
+  namespace: booksapp
+spec:
+  parentRefs:
+    - name: webapp
+      kind: Server
+      group: policy.linkerd.io
+  rules:
+    - matches:
+      - path:
+          value: "/authors/[0-9]+/edit"
+          type: "RegularExpression"
+        method: POST
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: webapp-ingress-edit-policy
+  namespace: booksapp
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: HTTPRoute
+    name: webapp-ingress-edit-route
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: webapp-ingress-authn

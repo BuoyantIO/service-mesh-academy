@@ -1,0 +1,26 @@
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: booksapp-only
+  namespace: booksapp
+  labels:
+    app.kubernetes.io/part-of: booksapp
+    project: booksapp
+spec:
+  targetRef:
+    kind: Namespace
+    name: booksapp
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: booksapp-accounts     
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: booksapp-accounts
+  namespace: booksapp
+spec:
+  identities:
+    - "*.booksapp.serviceaccount.identity.linkerd.cluster.local"

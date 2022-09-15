@@ -1,0 +1,17 @@
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  namespace: booksapp
+  name: authors
+  labels:
+    app: authors
+    app.kubernetes.io/part-of: booksapp
+    project: booksapp
+spec:
+  podSelector:
+    matchLabels:
+      app: authors
+      project: booksapp
+  port: service
+  proxyProtocol: HTTP/1

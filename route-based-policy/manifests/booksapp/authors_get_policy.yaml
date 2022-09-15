@@ -1,0 +1,25 @@
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: authors-get-policy
+  namespace: booksapp
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: HTTPRoute
+    name: authors-get-route
+  requiredAuthenticationRefs:
+    - name: authors-get-authn
+      kind: MeshTLSAuthentication
+      group: policy.linkerd.io
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: authors-get-authn
+  namespace: booksapp
+spec:
+  identities:
+    - "books.booksapp.serviceaccount.identity.linkerd.cluster.local"
+    - "webapp.booksapp.serviceaccount.identity.linkerd.cluster.local"

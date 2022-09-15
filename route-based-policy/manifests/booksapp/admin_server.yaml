@@ -1,0 +1,11 @@
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  namespace: booksapp
+  name: linkerd-admin
+spec:
+  podSelector:
+    matchLabels: {}
+  port: linkerd-admin
+  proxyProtocol: HTTP/2

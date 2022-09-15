@@ -1,0 +1,24 @@
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: authors-modify-route
+  namespace: booksapp
+spec:
+  parentRefs:
+    - name: authors-server
+      kind: Server
+      group: policy.linkerd.io
+  rules:
+    - matches:
+      - path:
+          value: "/authors/"
+          type: "PathPrefix"
+        method: DELETE
+      - path:
+          value: "/authors/"
+          type: "PathPrefix"
+        method: PUT
+      - path:
+          value: "/authors.json"
+        method: POST

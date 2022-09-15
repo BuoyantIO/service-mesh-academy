@@ -1,0 +1,18 @@
+# ---
+# apiVersion: getambassador.io/v3alpha1
+# kind: Mapping
+# metadata:
+#   name: emojivoto-mapping
+# spec:
+#   prefix: /
+#   hostname: emoji.example.com
+#   service: web-svc.emojivoto
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: books-mapping
+spec:
+  prefix: /
+  hostname: books.example.com
+  service: webapp.booksapp:7000
