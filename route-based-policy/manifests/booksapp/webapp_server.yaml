@@ -14,4 +14,4 @@ spec:
       app: webapp
       project: booksapp
   port: service
-  # proxyProtocol: HTTP/1
+  proxyProtocol: HTTP/1

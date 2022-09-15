@@ -7,218 +7,230 @@ DEMO_CMD_COLOR=$BLACK
 DEMO_COMMENT_COLOR=$PURPLE
 PROMPT_WAIT=false
 
+# This show_* stuff allows using environment variable hooks to
+# control what's shown when livecasting the demo. If you don't
+# set the environment variables, they'll be noops.
+
+show_hook () {
+  # set -x
+  hookname="SHOW_${1}"
+  hook=$(eval "echo \$$hookname")
+  nowait="$2"
+
+  if [ -n "$hook" ]; then $hook; fi
+  if [ -z "$nowait" ]; then wait; fi
+  # set +x
+}
+
+show_terminal () { show_hook TERMINAL "$@"; }
+show_browser  () { show_hook BROWSER "$@"; }
+show_video    () { show_hook VIDEO "$@"; }
+show_slides   () { show_hook SLIDES "$@"; }
+
+show_slides --nowait
+
 clear
 show "Waiting..."
 wait
 
 clear
-obs "Terminal + Video"
+show_terminal --nowait
 
-# # Show basics about the cluster.
-# show "# We already have a cluster set up. Let's look at it."
-# pei "kubectl get nodes"
-# pei "kubectl get ns | sort"
-# wait
-# clear
+# Show basics about the cluster.
+show "# We already have a cluster set up. Let's look at it."
+pei "kubectl get nodes"
+pei "kubectl get ns | sort"
+wait
+clear
 
-# # Show how we installed things.
-# show "# Here's how we installed Linkerd:"
-# sed -n '/LINKERD_INSTALL_START/,/LINKERD_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
-# show ""
-# show "# ...and Grafana, since we need to do that by head with Linkerd 2.12:"
-# sed -n '/GRAFANA_INSTALL_START/,/GRAFANA_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
-# wait
+# Show how we installed things.
+show "# Here's how we installed Linkerd:"
+sed -n '/LINKERD_INSTALL_START/,/LINKERD_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
+show ""
+show "# ...and Grafana, since we need to do that by head with Linkerd 2.12:"
+sed -n '/GRAFANA_INSTALL_START/,/GRAFANA_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
+wait
 
-# clear
-# show "# Here's how we installed Booksapp, including mesh injection:"
-# sed -n '/BOOKS_INSTALL_START/,/BOOKS_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
-# wait
+clear
+show "# Here's how we installed Booksapp, including mesh injection:"
+sed -n '/BOOKS_INSTALL_START/,/BOOKS_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
+wait
 
-# clear
-# show "# And here's how we installed a single-replica Emissary-ingress,"
-# show "# including mesh injection:"
-# sed -n '/EMISSARY_INSTALL_START/,/EMISSARY_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
-# show ""
-# show "# We had to configure Emissary for HTTP (not HTTPS!) routing too:"
-# sed -n '/EMISSARY_CONFIGURE_START/,/EMISSARY_CONFIGURE_END/p' create-cluster.sh | sed '1d;$d'
+clear
+show "# And here's how we installed a single-replica Emissary-ingress,"
+show "# including mesh injection:"
+sed -n '/EMISSARY_INSTALL_START/,/EMISSARY_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
+show ""
+show "# We had to configure Emissary for HTTP (not HTTPS!) routing too:"
+sed -n '/EMISSARY_CONFIGURE_START/,/EMISSARY_CONFIGURE_END/p' create-cluster.sh | sed '1d;$d'
 
-# wait
-# clear
+wait
+clear
 
-# show "# At this point, things should be working. Let's start by looking at the books app"
-# show "# in the browser."
-# wait
+show "# At this point, things should be working. Let's start by looking at the books app"
+show "# in the browser."
+wait
 
-# obs "Safari + Video"
+show_browser
+clear
+show_terminal --nowait
 
-# wait
+show "# We can also use linkerd viz to look deeper into the books app."
+pei "linkerd viz stat deploy -n booksapp"
+wait 
 
-# clear
-# obs "Terminal + Video"
+pe "linkerd viz top deploy -n booksapp"
+clear
 
-# show "# We can also use linkerd viz to look deeper into the books app."
-# pei "linkerd viz stat deploy -n booksapp"
-# wait 
+show "# OK. Time to break everything!"
+pe 'kubectl annotate ns booksapp config.linkerd.io/default-inbound-policy=deny'
+wait
+clear
 
-# pe "linkerd viz top deploy -n booksapp"
-# clear
+show "# So, nothing should work now, right?"
+pe "linkerd viz stat deploy -n booksapp"
+wait 
 
-# show "# OK. Time to break everything!"
-# pe 'kubectl annotate ns booksapp config.linkerd.io/default-inbound-policy=deny'
-# wait
-# clear
+show ""
+show "# Huh. It's still working? Let's try the browser."
+wait
 
-# show "# So, nothing should work now, right?"
+show_browser
+clear
+show_terminal --nowait
+
+show "# Anyone remember the gotcha that's biting us now?"
+wait
+
+show ""
+show "# Right. We have to restart the pods to make our change to the"
+show "# default policy take effect."
+pe 'kubectl rollout restart -n booksapp deploy'
+pe 'watch "kubectl get pods -n booksapp"'
+clear
+
+show "# At this point, things should not work. We'll use the browser to verify that."
+wait
+
+show_browser
+clear
+show_terminal --nowait
+
+show "# OK, let's start allowing things, but minimally. First we allow linkerd-viz"
+show "# and Prometheus. We start with a Server definition..."
+bat manifests/booksapp/admin_server.yaml
+wait
+
+clear
+show "# ...then we define an AuthorizationPolicy using MeshTLSAuthentication."
+show "#"
+show "# Another question as we look at this: the AuthorizationPolicy doesn't"
+show "# reference the Server we just created. Why do we need it?"
+bat manifests/booksapp/allow_viz.yaml
+wait
+
+clear
+show "# Let's apply these."
+pei "kubectl apply -f manifests/booksapp/admin_server.yaml"
+pei "kubectl apply -f manifests/booksapp/allow_viz.yaml"
+wait 
+clear
+
+show "# If we tap the traffic deployment, we can see that it is getting 403s."
+pe "linkerd viz tap -n booksapp deploy/traffic"
+
+clear
+show "# We can also see, in the browser, that viz gets a little happier."
+wait
+
+show_browser
+clear
+show_terminal --nowait
+
+show "# To really see things correctly we need to allow app traffic too. Again, we'll start"
+show "# with Servers..."
+wait
+bat manifests/booksapp/{authors,books,webapp}_server.yaml
+
+clear
+show "# ...and continue with an AuthorizationPolicy using MeshTLSAuthentication."
+bat manifests/booksapp/allow_namespace.yaml
+wait
+
+clear
+show "# Another question: why don't we have a Server for the traffic generator?"
+wait
+show ""
+show "# Right. It doesn't have any ports defined: it's outbound-only. Policy for"
+show "# its traffic is managed by the defining it for the services it's trying"
+show "# to talk to."
+show ""
+show "# So let's apply all this stuff."
+pei "kubectl apply -f manifests/booksapp/authors_server.yaml"
+pei "kubectl apply -f manifests/booksapp/books_server.yaml"
+pei "kubectl apply -f manifests/booksapp/webapp_server.yaml"
+pei "kubectl apply -f manifests/booksapp/allow_namespace.yaml"
+wait 
+clear
+
+show "# At this point we should see actual traffic showing up in viz..."
 # pe "linkerd viz stat deploy -n booksapp"
 # wait 
 
-# show ""
-# show "# Huh. It's still working? Let's try the browser."
-# wait
+pe "linkerd viz top deploy -n booksapp"
 
-# obs "Safari + Video"
+clear
+show "# ...and viz should work better in the browser again too."
+wait
 
-# wait
-# clear
+show_browser
+clear
+show_terminal --nowait
 
-# obs "Terminal + Video"
+show "# So far, so good. We didn't try actually using the books app from the"
+show "# browser, though. Does that work?"
+wait
 
-# show "# Anyone remember the gotcha that's biting us now?"
-# wait
+show_browser
+clear
+show_terminal --nowait
 
-# show ""
-# show "# Right. We have to restart the pods to make our change to the"
-# show "# default policy take effect."
-# pe 'kubectl rollout restart -n booksapp deploy'
-# pe 'watch "kubectl get pods -n booksapp"'
-# clear
+show "# No. Let's fix that using route-based policy -- we definitely don't want"
+show "# to allow anything from the browser to the webapp. So let's define an"
+show "# HTTPRoute for the webapp that only allows what we want..."
+bat manifests/booksapp/webapp_ingress_route.yaml
+wait
 
-# show "# At this point, things should not work. We'll use the browser to verify that."
-# wait
-# obs "Safari + Video"
+clear
+show "# ...and an AuthorizationPolicy that allows only our ingress."
+bat manifests/booksapp/webapp_ingress_policy.yaml
+wait
 
-# wait
-# clear
+clear
+show "# Let's apply these."
+pei "kubectl apply -f manifests/booksapp/webapp_ingress_route.yaml"
+pei "kubectl apply -f manifests/booksapp/webapp_ingress_policy.yaml"
+wait
 
-# obs "Terminal + Video"
+clear
+show "# Oh wait. We're missing something..."
+wait
+show ""
+show "# Right. We just broke probes, so let's re-allow them."
+wait
+bat manifests/booksapp/webapp_probe.yaml
+clear
+show "# Let's apply that too..."
+pei "kubectl apply -f manifests/booksapp/webapp_probe.yaml"
+wait
 
-# show "# OK, let's start allowing things, but minimally. First we allow linkerd-viz"
-# show "# and Prometheus. We start with a Server definition..."
-# bat manifests/booksapp/admin_server.yaml
-# wait
+clear
+show "# ...and now we should see the books app working in the webapp too."
+wait
 
-# clear
-# show "# ...then we define an AuthorizationPolicy using MeshTLSAuthentication."
-# show "#"
-# show "# Another question as we look at this: the AuthorizationPolicy doesn't"
-# show "# reference the Server we just created. Why do we need it?"
-# bat manifests/booksapp/allow_viz.yaml
-# wait
-
-# clear
-# show "# Let's apply these."
-# pei "kubectl apply -f manifests/booksapp/admin_server.yaml"
-# pei "kubectl apply -f manifests/booksapp/allow_viz.yaml"
-# wait 
-# clear
-
-# show "# Now we should see, in the browser, that viz gets happier."
-# wait
-# obs "Safari + Video"
-# wait
-# clear
-# obs "Terminal + Video"
-
-# show "# Well, it's starting to get happier, anyway. To really see things correctly we need"
-# show "# to allow app traffic too. Again, we'll start with Servers..."
-# wait
-# bat manifests/booksapp/{authors,books,webapp}_server.yaml
-
-# clear
-# show "# ...and continue with an AuthorizationPolicy using MeshTLSAuthentication."
-# bat manifests/booksapp/allow_namespace.yaml
-# wait
-
-# clear
-# show "# Another question: why don't we have a Server for the traffic generator?"
-# wait
-# show ""
-# show "# Right. It doesn't have any ports defined: it's outbound-only. Policy for"
-# show "# its traffic is managed by the defining it for the services it's trying"
-# show "# to talk to."
-# show ""
-# show "# So let's apply all this stuff."
-# pei "kubectl apply -f manifests/booksapp/authors_server.yaml"
-# pei "kubectl apply -f manifests/booksapp/books_server.yaml"
-# pei "kubectl apply -f manifests/booksapp/webapp_server.yaml"
-# pei "kubectl apply -f manifests/booksapp/allow_namespace.yaml"
-# wait 
-# clear
-
-# show "# At this point we should see actual traffic showing up in viz..."
-# # pe "linkerd viz stat deploy -n booksapp"
-# # wait 
-
-# pe "linkerd viz top deploy -n booksapp"
-
-# clear
-# show "# ...and viz should work better in the browser again too."
-# wait
-
-# obs "Safari + Video"
-# wait
-
-# obs "Terminal + Video"
-# clear
-
-# show "# So far, so good. We didn't try actually using the books app from the"
-# show "# browser, though. Does that work?"
-# wait
-
-# obs "Safari + Video"
-# wait
-
-# clear
-# obs "Terminal + Video"
-
-# show "# No. Let's fix that using route-based policy -- we definitely don't want"
-# show "# to allow anything from the browser to the webapp. So let's define an"
-# show "# HTTPRoute for the webapp that only allows what we want..."
-# bat manifests/booksapp/webapp_ingress_route.yaml
-# wait
-
-# clear
-# show "# ...and an AuthorizationPolicy that allows only our ingress."
-# bat manifests/booksapp/webapp_ingress_policy.yaml
-# wait
-
-# clear
-# show "# Let's apply these."
-# pei "kubectl apply -f manifests/booksapp/webapp_ingress_route.yaml"
-# pei "kubectl apply -f manifests/booksapp/webapp_ingress_policy.yaml"
-# wait
-
-# clear
-# show "# Oh wait. We're missing something..."
-# wait
-# show ""
-# show "# Right. We just broke probes, so let's re-allow them."
-# wait
-# bat manifests/booksapp/webapp_probe.yaml
-# clear
-# show "# Let's apply that too..."
-# pei "kubectl apply -f manifests/booksapp/webapp_probe.yaml"
-# wait
-
-# clear
-# show "# ...and now we should see the books app working in the webapp too."
-# wait
-
-# obs "Safari + Video"
-# wait
-
-# clear
-# obs "Terminal + Video"
+show_browser
+clear
+show_terminal --nowait
 
 show "# That's actually working a little bit TOO well. We seem to be allowing..."
 show "# everything, really. Let's take another look at that HTTPRoute -- especially"
@@ -241,11 +253,9 @@ show ""
 show "# OK, how is that in the browser?"
 wait
 
-obs "Safari + Video"
-wait
-
+show_browser
 clear
-obs "Terminal + Video"
+show_terminal --nowait
 
 show "# Errr. That's a little restrictive. Let's allow CSS, authors, and books as prefix"
 show "# matches."
@@ -257,11 +267,9 @@ show ""
 show "# That should be better. Hopefully. Let's check viewing and editing things this time."
 wait
 
-obs "Safari + Video"
-wait
-
+show_browser
 clear
-obs "Terminal + Video"
+show_terminal --nowait
 
 show "# So editing doesn't work; let's at least allow editing authors. One more note as"
 show "# we do this: you needn't have all your routes in a single HTTPRoute. Here's a new"
@@ -275,11 +283,9 @@ show ""
 show "# At this point, editing authors should work, but editing books should still fail."
 wait
 
-obs "Safari + Video"
-wait
-
+show_browser
 clear
-obs "Terminal + Video"
+show_terminal --nowait
 
 show "# Finally, at this point things are a bit complex. We can use 'linkerd viz authz'"
 show "# to see all the authorization policies that affect our webapp, for example."
@@ -296,4 +302,4 @@ show "# - Add route-based policy to the authors and books services too -- right 
 show "#   they're blindly trusting the ingress to protect them, and they needn't."
 wait
 
-obs "Intro Slides"
+show_slides --nowait
