@@ -11,9 +11,9 @@ PROMPT_WAIT=false
 # control what's shown when livecasting the demo. If you don't
 # set the environment variables, they'll be noops.
 
-show_hook () {
+run_hook () {
   # set -x
-  hookname="SHOW_${1}"
+  hookname="DEMO_HOOK_${1}"
   hook=$(eval "echo \$$hookname")
   nowait="$2"
 
@@ -22,10 +22,10 @@ show_hook () {
   # set +x
 }
 
-show_terminal () { show_hook TERMINAL "$@"; }
-show_browser  () { show_hook BROWSER "$@"; }
-show_video    () { show_hook VIDEO "$@"; }
-show_slides   () { show_hook SLIDES "$@"; }
+show_terminal () { run_hook TERMINAL "$@"; }
+show_browser  () { run_hook BROWSER "$@"; }
+show_video    () { run_hook VIDEO "$@"; }
+show_slides   () { run_hook SLIDES "$@"; }
 
 show_slides --nowait
 
