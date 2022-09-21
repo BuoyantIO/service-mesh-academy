@@ -1,31 +1,47 @@
-## Create the namespace, our certs will need to exist here for our installation
-## to work.
+## NOTE: We're configuring cert-manager here, but this time we're using
+## the linkerd namespace! This is all about the issuer certs, and Linkerd
+## must have access to the private keys for the issuer certs.
+## 
+## We start by actually creating the linkerd namespace -- since we haven't
+## installed Linkerd yet, the namespace doesn't exist yet.
 apiVersion: v1
 kind: Namespace
 metadata:
   name: linkerd
 ---
-## Create an identity certificate signed by our root issuer
+## Next, we use a Certificate resource to tell cert-manager how to create
+## the Linkerd issuer certificate. Again, this is in the linkerd namespace,
+## so that Linkerd has access to both the public and private keys for the
+## issuer cert.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: linkerd-identity-issuer
-  namespace: linkerd # note the namespace
+  # NOTE: pay attention to the namespace here!
+  namespace: linkerd
 spec:
-  secretName: linkerd-identity-issuer
-  duration: 48h
-  renewBefore: 25h
-  issuerRef:
-    name: linkerd-trust-anchor
-    kind: ClusterIssuer
+  # Set the common name of the subject.
   commonName: identity.linkerd.cluster.local
-  dnsNames:
-  - identity.linkerd.cluster.local
+  # # Also set extra DNS names for SAN.
+  # dnsNames:
+  # - identity.linkerd.cluster.local
+  ## This is itself a CA certificate...
   isCA: true
-  privateKey:
-    algorithm: ECDSA
   usages:
   - cert sign
   - crl sign
   - server auth
   - client auth
+  ## ...and it's only good for 48 hours, so make sure to renew it
+  ## no more than 25 hours after it's issued.
+  duration: 48h
+  renewBefore: 25h
+  ## It must be issued (signed) by trust anchor ClusterIssuer.
+  issuerRef:
+    name: linkerd-trust-anchor
+    kind: ClusterIssuer
+  # It uses a 256-bit ECDSA private key...
+  privateKey:
+    algorithm: ECDSA
+  # ...and the private key will be stored in this Secret.
+  secretName: linkerd-identity-issuer

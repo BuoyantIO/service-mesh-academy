@@ -1,8 +1,11 @@
-## Use trust to redistribute certificate from cert-manager namespace to linkerd
+## Use the cert-manager Trust extension to copy the public key from our
+## trust anchor certificate from the cert-manager namespace to the linkerd
+## namespace, so that Linkerd can actually use it to validate certificates.
 apiVersion: trust.cert-manager.io/v1alpha1
 kind: Bundle
 metadata:
   name: linkerd-identity-trust-roots
+  namespace: linkerd
 spec:
   sources:
   - secret:

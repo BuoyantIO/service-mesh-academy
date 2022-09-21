@@ -94,7 +94,7 @@ $ linkerd install \
 ### 3) Generating self-signed certificates for the security conscious
 ---
 
-**Why do we want shorter validty periods**: because they make our environment
+**Why we want shorter validity periods**: because they make our environment
 more secure and robust.
 
 * Key compromises might happen more often than you think. Private keys need
@@ -102,7 +102,6 @@ more secure and robust.
   especially true with issuer CAs that typically live in the cluster).
 * Revoking certificates might happen, best to get used to rotating your
   certificates.
-
 
 We will generate a root CA with a validty of one year (or ~ 8760h) and an
 issuer with a validty of one week (~ 168h). This might be a bit too short,
