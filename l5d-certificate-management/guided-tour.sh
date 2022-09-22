@@ -489,8 +489,8 @@ show "# to do both."
 wait
 show ""
 show "# Since this is an operation that's not guaranteed to be zero downtime, I'm"
-show "# leaving it as homework 🙂. You'll find a guide in this repository."
-
+show "# leaving it as homework 🙂. You'll find a guide in this repository (the"
+show "# EXPIRED-CERTS.md file)."
 wait
 clear
 
