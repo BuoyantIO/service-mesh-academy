@@ -50,6 +50,7 @@ fi
 #
 # * a Kubernetes cluster and the `kubectl` command
 #    * you can run `create-cluster.sh` to create a suitable `k3d` cluster
+#    * or `setup-cluster.sh` to set up a cluster that's already running
 #
 # * arrange for "emoji.example.com", "books.example.com", and "viz.example.com"
 #   to resolve to your cluster's ingress
@@ -66,26 +67,26 @@ clear
 
 # Show how we installed things.
 show "# Here's how we installed Linkerd:"
-sed -n '/LINKERD_INSTALL_START/,/LINKERD_INSTALL_END/p' create-cluster.sh | sed '1d;$d' | egrep -v '^#'
+sed -n '/LINKERD_INSTALL_START/,/LINKERD_INSTALL_END/p' setup-cluster.sh | sed '1d;$d' | egrep -v '^#'
 show ""
 show "# ...and Grafana, since we need to do that by hand with Linkerd 2.12:"
-sed -n '/GRAFANA_INSTALL_START/,/GRAFANA_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
+sed -n '/GRAFANA_INSTALL_START/,/GRAFANA_INSTALL_END/p' setup-cluster.sh | sed '1d;$d'
 wait
 
 clear
 show "# Here's how we installed Emojivoto and Booksapp, including mesh injection:"
-sed -n '/EMOJIVOTO_INSTALL_START/,/EMOJIVOTO_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
+sed -n '/EMOJIVOTO_INSTALL_START/,/EMOJIVOTO_INSTALL_END/p' setup-cluster.sh | sed '1d;$d'
 show ""
-sed -n '/BOOKS_INSTALL_START/,/BOOKS_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
+sed -n '/BOOKS_INSTALL_START/,/BOOKS_INSTALL_END/p' setup-cluster.sh | sed '1d;$d'
 wait
 
 clear
 show "# And here's how we installed a single-replica Emissary-ingress,"
 show "# including mesh injection:"
-sed -n '/EMISSARY_INSTALL_START/,/EMISSARY_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
+sed -n '/EMISSARY_INSTALL_START/,/EMISSARY_INSTALL_END/p' setup-cluster.sh | sed '1d;$d'
 show ""
 show "# We had to configure Emissary for HTTP (not HTTPS!) routing too:"
-sed -n '/EMISSARY_CONFIGURE_START/,/EMISSARY_CONFIGURE_END/p' create-cluster.sh | sed '1d;$d'
+sed -n '/EMISSARY_CONFIGURE_START/,/EMISSARY_CONFIGURE_END/p' setup-cluster.sh | sed '1d;$d'
 
 wait
 clear
