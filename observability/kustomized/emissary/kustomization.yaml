@@ -1,5 +1,0 @@
-resources:
-- emissary-emissaryns.yaml
-patchesStrategicMerge:
-- replicas-patch.yaml
-

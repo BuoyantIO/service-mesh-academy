@@ -55,3 +55,56 @@ show () {
 cmd () {
   NO_WAIT=true DEMO_PROMPT='$ ' TYPE_SPEED= p "$@"
 }
+
+# run_hook allows using environment variable hooks to control what
+# happens in a demo, mostly for livecasting.
+#
+# Usage:
+#   run_hook [--nowait] hookname [args...]
+#
+# If the environment variable DEMO_HOOK_$hookname is set, it will be
+# run $DEMO_HOOK_hookname with the given arguments, then wait for the
+# user to hit RETURN unless --nowait is given. 
+#
+# If the environment variable is not set, this is a no-op.
+#
+# An example: if you set DEMO_HOOK_FOOBAR=cat, then
+#
+#   run_hook FOOBAR /tmp/foo
+#
+# will turn into "cat /tmp/foo", followed by waiting for the user to
+# hit RETURN.
+#
+#   run_hook --nowait FOOBAR /tmp/foo
+#
+# will do the same, but you won't need to hit RETURN after.
+#
+# If DEMO_HOOK_FOOBAR is not set, both examples above will be
+# no-ops.
+
+run_hook () {
+  # set -x
+
+  local nowait="$2"
+
+  if [ "$1" = "--nowait" ]; then
+    shift
+    nowait=YES
+  fi  
+
+  local hookname="DEMO_HOOK_${1}"
+  shift
+
+  local hook=$(eval "echo \$$hookname")
+
+  if [ -n "$hook" ]; then
+    $hook "$@"
+
+    if [ -z "$nowait" ]; then
+      wait
+    fi
+  fi
+
+  # set +x
+}
+

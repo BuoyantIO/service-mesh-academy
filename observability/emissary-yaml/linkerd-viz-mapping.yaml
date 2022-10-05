@@ -7,5 +7,8 @@ spec:
   prefix: /
   hostname: viz.example.com
   service: web.linkerd-viz.svc.cluster.local:8084
+  host_rewrite: web.linkerd-viz.svc.cluster.local:8084
+  remove_request_headers:
+  - Origin
   allow_upgrade:
   - websocket
