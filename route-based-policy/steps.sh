@@ -1,305 +1,324 @@
 #!/bin/bash
-# shellcheck source=demo-magic.sh
-. demo-magic.sh
-. demo-magic-extras.sh
 
-DEMO_CMD_COLOR=$BLACK
-DEMO_COMMENT_COLOR=$PURPLE
-PROMPT_WAIT=false
+# set -e
 
 # This show_* stuff allows using environment variable hooks to
 # control what's shown when livecasting the demo. If you don't
 # set the environment variables, they'll be noops.
 
-run_hook () {
-  # set -x
-  hookname="DEMO_HOOK_${1}"
-  hook=$(eval "echo \$$hookname")
-  nowait="$2"
+#!hook show_terminal TERMINAL
+#!hook show_browser BROWSER
+#!hook show_video VIDEO
+#!hook show_slides SLIDES
 
-  if [ -n "$hook" ]; then $hook; fi
-  if [ -z "$nowait" ]; then wait; fi
-  # set +x
-}
+## #!macro browser_then_terminal
+## #!  #@wait
+## #!  #@show_browser
+## #!  #@wait
+## #!  #@clear
+## #!  #@show_terminal
+## #!end
 
-show_terminal () { run_hook TERMINAL "$@"; }
-show_browser  () { run_hook BROWSER "$@"; }
-show_video    () { run_hook VIDEO "$@"; }
-show_slides   () { run_hook SLIDES "$@"; }
+#!macro wait_clear
+#!  #@wait
+#!  #@echo clear
+#!end
 
-show_slides --nowait
-
-clear
-show "Waiting..."
-wait
+show_slides
 
 clear
-show_terminal --nowait
+echo Waiting...
 
-# Show basics about the cluster.
-show "# We already have a cluster set up. Let's look at it."
-pei "kubectl get nodes"
-pei "kubectl get ns | sort"
-wait
-clear
+## #@wait_clear
+#@wait
+#@clear
+show_terminal
 
-# Show how we installed things.
-show "# Here's how we installed Linkerd:"
-sed -n '/LINKERD_INSTALL_START/,/LINKERD_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
-show ""
-show "# ...and Grafana, since we need to do that by head with Linkerd 2.12:"
-sed -n '/GRAFANA_INSTALL_START/,/GRAFANA_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
-wait
+#@SHOW
 
-clear
-show "# Here's how we installed Booksapp, including mesh injection:"
-sed -n '/BOOKS_INSTALL_START/,/BOOKS_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
-wait
+## Show basics about the cluster.
+# We already have a cluster set up. Let's look at it.
+kubectl get nodes
 
-clear
-show "# And here's how we installed a single-replica Emissary-ingress,"
-show "# including mesh injection:"
-sed -n '/EMISSARY_INSTALL_START/,/EMISSARY_INSTALL_END/p' create-cluster.sh | sed '1d;$d'
-show ""
-show "# We had to configure Emissary for HTTP (not HTTPS!) routing too:"
-sed -n '/EMISSARY_CONFIGURE_START/,/EMISSARY_CONFIGURE_END/p' create-cluster.sh | sed '1d;$d'
+kubectl get ns | sort
+## wait_clear
+#@wait
+#@clear
 
-wait
-clear
+## Show how we installed things.
+# Here's how we installed Linkerd:
 
-show "# At this point, things should be working. Let's start by looking at the books app"
-show "# in the browser."
-wait
+#@immed
+sed -n '/LINKERD_INSTALL_START/,/LINKERD_INSTALL_END/p' setup-cluster.sh | sed '1d;$d'
 
-show_browser
-clear
-show_terminal --nowait
+# ...and Grafana, since we need to do that by head with Linkerd 2.12:
 
-show "# We can also use linkerd viz to look deeper into the books app."
-pei "linkerd viz stat deploy -n booksapp"
-wait 
+#@immed
+sed -n '/GRAFANA_INSTALL_START/,/GRAFANA_INSTALL_END/p' setup-cluster.sh | sed '1d;$d'
 
-pe "linkerd viz top deploy -n booksapp"
-clear
+#@wait
+#@clear
+# Here's how we installed Booksapp, including mesh injection:
 
-show "# OK. Time to break everything!"
-pe 'kubectl annotate ns booksapp config.linkerd.io/default-inbound-policy=deny'
-wait
-clear
+#@immed
+sed -n '/BOOKS_INSTALL_START/,/BOOKS_INSTALL_END/p' setup-cluster.sh | sed '1d;$d'
 
-show "# So, nothing should work now, right?"
-pe "linkerd viz stat deploy -n booksapp"
-wait 
+#@wait
+#@clear
+# And here's how we installed a single-replica Emissary-ingress,
+# including mesh injection:
 
-show ""
-show "# Huh. It's still working? Let's try the browser."
-wait
+#@immed
+sed -n '/EMISSARY_INSTALL_START/,/EMISSARY_INSTALL_END/p' setup-cluster.sh | sed '1d;$d'
 
-show_browser
-clear
-show_terminal --nowait
+# We had to configure Emissary for HTTP (not HTTPS!) routing too:
 
-show "# Anyone remember the gotcha that's biting us now?"
-wait
+#@immed
+sed -n '/EMISSARY_CONFIGURE_START/,/EMISSARY_CONFIGURE_END/p' setup-cluster.sh | sed '1d;$d'
 
-show ""
-show "# Right. We have to restart the pods to make our change to the"
-show "# default policy take effect."
-pe 'kubectl rollout restart -n booksapp deploy'
-pe 'watch "kubectl get pods -n booksapp"'
-clear
+#@wait
+#@clear
+# At this point, things should be working. Let's start by looking at the books app
+# in the browser.
+#@wait
+#@show_browser
+#@wait
+#@clear
+#@show_terminal
 
-show "# At this point, things should not work. We'll use the browser to verify that."
-wait
+# We can also use linkerd viz to look deeper into the books app.
+# 
+# linkerd viz stat shows stats.
+linkerd viz stat deploy -n booksapp
+#@wait 
 
-show_browser
-clear
-show_terminal --nowait
+# linkerd viz top shows the most common calls.
+linkerd viz top deploy -n booksapp
+#@clear
 
-show "# OK, let's start allowing things, but minimally. First we allow linkerd-viz"
-show "# and Prometheus. We start with a Server definition..."
+# OK. Time to break everything!
+kubectl annotate ns booksapp config.linkerd.io/default-inbound-policy=deny
+
+#@wait
+#@clear
+# So, nothing should work now, right?
+linkerd viz stat deploy -n booksapp
+#@wait 
+
+#@echo
+# Huh. It's still working? Let's try the browser.
+#@wait
+#@show_browser
+#@wait
+#@clear
+#@show_terminal
+
+# Anyone remember the gotcha that's biting us now?
+#@wait
+
+#@echo
+# Right. We have to restart the pods to make our change to the default
+# policy take effect.
+kubectl rollout restart -n booksapp deploy
+watch "kubectl get pods -n booksapp"
+#@clear
+
+# At this point, things should not work. We'll use the browser to verify that
+# (both by trying the app, and by looking at viz for the booksapp namespace).
+#@wait
+#@show_browser
+#@wait
+#@clear
+#@show_terminal
+
+# OK, let's start allowing things, but minimally. First we allow linkerd-viz
+# and Prometheus. We start with a Server definition...
 bat manifests/booksapp/admin_server.yaml
-wait
 
-clear
-show "# ...then we define an AuthorizationPolicy using MeshTLSAuthentication."
-show "#"
-show "# Another question as we look at this: the AuthorizationPolicy doesn't"
-show "# reference the Server we just created. Why do we need it?"
+#@wait
+#@clear
+# ...then we define an AuthorizationPolicy using MeshTLSAuthentication.
+#
+# Another question as we look at this: the AuthorizationPolicy doesn't
+# reference the Server we just created. Why do we need it?
 bat manifests/booksapp/allow_viz.yaml
-wait
 
-clear
-show "# Let's apply these."
-pei "kubectl apply -f manifests/booksapp/admin_server.yaml"
-pei "kubectl apply -f manifests/booksapp/allow_viz.yaml"
-wait 
-clear
+#@wait
+#@clear
+# Let's apply these.
+kubectl apply -f manifests/booksapp/admin_server.yaml
+kubectl apply -f manifests/booksapp/allow_viz.yaml
+#@wait
+#@clear
 
-show "# If we tap the traffic deployment, we can see that it is getting 403s."
-pe "linkerd viz tap -n booksapp deploy/traffic"
+#@SHOW
 
-clear
-show "# We can also see, in the browser, that viz gets a little happier."
-wait
+# If we tap the traffic deployment, we can see that it is getting 403s.
+##@failok
+linkerd viz tap -n booksapp deploy/traffic
 
-show_browser
-clear
-show_terminal --nowait
+#@clear
+# We can also see, in the browser, that viz gets a little happier.
+#@wait
+#@show_browser
+#@wait
+#@clear
+#@show_terminal
 
-show "# To really see things correctly we need to allow app traffic too. Again, we'll start"
-show "# with Servers..."
-wait
+# To really see things correctly we need to allow app traffic too. Again, we'll start
+# with Servers...
+#@wait
 bat manifests/booksapp/{authors,books,webapp}_server.yaml
 
-clear
-show "# ...and continue with an AuthorizationPolicy using MeshTLSAuthentication."
+#@clear
+# ...and continue with an AuthorizationPolicy using MeshTLSAuthentication.
 bat manifests/booksapp/allow_namespace.yaml
-wait
 
-clear
-show "# Another question: why don't we have a Server for the traffic generator?"
-wait
-show ""
-show "# Right. It doesn't have any ports defined: it's outbound-only. Policy for"
-show "# its traffic is managed by the defining it for the services it's trying"
-show "# to talk to."
-show ""
-show "# So let's apply all this stuff."
-pei "kubectl apply -f manifests/booksapp/authors_server.yaml"
-pei "kubectl apply -f manifests/booksapp/books_server.yaml"
-pei "kubectl apply -f manifests/booksapp/webapp_server.yaml"
-pei "kubectl apply -f manifests/booksapp/allow_namespace.yaml"
-wait 
-clear
+#@wait
+#@clear
+# Another question: why don't we have a Server for the traffic generator?
+#@wait
+#@echo
+# Right. It doesn't have any ports defined: it's outbound-only. Policy for
+# its traffic is managed by the defining it for the services it's trying
+# to talk to.
 
-show "# At this point we should see actual traffic showing up in viz..."
-# pe "linkerd viz stat deploy -n booksapp"
-# wait 
+# So let's apply all this stuff.
+kubectl apply -f manifests/booksapp/authors_server.yaml
+kubectl apply -f manifests/booksapp/books_server.yaml
+kubectl apply -f manifests/booksapp/webapp_server.yaml
+kubectl apply -f manifests/booksapp/allow_namespace.yaml
+#@wait 
+#@clear
 
-pe "linkerd viz top deploy -n booksapp"
+# At this point we should see actual traffic showing up in viz...
+## linkerd viz stat deploy -n booksapp
+## wait 
 
-clear
-show "# ...and viz should work better in the browser again too."
-wait
+linkerd viz top deploy -n booksapp
 
-show_browser
-clear
-show_terminal --nowait
+#@clear
+# ...and viz should work better in the browser again too.
+#@wait
+#@show_browser
+#@wait
+#@clear
+#@show_terminal
 
-show "# So far, so good. We didn't try actually using the books app from the"
-show "# browser, though. Does that work?"
-wait
+# So far, so good. We didn't try actually using the books app from the
+# browser, though. Does that work?
+#@wait
+#@show_browser
+#@wait
+#@clear
+#@show_terminal
 
-show_browser
-clear
-show_terminal --nowait
-
-show "# No. Let's fix that using route-based policy -- we definitely don't want"
-show "# to allow anything from the browser to the webapp. So let's define an"
-show "# HTTPRoute for the webapp that only allows what we want..."
+# No. Let's fix that using route-based policy -- we definitely don't want
+# to allow any random thing that the browser might send to actually get
+# to the webapp. So let's define an HTTPRoute for the webapp that only
+# allows what we want...
 bat manifests/booksapp/webapp_ingress_route.yaml
-wait
 
-clear
-show "# ...and an AuthorizationPolicy that allows only our ingress."
+#@wait
+#@clear
+# ...and an AuthorizationPolicy that allows only our ingress.
 bat manifests/booksapp/webapp_ingress_policy.yaml
-wait
 
-clear
-show "# Let's apply these."
-pei "kubectl apply -f manifests/booksapp/webapp_ingress_route.yaml"
-pei "kubectl apply -f manifests/booksapp/webapp_ingress_policy.yaml"
-wait
+#@wait
+#@clear
+# Let's apply these.
+kubectl apply -f manifests/booksapp/webapp_ingress_route.yaml
+kubectl apply -f manifests/booksapp/webapp_ingress_policy.yaml
 
-clear
-show "# Oh wait. We're missing something..."
-wait
-show ""
-show "# Right. We just broke probes, so let's re-allow them."
-wait
+#@wait
+#@clear
+# Oh wait. We're missing something...
+#@wait
+#@echo
+# Right. We just broke probes, so let's re-allow them.
+#@wait
 bat manifests/booksapp/webapp_probe.yaml
-clear
-show "# Let's apply that too..."
-pei "kubectl apply -f manifests/booksapp/webapp_probe.yaml"
-wait
+#@clear
+# Let's apply that too...
+kubectl apply -f manifests/booksapp/webapp_probe.yaml
 
-clear
-show "# ...and now we should see the books app working in the webapp too."
-wait
+#@wait
+#@clear
+# ...and now we should see the books app working in the webapp too.
+#@wait
+#@show_browser
+#@wait
+#@clear
+#@show_terminal
 
-show_browser
-clear
-show_terminal --nowait
-
-show "# That's actually working a little bit TOO well. We seem to be allowing..."
-show "# everything, really. Let's take another look at that HTTPRoute -- especially"
-show '# the path.'
+# That's actually working a little bit TOO well. We seem to be allowing...
+# everything, really. Let's take another look at that HTTPRoute -- especially
+# the path.
 bat manifests/booksapp/webapp_ingress_route.yaml
-wait
-show ""
-show "# When you specify a path in an HTTPRoute, the default is for it to be a"
-show "# prefix match -- and every path has a prefix of /, so we're actually allowing"
-show "# literally all HTTP traffic from the ingress. That's not good."
-wait
+#@wait
 
-clear
-show "# Instead, let's make that an exact match instead."
+# When you specify a path in an HTTPRoute, the default is for it to be a
+# prefix match -- and every path has a prefix of /, so we're actually allowing
+# literally all HTTP traffic from the ingress. That's not good.
+
+#@wait
+#@clear
+# Instead, let's make that an exact match instead.
 bat manifests/booksapp/webapp_ingress_route_2.yaml
-wait
-pei "kubectl apply -f manifests/booksapp/webapp_ingress_route_2.yaml"
-wait
-show ""
-show "# OK, how is that in the browser?"
-wait
+#@wait
+kubectl apply -f manifests/booksapp/webapp_ingress_route_2.yaml
+#@wait
 
-show_browser
-clear
-show_terminal --nowait
+# OK, how is that in the browser?
+#@wait
+#@show_browser
+#@wait
+#@clear
+#@show_terminal
 
-show "# Errr. That's a little restrictive. Let's allow CSS, authors, and books as prefix"
-show "# matches."
+# Errr. That's a little restrictive. Let's allow CSS, authors, and books as prefix
+# matches.
 bat manifests/booksapp/webapp_ingress_route_3.yaml
-wait
-pei "kubectl apply -f manifests/booksapp/webapp_ingress_route_3.yaml"
-wait
-show ""
-show "# That should be better. Hopefully. Let's check viewing and editing things this time."
-wait
+#@wait
+kubectl apply -f manifests/booksapp/webapp_ingress_route_3.yaml
+#@wait
 
-show_browser
-clear
-show_terminal --nowait
+# That should be better. Hopefully. Let's check viewing and editing things this time.
+#@wait
+#@show_browser
+#@wait
+#@clear
+#@show_terminal
 
-show "# So editing doesn't work; let's at least allow editing authors. One more note as"
-show "# we do this: you needn't have all your routes in a single HTTPRoute. Here's a new"
-show "# HTTPRoute and AuthorizationPolicy that allows editing authors (also demonstrating"
-show "# regular-expression matching)."
+# So editing doesn't work; let's at least allow editing authors. One more note as
+# we do this: you needn't have all your routes in a single HTTPRoute. Here's a new
+# HTTPRoute and AuthorizationPolicy that allows editing authors (also demonstrating
+# regular-expression matching).
 bat manifests/booksapp/webapp_ingress_edit.yaml
-wait
-pei "kubectl apply -f manifests/booksapp/webapp_ingress_edit.yaml"
-wait
-show ""
-show "# At this point, editing authors should work, but editing books should still fail."
-wait
+#@wait
+kubectl apply -f manifests/booksapp/webapp_ingress_edit.yaml
+#@wait
 
-show_browser
-clear
-show_terminal --nowait
+# At this point, editing authors should work, but editing books should still fail.
+#@wait
+#@show_browser
+#@wait
+#@clear
+#@show_terminal
 
-show "# Finally, at this point things are a bit complex. We can use 'linkerd viz authz'"
-show "# to see all the authorization policies that affect our webapp, for example."
-pe "linkerd viz authz -n booksapp deploy/webapp"
-show ""
-show "# Note that you actually have to use HTTPRoutes and AuthorizationPolicies before"
-show "# they'll show up here."
+# Finally, at this point things are a bit complex. We can use 'linkerd viz authz'
+# to see all the authorization policies that affect our webapp, for example.
+linkerd viz authz -n booksapp deploy/webapp
+#@echo
+# Note that you actually have to use HTTPRoutes and AuthorizationPolicies before
+# they'll show up here.
 
-wait
-clear
-show "# Homework, should you choose to accept it:"
-show "# - Allow editing books too!"
-show "# - Add route-based policy to the authors and books services too -- right now,"
-show "#   they're blindly trusting the ingress to protect them, and they needn't."
-wait
+#@wait
+#@clear
+# Homework, should you choose to accept it:
+# - Allow editing books too!
+# - Add route-based policy to the authors and books services too -- right now,
+#   they're blindly trusting the ingress to protect them, and they needn't.
+#@wait
 
-show_slides --nowait
+#@show_slides

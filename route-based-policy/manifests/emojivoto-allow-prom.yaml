@@ -1,0 +1,36 @@
+---
+# Server "prom": matches the Prometheus port of the emoji, web, and voting
+# services, by selecting over the pods with corresponding app labels.
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  namespace: emojivoto
+  name: prom
+  labels:
+    app.kubernetes.io/part-of: emojivoto
+    app.kubernetes.io/version: v11
+spec:
+  port: prom
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: [emoji-svc, web-svc, voting-svc]
+  proxyProtocol: HTTP/1
+
+---
+# ServerAuthorization "prom-prometheus": allows unauthenticated traffic to the
+# "prom" Server, so that metrics scrapes can come from anywhere.
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  namespace: emojivoto
+  name: prom-prometheus
+  labels:
+    app.kubernetes.io/part-of: emojivoto
+    app.kubernetes.io/version: v11
+spec:
+  server:
+    name: prom
+  client:
+    unauthenticated: true

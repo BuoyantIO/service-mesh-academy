@@ -1,0 +1,34 @@
+
+---
+# Server "admin": matches the admin port for every pod in this namespace
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  namespace: emojivoto
+  name: admin
+  labels:
+    app.kubernetes.io/part-of: emojivoto
+    app.kubernetes.io/version: v11
+spec:
+  port: linkerd-admin
+  podSelector:
+    matchLabels: {} # every pod
+  proxyProtocol: HTTP/1
+
+---
+# ServerAuthorization "admin-everyone": allows unauthenticated access to the
+# "admin" Server, so that Kubernetes health checks can get through.
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  namespace: emojivoto
+  name: admin-everyone
+  labels:
+    app.kubernetes.io/part-of: emojivoto
+    app.kubernetes.io/version: v11
+spec:
+  server:
+    name: admin
+  client:
+    unauthenticated: true
+    

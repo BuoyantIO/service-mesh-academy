@@ -1,0 +1,104 @@
+---
+# Server "emoji-grpc": matches the gRPC port of the emoji service, by selecting
+# over pods with the app=emoji-svc label. Has an emojivoto/api=internal-grpc
+# label; this is used by a ServerAuthorization below.
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  namespace: emojivoto
+  name: emoji-grpc
+  labels:
+    app.kubernetes.io/part-of: emojivoto
+    app.kubernetes.io/name: emoji
+    app.kubernetes.io/version: v11
+    app: emoji-svc
+    emojivoto/api: internal-grpc
+spec:
+  podSelector:
+    matchLabels:
+      app: emoji-svc
+  port: grpc
+  proxyProtocol: gRPC
+
+---
+# Server "voting-grpc": matches the gRPC port of the voting service by
+# selecting over pods with the app=voting-svc label. Has an
+# emojivoto/api=internal-grpc label; this is used by a ServerAuthorization
+# below.
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  namespace: emojivoto
+  name: voting-grpc
+  labels:
+    app: voting-svc
+    emojivoto/api: internal-grpc
+spec:
+  podSelector:
+    matchLabels:
+      app: voting-svc
+  port: grpc
+  proxyProtocol: gRPC
+
+---
+# ServerAuthorization "internal-grpc": matches all Servers with the
+# emojivoto/api=internal-grpc label and only allows authenticated traffic from
+# the web service (as identified by the ServiceAccount)
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  namespace: emojivoto
+  name: internal-grpc
+  labels:
+    app.kubernetes.io/part-of: emojivoto
+    app.kubernetes.io/version: v11
+spec:
+  server:
+    selector:
+      matchLabels:
+        emojivoto/api: internal-grpc
+  client:
+    meshTLS:
+      serviceAccounts:
+        - name: web
+
+---
+# Server "web-http": matches the http port for pods in the web service, by
+# selecting over the app=web-svc label.
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  namespace: emojivoto
+  name: web-http
+  labels:
+    app.kubernetes.io/part-of: emojivoto
+    app.kubernetes.io/name: web
+    app.kubernetes.io/version: v11
+spec:
+  podSelector:
+    matchLabels:
+      app: web-svc
+  port: http
+  proxyProtocol: HTTP/1
+
+---
+# ServerAuthorization "web-public": allows unauthenticated traffic
+# to the web-http Server, so that the web service can serve HTTP requests
+# to anyone.
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  namespace: emojivoto
+  name: web-public
+  labels:
+    app.kubernetes.io/part-of: emojivoto
+    app.kubernetes.io/name: web
+    app.kubernetes.io/version: v11
+spec:
+  server:
+    name: web-http
+  client:
+    unauthenticated: true
+    networks:
+      - cidr: 0.0.0.0/0
+      - cidr: ::/0

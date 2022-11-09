@@ -2,7 +2,7 @@
 apiVersion: getambassador.io/v3alpha1
 kind: Mapping
 metadata:
-  name: viz-mapping
+  name: viz-example-mapping
 spec:
   prefix: /
   hostname: viz.example.com

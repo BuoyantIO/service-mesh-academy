@@ -1,0 +1,17 @@
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: voting-grpc
+  namespace: emojivoto
+  labels:
+    app.kubernetes.io/part-of: emojivoto
+    app.kubernetes.io/name: voting
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: voting-grpc
+  requiredAuthenticationRefs:
+    - name: web
+      kind: ServiceAccount
