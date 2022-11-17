@@ -221,26 +221,8 @@ So that's the happy path for the init container. Let's switch to a CNI.
 
 ## Using the CNI plugin
 
-`k3d`, as it happens, uses `flannel` by default for its network layer.
-This is fine, except that it installs `flannel` in a way that doesn't
-work with Linkerd's standard CNI plugin install paths. So we have two
-options:
-
-<!-- @wait -->
-
-1. Tweak the Linkerd install paths to work with `k3d`'s `flannel`
-   install, or
-
-2. Install some other CNI when we set up `k3d`.
-
-<!-- @wait -->
-
-Either of these options will work. We'll just tweak the install paths
-(option 1) at the moment, and save playing with entirely different CNI
-layers for a different workshop.
-
-So let's create a new `k3d` cluster. Again, we explicitly tell `k3d`
-_not_ to deploy Traefik, since we'll be using Linkerd.
+We'll create a new `k3d` cluster to try out the CNI. Again, we explicitly
+tell `k3d` _not_ to deploy Traefik, since we'll be using Linkerd.
 
 ```bash
 k3d cluster delete startup-cni
@@ -254,13 +236,8 @@ extension must be installed before installing Linkerd itself**, and in
 fact it is the **only** extension where that's possible.
 
 ```bash
-linkerd-edge-22.11.1 install-cni \
-    --dest-cni-net-dir "/var/lib/rancher/k3s/agent/etc/cni/net.d/" \
-    --dest-cni-bin-dir "/bin" | kubectl apply -f -
+linkerd-edge-22.11.1 install-cni | kubectl apply -f -
 ```
-
-Those `--dest-cni-net-dir` and `--dest-cni-bin-dir` arguments are
-**required** to use the extension with `flannel`.
 
 Note that we now have a new `linkerd-cni` namespace:
 
@@ -293,9 +270,94 @@ linkerd-edge-22.11.1 install --linkerd-cni-enabled | kubectl apply -f -
 linkerd-edge-22.11.1 check
 ```
 
+<!-- @SHOW -->
+
+Something is wrong. What's up with our Linkerd pods?
+
+```bash
+kubectl get pods -n linkerd
+## NAME                                     READY   STATUS                  RESTARTS      AGE
+## linkerd-identity-5ff8bd9464-scswh        0/2     Init:CrashLoopBackOff   3 (29s ago)   113s
+## linkerd-destination-695f674c6b-pmv47     0/4     Init:CrashLoopBackOff   3 (29s ago)   113s
+## linkerd-proxy-injector-6f945494d-vjwrm   0/2     Init:CrashLoopBackOff   3 (25s ago)   113s
+```
+
+That's not good. Let's look a little deeper into the destination
+controller to see if we can find anything.
+
+```bash
+POD=$(kubectl get pods -n linkerd -l 'linkerd.io/control-plane-component=destination' -o jsonpath='{ .items[0].metadata.name }')
+#@print "# Found destination controller pod ${POD}"
+
+kubectl logs -n linkerd ${POD}
+## Defaulted container "linkerd-proxy" out of: linkerd-proxy, destination, sp-validator, policy, linkerd-network-validator (init)
+## Error from server (BadRequest): container "linkerd-proxy" in pod "linkerd-destination-695f674c6b-pmv47" is waiting to start: PodInitializing
+```
+
+"Waiting to start: PodInitializing" means that the init container hasn't
+completed yet. What does it say?
+
+```bash
+kubectl logs -n linkerd ${POD} -c linkerd-network-validator
+## 2022-11-17T16:06:24.074377Z  INFO linkerd_network_validator: Listening for connections on 0.0.0.0:4140
+## 2022-11-17T16:06:24.074403Z DEBUG linkerd_network_validator: token="rI32HVkfyqilbDlcxICwEAWbqTxSM0l7iBdY9xnPInzVSTqJxdXymmCaMLRwa7U\n"
+## 2022-11-17T16:06:24.074409Z  INFO linkerd_network_validator: Connecting to 1.1.1.1:20001
+## 2022-11-17T16:06:34.077112Z ERROR linkerd_network_validator: Failed to validate networking configuration timeout=10s
+```
+
+So... our CNI is just broken; the validator is doing its job and
+showing us that something is wrong.
+
+<!-- @wait_clear -->
+
+Actually going through the debugging exercise is a little bit much for
+this talk, so we'll skip to the punchline: `k3d`, as it happens, uses
+`flannel` by default for its network layer. This is fine, except that
+it installs `flannel` in a way that doesn't work with Linkerd's
+standard CNI plugin install paths. So we have two options:
+
+1. Tweak the Linkerd install paths to work with `k3d`'s `flannel`
+   install, or
+
+2. Install some other CNI when we set up `k3d`.
+
+Either of these options will work. We'll just tweak the install paths
+(option 1) at the moment, and save playing with entirely different CNI
+layers for a different workshop.
+
+<!-- @wait_clear -->
+
+So. Let's delete and recreate our cluster...
+
+```bash
+k3d cluster delete startup-cni
+# -p "80:80@loadbalancer" -p "443:443@loadbalancer"
+k3d cluster create startup-cni \
+    --k3s-arg '--no-deploy=traefik@server:*;agents:*'
+```
+
+...and then reinstall the Linkerd CNI extension, this time with the
+arguments that override the install paths as needed to actually work:
 (Obviously we could do this with Helm as well.)
 
-Once again, this gives us the `linkerd` namespace:
+```bash
+linkerd-edge-22.11.1 install-cni \
+    --dest-cni-net-dir "/var/lib/rancher/k3s/agent/etc/cni/net.d/" \
+    --dest-cni-bin-dir "/bin" | kubectl apply -f -
+```
+
+OK, let's see if Linkerd comes up this time:
+
+```bash
+linkerd-edge-22.11.1 install --crds | kubectl apply -f -
+linkerd-edge-22.11.1 install --linkerd-cni-enabled | kubectl apply -f -
+linkerd-edge-22.11.1 check
+```
+
+<!-- @wait_clear -->
+
+Much better! Once again, we have a `linkerd` namespace with the usual
+suspects running in it:
 
 ```bash
 kubectl get namespace
@@ -306,19 +368,13 @@ kubectl get namespace
 ## kube-node-lease   Active   2m57s
 ## linkerd-cni       Active   2m45s
 ## linkerd           Active   2m10s
-```
 
-with Linkerd's usual suspects running in it:
-
-```bash
 kubectl get pods -n linkerd
 ## NAME                                      READY   STATUS    RESTARTS   AGE
 ## linkerd-identity-6548449996-tvjbp         2/2     Running   0          107s
 ## linkerd-proxy-injector-758c5896b8-pb25z   2/2     Running   0          107s
 ## linkerd-destination-699f8b87db-dckh7      4/4     Running   0          107s
 ```
-
-<!-- @SHOW -->
 
 <!-- @wait_clear -->
 
@@ -398,6 +454,10 @@ the validator is much better.)
 
 <!-- @wait_clear -->
 
+So there we go: we've taken a quick look at some of what's under the hood
+when Linkerd starts running using the init container and the CNI plugin,
+including seeing things break when the CNI is unhappy. There's a lot more
+to explore here, but hopefully this will serve as a good starting point.
 
-
-
+<!-- @wait -->
+<!-- @show_slides -->
