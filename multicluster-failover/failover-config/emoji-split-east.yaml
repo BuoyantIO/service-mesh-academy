@@ -1,0 +1,16 @@
+apiVersion: split.smi-spec.io/v1alpha2
+kind: TrafficSplit
+metadata:
+  name: emoji-svc
+  namespace: emojivoto
+  labels:
+      failover.linkerd.io/controlled-by: linkerd-failover
+  annotations:
+      failover.linkerd.io/primary-service: emoji-svc
+spec:
+  service: emoji-svc
+  backends:
+  - service: emoji-svc
+    weight: 1
+  - service: emoji-svc-west
+    weight: 0
