@@ -5,7 +5,7 @@ set -e
 
 missing= ;\
 for cluster in east west; do \
-    if ! k3d cluster get "$cluster" >/dev/null 2>&1; then \
+    if ! kubectl config get-contexts "$cluster" >/dev/null 2>&1; then \
         missing="$missing $cluster" ;\
     fi ;\
 done ;\
