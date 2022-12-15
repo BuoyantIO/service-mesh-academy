@@ -7,7 +7,7 @@ spec:
   selector:
     app: nginx-deploy
   sessionAffinity: None
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - protocol: TCP
     port: 80
@@ -31,7 +31,7 @@ spec:
       containers:
       - image: nginx
         name: nginx
-      - image: cr.l5d.io/linkerd/debug:stable-2.11.1
+      - image: cr.l5d.io/linkerd/debug:stable-2.12.2
         imagePullPolicy: IfNotPresent
         name: linkerd-debug
         resources: {}
