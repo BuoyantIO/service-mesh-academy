@@ -1,14 +1,3 @@
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: IngressClass
-# metadata:
-#   labels:
-#     app.kubernetes.io/component: controller
-#   name: nginx
-#   annotations:
-#     ingressclass.kubernetes.io/is-default-class: "true"
-# spec:
-#   controller: k8s.io/ingress-nginx
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -16,6 +5,7 @@ metadata:
   name: emojivoto
   namespace: emojivoto
   annotations:
+    # Route to the Service, not directly to its endpoints
     nginx.ingress.kubernetes.io/service-upstream: "true"
 spec:
   ingressClassName: nginx

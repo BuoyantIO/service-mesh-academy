@@ -79,11 +79,12 @@ curl --proto '=https' --tlsv1.2 -sSfL $EMISSARY_INGRESS | \
     kubectl apply -f -
 ```
 
-Let's also annotate Emissary to skip incoming ports 80 and 443, in case we
-later want to use the client's incoming IP address:
+Let's also annotate Emissary to skip incoming ports 8080 and 8443, in case we
+later want to use the client's incoming IP address (and we're using 8080 and
+8443 because those are the actual ports the Emissary Pods will see):
 
 ```bash
-kubectl annotate -n emissary deploy/emissary-ingress config.linkerd.io/skip-incoming-ports=80,443
+kubectl annotate -n emissary deploy/emissary-ingress config.linkerd.io/skip-incoming-ports=8080,8443
 ```
 
 Then we can wait for the deployments to be ready:
