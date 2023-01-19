@@ -1,0 +1,9 @@
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: emojivoto-mapping
+spec:
+  prefix: /
+  hostname: emoji.127-0-0-1.sslip.io
+  service: web-svc.emojivoto
