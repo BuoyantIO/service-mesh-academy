@@ -20,7 +20,7 @@ fi
 # required here.
 missing= ;\
 \
-for cmd in bat yq kubectl linkerd; do \
+for cmd in bat kubectl linkerd; do \
     if ! command -v $cmd >/dev/null 2>&1; then \
         missing="$missing $cmd" ;\
     fi ;\
