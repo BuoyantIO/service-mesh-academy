@@ -25,7 +25,7 @@ BAT_STYLE="grid,numbers"
 ```
 
 ---
-<!-- @SKIP -->
+<!-- @SHOW -->
 
 # Sneak Peek: Linkerd 2.13
 
@@ -48,8 +48,6 @@ linkerd install | kubectl apply -f -
 linkerd viz install | kubectl apply -f -
 linkerd check
 ```
-
-<!-- @SHOW -->
 
 Next, we'll install the Faces demo (https://github.com/BuoyantIO/faces-demo),
 using Emissary as the ingress controller.
