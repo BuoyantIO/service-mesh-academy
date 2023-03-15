@@ -1,0 +1,11 @@
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: color-mapping
+  namespace: faces
+spec:
+  hostname: "*"
+  prefix: /color/
+  service: color.faces
+  timeout_ms: 0
