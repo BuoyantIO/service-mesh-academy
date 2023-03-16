@@ -58,3 +58,19 @@ linkerd inject k8s/01-base | kubectl apply -f -
 
 # After that, wait for the Faces application to be ready.
 kubectl -n faces wait --for condition=available --timeout=90s deploy --all
+
+REMAINING=60
+while true; do \
+    printf "." ;\
+    status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/faces/) ;\
+    if [ "$status" = "200" ]; then \
+        echo "Faces ready!" ;\
+        break ;\
+    fi ;\
+    REMAINING=$((REMAINING-1)) ;\
+    if [ "$REMAINING" -le 0 ]; then \
+        echo "Faces not ready after 60 seconds" ;\
+        exit 1 ;\
+    fi ;\
+    sleep 1 ;\
+done

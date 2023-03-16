@@ -38,23 +38,23 @@ since stable-2.13.0 isn't out yet:
 curl --proto '=https' --tlsv1.2 -sSfL https://run.linkerd.io/install-edge | sh
 ```
 
-Once that's done, we can proceed to install Linkerd and Linkerd Viz into our
-cluster:
+Once that's done, we can proceed to install Linkerd into our cluster.
 
 ```bash
 linkerd check --pre
 linkerd install --crds | kubectl apply -f -
 linkerd install | kubectl apply -f -
-linkerd viz install | kubectl apply -f -
 linkerd check
 ```
+
+<!-- @wait_clear -->
 
 Next, we'll install the Faces demo (https://github.com/BuoyantIO/faces-demo),
 using Emissary as the ingress controller.
 
 This bit honestly isn't very interesting (it's literally just grabbing some
 YAML, running it through `linkerd inject`, and then running that through
-`kubectl apply`) so we're going to burn through it pretty quickly. It's in
+`kubectl apply`) so we're going to run through it pretty quickly. It's in
 `setup-demo.sh`.
 
 <!-- @wait -->
@@ -65,11 +65,18 @@ $SHELL setup-demo.sh
 ```
 
 <!-- @wait_clear -->
-<!-- @show_composite -->
 
-OK! At this point, we'll bring up two web browsers to show the Faces
-demo. Both should show the same thing right now: a bunch of smiley
-faces on green backgrounds.
+OK! At this point, we'll point a couple of web browsers to the Faces
+demo, at `http://localhost/faces/`.
+
+One browser should be completely normal; the other should use an
+extension like `ModHeader` to add the header `X-Faces-User: testuser`
+to its requests. Both should show the same thing right now: a bunch of
+smiley faces on green backgrounds. The one using `ModHeader` should
+also say "User: testuser" at the top.
+
+<!-- @wait -->
+<!-- @show_composite -->
 
 <!-- @wait_clear -->
 
@@ -94,7 +101,11 @@ which will return blue, instead of green.
 kubectl apply -f k8s/02-canary/color-canary.yaml
 ```
 
-<!-- @wait_clear -->
+<!-- @wait -->
+<!-- @show_slides -->
+<!-- @wait -->
+<!-- @clear -->
+<!-- @show_composite -->
 
 We can edit the weights to change the distribution of traffic: for
 example, if we edit the weights so that both are `weight: 50`, we'll
