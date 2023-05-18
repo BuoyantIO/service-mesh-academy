@@ -1,0 +1,22 @@
+apiVersion: policy.linkerd.io/v1beta2
+kind: HTTPRoute
+metadata:
+  name: smiley-a-b
+  namespace: faces
+spec:
+  parentRefs:
+    - name: smiley
+      kind: Service
+      group: core
+      port: 80
+  rules:
+  - matches:
+    - headers:
+      - name: "x-faces-user"
+        value: "testuser"
+    backendRefs:
+      - name: smiley2
+        port: 80
+  - backendRefs:
+    - name: smiley
+      port: 80
