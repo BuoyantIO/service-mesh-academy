@@ -30,7 +30,7 @@ https://localhost/faces/ -- one normal one, and one using ModHeader or the
 like to set `X-Faces-User: testuser` for the canarying test.
 
 ---
-<!-- @SKIP -->
+<!-- @SHOW -->
 
 # Dynamic Request Routing and Circuit Breaking
 
@@ -276,8 +276,6 @@ for future workshops!
 
 <!-- @wait -->
 <!-- @show_1 -->
-
-<!-- @SHOW -->
 
 <!-- @wait -->
 <!-- @show_2 -->
