@@ -290,7 +290,51 @@ linkerd diagnostics policy -n faces svc/smiley 80 | bat -l yaml
 ```
 
 It is _extremely_ verbose, but it can tell you great things about exactly
-what's up with complex routing situations.
+what's up with complex routing situations. Let's restore one of the `color`
+routes:
+
+```bash
+kubectl apply -f k8s/02-canary/color-canary-50.yaml
+```
+
+...and then check `linkerd diagnostics policy` for `color`.
+
+```bash
+linkerd diagnostics policy -n faces svc/color 80 | bat -l yaml
+```
+
+<!-- @wait_clear -->
+
+## One More Thing...
+
+Unfortunately, there's not a cool diagnostic thing that will show you circuit
+breakers directly. We can, though, use `linkerd viz stat` to infer things:
+specifically, `linkerd viz stat pods` is pretty powerful here.
+
+For example, if we look at traffic to the `face` _Deployment_, we just see
+traffic as usual.
+
+```bash
+linkerd viz stat deployment -n faces face
+```
+
+However, if we look at all the _Pods_ with the `service=face` label that the
+`face` Service will select, we can see which Pods are taking traffic... and
+which are not.
+
+```bash
+linkerd viz stat pods -n faces -l "service=face"
+```
+
+<!-- @wait_clear -->
+
+## One More Thing...
+
+One note: it takes awhile for the `linkerd viz stat` numbers to really catch
+up to changing situations, so be prepared to give it a minute or two to really
+get the measure of things after you change anything.
+
+Thanks for watching!!
 
 <!-- @wait -->
 <!-- @show_1 -->

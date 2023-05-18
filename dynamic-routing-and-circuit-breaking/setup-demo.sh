@@ -30,6 +30,7 @@ curl --proto '=https' --tlsv1.2 -sSfL https://run.linkerd.io/install | sh
 linkerd check --pre
 linkerd install --crds | kubectl apply -f -
 linkerd install | kubectl apply -f -
+linkerd viz install | kubectl apply -f -
 linkerd check
 
 # After that, we'll install Emissary as an ingress controller. The choice
