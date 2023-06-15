@@ -128,7 +128,7 @@ Next up, install the Linkerd control plane. Note the `-f` parameter including
 Also note that we're passing the public half of the trust anchor to Helm, so
 it can update the trust anchor bundle that Linkerd uses for workload identity
 verification. This is also something that may need to change when you're using
-a proper off-control CA.
+a proper off-cluster CA.
 
 ```bash
 helm install linkerd-control-plane -n linkerd \
@@ -358,9 +358,9 @@ this is the single best way to cross-check what's going on.
 
 We're not going to show `linkerd diagnostics controller-metrics` because it's
 pretty much like `proxy-metrics`, and we're not going to show `linkerd
-diagnostics policy` here because it's covered in the SMA on Linkerd 2.12+
-route-based policy (at
-https://buoyant.io/service-mesh-academy/a-deep-dive-into-route-based-policy).
+diagnostics policy` here because it's covered in the SMA on Linkerd 2.13+
+circuit breaking and dynamic routing (at
+https://buoyant.io/service-mesh-academy/circuit-breaking-and-dynamic-routing-deep-dive).
 
 So that's a wrap on our quick dive into production Linkerd -- thanks!
 
