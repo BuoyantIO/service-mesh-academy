@@ -1,0 +1,17 @@
+apiVersion: linkerd.buoyant.io/v1alpha1
+kind: DataPlane
+metadata:
+  name: buoyant-cloud
+  namespace: buoyant-cloud
+spec:
+  workloadSelector:
+    matchLabels: {}
+---
+apiVersion: linkerd.buoyant.io/v1alpha1
+kind: DataPlane
+metadata:
+  name: emojivoto
+  namespace: emojivoto
+spec:
+  workloadSelector:
+    matchLabels: {}

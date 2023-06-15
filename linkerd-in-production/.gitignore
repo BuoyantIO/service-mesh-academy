@@ -1,0 +1,4 @@
+ca.crt
+ca.key
+cloud-values.yaml
+linkerd-control-plane

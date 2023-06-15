@@ -1,0 +1,35 @@
+# Use a Certificate resource to tell cert-manager how to create the Linkerd
+# issuer certificate. This is in the linkerd namespace so that Linkerd has
+# access to both the public and private keys for the issuer cert.
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-identity-issuer
+  namespace: linkerd
+spec:
+  # Set the common name of the subject, and make sure the DNS names are
+  # the same.
+  commonName: identity.linkerd.cluster.local
+  dnsNames:
+  - identity.linkerd.cluster.local
+  # This is itself a CA certificate...
+  isCA: true
+  usages:
+  - cert sign
+  - crl sign
+  - server auth
+  - client auth
+  # ...and it's only good for 48 hours, so make sure to renew it
+  # no more than 25 hours after it's issued.
+  duration: 48h
+  renewBefore: 25h
+  # It must be issued (signed) by the trust anchor Issuer.
+  issuerRef:
+    name: linkerd-trust-anchor
+    kind: Issuer
+  # It uses a 256-bit ECDSA private key...
+  privateKey:
+    algorithm: ECDSA
+  # ...and the private key will be stored in this Secret.
+  secretName: linkerd-identity-issuer

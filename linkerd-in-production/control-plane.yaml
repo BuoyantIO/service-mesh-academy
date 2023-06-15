@@ -1,0 +1,8 @@
+apiVersion: linkerd.buoyant.io/v1alpha1
+kind: ControlPlane
+metadata:
+  name: control-plane
+spec:
+  components:
+    linkerd:
+      version: stable-2.13.4
