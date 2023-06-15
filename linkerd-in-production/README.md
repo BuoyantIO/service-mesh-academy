@@ -20,13 +20,11 @@ your cluster's context to match.
 
 [Civo]: https://civo.io/
 
-<!-- @SKIP -->
-
 <!-- @import demosh/demo-tools.sh -->
 <!-- @import demosh/check-requirements.sh -->
 <!-- @start_livecast -->
 ---
-<!-- @SSKIP -->
+<!-- @SHOW -->
 
 # Install `cert-manager`
 
@@ -243,8 +241,6 @@ messing with kernel routing on our behalf.
 
 One last note: let's take a look at the logs for one of our emojivoto
 containers.
-
-<!-- @SHOW -->
 
 ```bash
 EMOJIPOD=$(kubectl get pods -n emojivoto -l 'app=emoji-svc' -o jsonpath='{ .items[0].metadata.name }')

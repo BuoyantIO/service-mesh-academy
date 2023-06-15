@@ -15,11 +15,12 @@ need to create your own `cloud-values.yaml` file, containing the values from
 Buoyant Cloud's "Add Cluster" command.
 
 [Civo]: https://civo.io/
+[README.md]: README.md
 
 <!-- @import demosh/demo-tools.sh -->
 <!-- @clear -->
 ---
-<!-- @SKIP -->
+<!-- @SHOW -->
 
 # Link this cluster to Buoyant Cloud
 
@@ -44,8 +45,6 @@ helm install \
      --wait \
      linkerd-buoyant linkerd-buoyant/linkerd-buoyant
 ```
-
-<!-- @SHOW -->
 
 OK -- now we're connected to Cloud. Let's take a look.
 
