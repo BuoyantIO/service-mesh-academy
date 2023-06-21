@@ -49,15 +49,20 @@ application from a failing workload.
 
 ## Dynamic Request Routing: Progressive Delivery
 
-As running right now, the Faces GUI should be showing all
-grinning faces on green backgrounds. The green background
-comes from the `color` workload. If we have a new version
-of that workload (`color2`) which returns blue instead of
-green, we can slowly shift traffic to `color2` using a
-new `HTTPRoute` resource.
+As running right now, the Faces GUI should be showing all grinning faces on
+green backgrounds. We can see that with a web browser.
 
-<!-- @show_3 -->
 <!-- @wait -->
+<!-- @show_3 -->
+
+<!-- @wait -->
+<!-- @show_5 -->
+
+The green background comes from the `color` workload. If we have a new version
+of that workload (`color2`) which returns blue instead of green, we can slowly
+shift traffic to `color2` using a new `HTTPRoute` resource.
+
+<!-- @wait_clear -->
 
 Here's the resource we'll apply:
 
@@ -82,7 +87,7 @@ see what's going on here.
 <!-- @show_1 -->
 
 <!-- @wait_clear -->
-<!-- @show_3 -->
+<!-- @show_5 -->
 
 ## Dynamic Request Routing: Progressive Delivery
 
