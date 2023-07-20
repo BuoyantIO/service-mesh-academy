@@ -165,6 +165,7 @@ step certificate inspect trust-anchor.crt
 ```
 
 <!-- @wait_clear -->
+<!-- @SKIP -->
 
 ## DEVELOPMENT SETUP: Create an issuer cert signed by the trust anchor.
 
@@ -303,22 +304,21 @@ ${RED}×${COLOR_RESET} issuer cert is within its validity period
     issuer certificate is not valid anymore. Expired on 2022-08-24T02:30:32Z
     see https://linkerd.io/2.12/checks/#l5d-identity-issuer-cert-is-time-valid for hints
 
-**In short**: _don't let your certificates expire_. This is important enough
-that we'll shortly be talking about automating rotation -- and, unfortunately,
-expired certificates are **the** most common reason for Linkerd outages in the
-real world.
+**In short**: _don't let your certificates expire_. Unfortunately, expired
+certificates are **the** most common reason for Linkerd outages in the real
+world. (This is why we'll shortly be talking about automating rotation.)
 
 <!-- @wait_clear -->
 
-For manual rotation, the first thing you need is the new certificates to
-switch to, so we'll start by using `step` to generate new certificates. We'll
-give this set shorter expiry times -- shorter expirations make our environment
-more secure and robust.
+Rotation, remember, means swapping certificates out, so the first thing to do
+for manual rotation is to generate the new certificates to use. We'll use
+`step` for this, and we'll give this set shorter expiry times. This improves
+the security of our environment:
 
-* Key compromises might happen more often than you think. Private keys need to
-  be carefully managed, and they should be rotated as often as possible for
-  your environment to avoid compromises. This is especially true with the
-  issuer certificates, since their private keys typically live in the cluster.
+* Key compromises can happen more often than you think, and you generally
+  won't know when they do. Rotating certs often - especially issuer
+  certificates, since their private keys need to live in the cluster - helps
+  mitigate the effect of any compromise.
 
 * Also, in many environments you'll have to deal with certificates getting
   revoked. If your trust anchor gets revoked by the corporate security
@@ -376,22 +376,35 @@ step certificate inspect new-identity.crt
 
 Now that we have the new certificates, we can actually do the rotation. This
 is a multi-step process, and **it requires some care to do it all without
-downtime**. So keep a careful eye on your trust anchors and don't let them
-expire!
+downtime**. You'll definitely want to run through this on your own clusters a
+few times.
 
 <!-- @wait -->
 
-To rotate the trust anchor, we start by _bundling_ the new trust anchor cert
-with the old one. The bundle contains both anchors, to allow a clean
-transition between them: we'll tell Linkerd to use this bundle rather than a
-single trust anchor cert, and that will allow Linkerd to temporarily validate
-identity issuers and workload certs using either trust anchor.
+The overall process is:
+
+1. _Bundle_ the new trust anchor with the old one, then tell Linkerd to use
+   the bundle. This allows both anchors to be valid during rotation.
+2. Restart meshed workloads, so that their proxies pick up the new bundle.
+3. Rotate the identity issuer, so that it's signed by the new trust anchor.
+4. Remove the old trust anchor from the bundle, so that no old certificates
+   will be considered valid.
+
+<!-- @wait_clear -->
+
+### Rotating step 1: Bundling trust anchors and switching to the bundle
+
+Rotating the trust anchor starts by _bundling_ the new trust anchor cert with
+the old one. The bundle contains both anchors, to allow a clean transition
+between them: we'll tell Linkerd to use this bundle rather than a single trust
+anchor cert, and that will allow Linkerd to temporarily validate identity
+issuers and workload certs using either trust anchor.
 
 We'll start by reading the current trust anchor from the cluster, to be
-completely certain that we have the correct certificate. This is using
-`kubectl` to examine the `linkerd-identity-trust-roots` ConfigMap, and grab
-the `ca-bundle.crt` element from its `data` element: that's where the trust
-bundle lives.
+completely certain that our bundle starts with the correct certificate.
+There's nothing magical here: just use `kubectl` to examine the
+`linkerd-identity-trust-roots` ConfigMap, and grab the `ca-bundle.crt` element
+from its `data` element: that's where the trust bundle lives.
 
 ```bash
 kubectl -n linkerd get cm linkerd-identity-trust-roots \
@@ -438,6 +451,8 @@ watch 'kubectl get pods -n linkerd'
 
 <!-- @clear -->
 
+### Rotating step 2: Restart meshed workloads
+
 At this point, you'd need to restart your meshed workloads to make sure they
 all pick up the new trust bundle. For example, if you have the Faces demo
 installed, you could do
@@ -464,18 +479,21 @@ the new trust bundle, and you'll continue with rotating the identity issuer.
 
 <!-- @wait_clear -->
 
-## OPERATIONAL SKILL: Manually rotating identity issuer certificates
+### Rotating step 3: Rotating the identity issuer certificate
 
 **You must have a valid trust anchor** for this step to work, which is why we
-demo'd rotating the trust anchor first! Specifically, you need
+demo'd rotating the trust anchor first! Specifically:
 
-- A valid trust anchor cert in the trust anchor bundle that your proxies have
-- A new identity issuer cert signed by that valid trust anchor cert
+1. You need a valid trust anchor cert in the trust anchor bundle;
+2. Your proxies need to be using that trust anchor bundle; and
+3. You need a new identity issuer cert signed by that valid trust anchor cert.
 
-In our case, we just rotated the trust anchor, so point 1 is good, and right
-before we did that we created a new identity issuer cert (the 1-week
-certificate in `new-identity.crt` and `new-identity.key`), so point 2 is good
-too.
+In our case, we just rotated the trust anchor and restarted the meshed
+workloads, so we're good on points 1 and 2.  Right before we did, that we
+created a new identity issuer cert (the 1-week certificate in
+`new-identity.crt` and `new-identity.key`), so we're good on point 3 too.
+
+<!-- @wait -->
 
 Given that, all we actually have to do is run `linkerd upgrade` to tell the
 proxies to use the new identity issuer cert.
@@ -494,7 +512,7 @@ Kubernetes event log. Here we'll repeatedly look for the `IssuerUpdated` event
 (note that this may take a little bit to appear):
 
 ```bash
-watch 'kubectl get events --field-selector reason=IssuerUpdated -n linkerd'
+kubectl get events --field-selector reason=IssuerUpdated -n linkerd --watch
 ```
 
 <!-- @clear -->
@@ -506,7 +524,7 @@ restarting meshed workloads by hand is definitely more deterministic.
 
 <!-- @wait_clear -->
 
-## OPERATIONAL SKILL: Cleaning up the trust anchor bundle after rotating is complete
+### Rotating step 4: Cleaning up the trust anchor bundle after rotating is complete
 
 Once the workloads are restarted, Linkerd isn't using the old trust anchor at
 all, and we can remove it from the bundle entirely. We'll do this the easy
@@ -582,7 +600,7 @@ certificate to rotate. That's another homework assignment. 🙂 (It's literally
 just "wait until it's time for the certificate to rotate, then check to make
 sure it did".)
 
-<!-- @wait -->
+<!-- @wait_clear -->
 
 **Please note**: this is the _almost_-production setup. We'll be using
 cert-manager to bootstrap and rotate the identity issuer, but we'll still use
@@ -665,14 +683,19 @@ bat manifests/cert-manager-ca-issuer.yaml
 kubectl apply -f manifests/cert-manager-ca-issuer.yaml
 ```
 
+At this point we should be able to verify that the ClusterIssuer exists and is
+`Ready`, meaning that it's found its secret and is ready to sign certificates.
+
+```bash
+kubectl get clusterissuer -n cert-manager linkerd-trust-anchor
+```
+
 <!-- @wait_clear -->
 
-Creating the ClusterIssuer doesn't really do anything interesting -- we need
-to go ahead and get the Certificate resource set up to have anything to see,
-so let's go ahead and do that.
-
-In order to do that, we'll need to create the `linkerd` namespace by hand,
-since we haven't installed Linkerd yet.
+Next, we need to go ahead and get the Certificate resource for the Linkerd
+identity issuer certificate. We want this to be in the `linkerd` namespace,
+but we haven't installed Linkerd yet, so we need to go ahead and create that
+namespace by hand.
 
 ```bash
 kubectl create namespace linkerd
@@ -694,8 +717,6 @@ created.
 ```bash
 kubectl get certificate -n linkerd linkerd-identity-issuer
 ```
-
-<!-- @wait_clear -->
 
 We can go take a closer look at the newly-created `linkerd-identity-issuer`
 secret, too:
@@ -770,10 +791,11 @@ linkerd check
 <!-- @wait_clear -->
 
 At this point, we have cert-manager handling rotating the identity issuer cert
-for us, which will make things much easier going forward! We'll still need to
-manually rotate the trust anchor, but that's easier too:
+for us, which will make things much easier going forward! This does change the
+procedure for rotating the trust anchor, though:
 
-1. Create the new trust anchor certificate and bundle as shown above.
+1. Create the new trust anchor certificate and bundle as shown above (e.g.
+   with `step certificate create` and `step certificate bundle`).
 
 <!-- @wait -->
 
@@ -787,19 +809,50 @@ manually rotate the trust anchor, but that's easier too:
         linkerd/linkerd-control-plane
    ```
 
+   Note that you can't use `linkerd upgrade` for this if you install with Helm.
+
 <!-- @wait -->
 
 3. Restart meshed workloads.
 
 <!-- @wait -->
 
-4. Update the `linkerd-trust-anchor` Secret in the `cert-manager` namespace,
-   which will cause cert-manager to update your identity issuer for you!
+4. Update the `linkerd-trust-anchor` Secret in the `cert-manager` namespace.
+   There's a trick to this:
+
+   ```
+   kubectl create secret tls linkerd-trust-anchor \
+           --cert=new-anchor.crt \
+           --key=new-anchor.key \
+           --namespace=cert-manager \
+           --dry-run=client --save-config -o yaml | kubectl apply -f -
+   ```
+
+   That `--dry-run=client --save-config -o yaml` bit tells `kubectl` not to
+   actually write the certificate, but instead to output YAML for it that you
+   can `kubectl apply`. This avoids an error about the secret already
+   existing.
 
 <!-- @wait -->
 
-5. Rerun `helm upgrade` with just the new trust anchor, and restart meshed
-   workloads once more.
+5. At this point, you can wait for cert-manager to rotate your identity
+   issuer, but chances are good that you rotated the trust anchor for a
+   reason. So it's better to use `cmctl`, the cert-manager CLI, to force a
+   renewal:
+
+   ```
+   cmctl renew -n linkerd linkerd-identity-issuer
+   ```
+
+<!-- @wait -->
+
+6. As before, you can either wait for workload certs to rotate, or restart
+   meshed workloads.
+
+<!-- @wait -->
+
+7. Finally, rerun `helm upgrade` with just the new trust anchor, and restart
+   meshed workloads once more.
 
 <!-- @wait_clear -->
 
@@ -815,9 +868,10 @@ PKI (maybe it's not cloud-native).
 
 <!-- @wait_clear -->
 
-When all is said and done, here's what you end up with. There's a trust anchor
-Secret in the `cert-manager` namespace, which Linkerd can't see. **This is the
-bit you'll need to change in production.**
+When all is said and done, here's what you end up with:
+
+There's a trust anchor Secret in the `cert-manager` namespace, which
+Linkerd can't see. **This is the bit you'll need to change in production.**
 
 ```bash
 kubectl describe secrets -n cert-manager linkerd-trust-anchor
@@ -841,6 +895,38 @@ kubectl describe secrets -n linkerd linkerd-identity-issuer
 
 <!-- @wait_clear -->
 
+## One More Thing
+
+Remember that we mentioned webhook certificates? We're not going to demo this,
+but you can use cert-manager to rotate webhook certs for you too, pretty much
+exactly the same way as we've shown here:
+
+1. Use a ClusterIssuer or Issuer resource to tell cert-manager about a
+   "webhook trust anchor" certificate.
+
+2. Use a Certificate resource to tell cert-manager to create a Kubernetes
+   secret for the webhook.
+
+<!-- @wait -->
+
+Some notes:
+
+- We **do not** recommend that you use the Linkerd trust anchor certificate as
+  the anchor for webhook certificates: keep them separate.
+
+- We **do** recommend that, in production, you keep the webhook anchor
+  certificates off-cluster, just like the main Linkerd trust anchor. (Again,
+  this shouldn't affect your Certificate resources: just the Issuer or
+  ClusterIssuer.)
+
+- There are quite a few webhooks to look at, depending on which extensions you
+  run.
+
+There's Linkerd documentation that goes into more detail on this at
+https://linkerd.io/2/tasks/automatically-rotating-webhook-tls-credentials/.
+
+<!-- @wait_clear -->
+
 ## Certificate Management with Linkerd
 
 So there's our whirlwind overview of Linkerd certificate management -- thanks!
@@ -849,6 +935,17 @@ https://github.com/BuoyantIO/service-mesh-academy is the source repo for this
 workshop (this is in the `l5d-certificate-management` directory), and feedback
 is always welcome via the Linkerd Slack at https://slack.linkerd.io/ --
 thanks!
+
+There is documentation for everything covered here, too:
+
+Manually rotating control plane certificates:
+    `https://linkerd.io/2/tasks/manually-rotating-control-plane-tls-credentials/`
+
+Automatically rotating control plane certificates:
+    `https://linkerd.io/2/tasks/automatically-rotating-control-plane-tls-credentials/`
+
+Automatically rotating webhook certificates:
+    `https://linkerd.io/2/tasks/automatically-rotating-webhook-tls-credentials/`
 
 <!-- @wait -->
 <!-- @show_slides -->
