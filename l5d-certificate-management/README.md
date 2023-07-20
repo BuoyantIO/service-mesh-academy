@@ -165,7 +165,6 @@ step certificate inspect trust-anchor.crt
 ```
 
 <!-- @wait_clear -->
-<!-- @SKIP -->
 
 ## DEVELOPMENT SETUP: Create an issuer cert signed by the trust anchor.
 
