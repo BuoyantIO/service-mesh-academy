@@ -32,7 +32,7 @@ BAT_STYLE="grid,numbers"
 ```
 
 ----
-<!-- @SKIP -->
+<!-- @SHOW -->
 
 # Linkerd Certificate Management
 
@@ -135,7 +135,6 @@ secret key in the cluster. Linkerd doesn't need the trust anchor's secret key
 on the cluster, and you should never put it there.
 
 <!-- @wait_clear -->
-<!-- @SHOW -->
 
 `step` arguments for our trust anchor:
 
@@ -255,7 +254,6 @@ linkerd check
 ```
 
 <!-- @wait_clear -->
-<!-- @SHOW -->
 
 ## OPERATIONAL SKILL: Manually rotating certificates
 
@@ -501,14 +499,10 @@ watch 'kubectl get events --field-selector reason=IssuerUpdated -n linkerd'
 
 <!-- @clear -->
 
-Once again, you'd need to restart your meshed workloads here, for example:
-
-```
-kubectl rollout restart -n faces deploy
-kubectl rollout status -n faces deploy
-```
-
-if you have the Faces demo installed.
+At this point you have a choice. You can restart your meshed workloads here to
+make sure everything updates to the new identity issuer immediately, or you
+can just wait for the next workload certificate rotation. Either is OK;
+restarting meshed workloads by hand is definitely more deterministic.
 
 <!-- @wait_clear -->
 
@@ -633,9 +627,9 @@ OK, it's time to configure cert-manager.
 
    **This is the bit that you'll need to change for the real world.** The
    ClusterIssuer we're going to set up just tells cert-manager to assume that
-   it has a self-signed cert in the cluster. To make that work, **we have to
-   do what we said never to do**, and store the secret key of the trust anchor
-   we generated with `step` in the cluster.
+   it has a cert, with its secret key, in the cluster. To make that work, **we
+   have to do what we said never to do**, and store the secret key of the
+   trust anchor we generated with `step` in the cluster.
 
    In the real world, you'll need to use the correct kind of cert-manager
    Issuer or ClusterIssuer for your external CA store. And you won't put the
@@ -668,7 +662,7 @@ to issue certificates:
 
 ```bash
 bat manifests/cert-manager-ca-issuer.yaml
-k apply -f manifests/cert-manager-ca-issuer.yaml
+kubectl apply -f manifests/cert-manager-ca-issuer.yaml
 ```
 
 <!-- @wait_clear -->
@@ -711,10 +705,21 @@ kubectl describe secret -n linkerd linkerd-identity-issuer
 ```
 
 Just to prove that there's really a certificate in there, let's look at it
-with 'step certificate inspect'. See the 'ca.crt' key listed in the output?
+with 'step certificate inspect'. See the `tls.crt` key listed in the output?
 Its value is a base64-encoded certificate (which, yes, means that it's
 base64-encoded base64-encoded data -- oh well). If we unwrap one layer of
 base64 encoding, we can feed that into 'step certificate inspect'.
+
+```bash
+kubectl get secret -n linkerd linkerd-identity-issuer \
+                   -o jsonpath='{ .data.tls\.crt }' \
+  | base64 -d \
+  | step certificate inspect -
+```
+
+As a bonus, cert-manager is polite enough to put the public half of the trust
+anchor into that Secret too -- that's the `ca.crt` key. We can look at that
+too.
 
 ```bash
 kubectl get secret -n linkerd linkerd-identity-issuer \
@@ -733,7 +738,10 @@ helm repo add linkerd https://helm.linkerd.io/stable --force-update
 helm install linkerd-crds -n linkerd --version 1.6.1 linkerd/linkerd-crds
 ```
 
-When we install the control plane chart, we pass some very specific arguments:
+<!-- @wait_clear -->
+
+Next up, the control plane chart. When we install this one, we pass some very
+specific arguments:
 
 - `--set-file identityTrustAnchorsPEM=trust-anchor.crt` tells Linkerd the file
   that has our initial trust anchor bundle. Remember, Linkerd doesn't have
@@ -800,36 +808,47 @@ another tool called trust-manager which is capable of copying the trust
 anchor's public key from the cert-manager namespace into the trust anchor
 bundle ConfigMap that Linkerd uses. We didn't use that in this example because
 it ends up being helpful to separate updating the trust anchor bundle and
-updating the Secret itself, but it's worth a look.
+updating the Secret itself, but it's worth a look. In general, once you have
+cert-manager running, there's a lot more you can do, such as setting your
+expiry periods programatically, or pulling in certificates from your corporate
+PKI (maybe it's not cloud-native).
 
 <!-- @wait_clear -->
 
-When all is said and done, here's what you'll end up with.
+When all is said and done, here's what you end up with. There's a trust anchor
+Secret in the `cert-manager` namespace, which Linkerd can't see. **This is the
+bit you'll need to change in production.**
 
 ```bash
-kubectl get secrets -n cert-manager
-# NAME                                       TYPE                                  DATA   AGE
-# linkerd-identity-trust-roots               kubernetes.io/tls                     3      64m
+kubectl describe secrets -n cert-manager linkerd-trust-anchor
+```
 
-kubectl get secrets -n linkerd
-# NAME                                 TYPE                                  DATA   AGE
-# linkerd-identity-issuer              kubernetes.io/tls                     3      62m
-# linkerd-identity-token-7tndg         kubernetes.io/service-account-token   3      58m
+In the `linkerd` namespace, we have a `linkerd-identity-trust-roots`
+ConfigMap. This stores the trust anchor bundle, which is public keys only.
+Linkerd needs to see this to validate mTLS certificates.
 
-kubectl get cm -n linkerd
-# NAME                           DATA   AGE
-# kube-root-ca.crt               1      62m
-# linkerd-identity-trust-roots   1      62m
-# linkerd-config                 1      59m
+```bash
+kubectl describe cm -n linkerd linkerd-identity-trust-roots
+```
+
+In the `linkerd` namespace, we also have the `linkerd-identity-issuer` Secret,
+which holds the identity issuer cert public and private keys. Linkerd needs
+this to manage workload identities.
+
+```bash
+kubectl describe secrets -n linkerd linkerd-identity-issuer
 ```
 
 <!-- @wait_clear -->
 
-And there you have it -- automated certificate bootstrapping. You can do a lot
-more things now, such as setting your expiry periods programatically, or
-pulling in certificates from your corporate PKI (maybe it's not cloud-native).
-This approach gives you more flexibility, although at the cost of at slightly
-lessening your security by keeping your trust anchor private key in-cluster.
+## Certificate Management with Linkerd
+
+So there's our whirlwind overview of Linkerd certificate management -- thanks!
+
+https://github.com/BuoyantIO/service-mesh-academy is the source repo for this
+workshop (this is in the `l5d-certificate-management` directory), and feedback
+is always welcome via the Linkerd Slack at https://slack.linkerd.io/ --
+thanks!
 
 <!-- @wait -->
 <!-- @show_slides -->

@@ -1,6 +1,6 @@
-## This linkerd-trust-anchor ClusterIssuer uses a self-signed certificate
-## stored in the linkerd-identity-trust-roots Secret in the cert-manager
-## namespace.
+## This linkerd-trust-anchor ClusterIssuer uses a certificate stored in the
+## linkerd-identity-trust-roots Secret in the cert-manager namespace. This
+## requires that both the public and private half of the cert be present!
 ##
 ## For anything like production use, you'd reconfigure this ClusterIssuer to
 ## use an external CA store for security. Storing the trust anchor's secret
