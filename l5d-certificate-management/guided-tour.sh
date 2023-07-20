@@ -518,7 +518,7 @@ pe "helm upgrade -i -n cert-manager cert-manager jetstack/cert-manager --set ins
 
 show ""
 show "# Also install the JetStack 'trust' tool."
-pe "helm upgrade -i -n cert-manager cert-manager-trust jetstack/cert-manager-trust --wait"
+pe "helm upgrade -i -n cert-manager trust-manager jetstack/trust-manager --wait"
 wait
 
 clear
