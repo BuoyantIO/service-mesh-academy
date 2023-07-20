@@ -1,18 +1,13 @@
-## NOTE: We're configuring cert-manager here, but this time we're using
-## the linkerd namespace! This is all about the issuer certs, and Linkerd
-## must have access to the private keys for the issuer certs.
-## 
-## We start by actually creating the linkerd namespace -- since we haven't
-## installed Linkerd yet, the namespace doesn't exist yet.
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: linkerd
----
-## Next, we use a Certificate resource to tell cert-manager how to create
-## the Linkerd issuer certificate. Again, this is in the linkerd namespace,
-## so that Linkerd has access to both the public and private keys for the
-## issuer cert.
+## NOTE: We're configuring cert-manager here, but since this is all about the
+## issuer certs, we'll use the linkerd namespace (since Linkerd must have
+## access to the private keys for the issuer certs). This means that you'll
+## need to create the linkerd namespace before applying this manifest, since
+## you need to get cert-manager running before installing Linkerd.
+##
+## This Certificate resource tells cert-manager how to create the Linkerd
+## issuer certificate in the linkerd namespace, using the linkerd-trust-anchor
+## ClusterIssuer to sign it. Check the options below to make sure the
+## certificate suits your needs.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -22,9 +17,6 @@ metadata:
 spec:
   # Set the common name of the subject.
   commonName: identity.linkerd.cluster.local
-  # # Also set extra DNS names for SAN.
-  # dnsNames:
-  # - identity.linkerd.cluster.local
   ## This is itself a CA certificate...
   isCA: true
   usages:
@@ -36,12 +28,13 @@ spec:
   ## no more than 25 hours after it's issued.
   duration: 48h
   renewBefore: 25h
-  ## It must be issued (signed) by trust anchor ClusterIssuer.
+  ## It must be issued (signed) by our linkerd-trust-anchor ClusterIssuer.
   issuerRef:
     name: linkerd-trust-anchor
     kind: ClusterIssuer
   # It uses a 256-bit ECDSA private key...
   privateKey:
     algorithm: ECDSA
-  # ...and the private key will be stored in this Secret.
+  # ...and the private key will be stored in the Secret named
+  # linkerd-identity-issuer (which is where Linkerd expects to find it).
   secretName: linkerd-identity-issuer
