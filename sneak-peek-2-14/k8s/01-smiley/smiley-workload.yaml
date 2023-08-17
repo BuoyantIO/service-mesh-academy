@@ -1,0 +1,102 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smiley
+  namespace: faces
+spec:
+  type: ClusterIP
+  selector:
+    service: smiley
+  ports:
+  - port: 80
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smiley
+  namespace: faces
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: smiley
+  template:
+    metadata:
+      labels:
+        service: smiley
+    spec:
+      containers:
+      - name: smiley
+        image: dwflynn/faces-service:0.8.0
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "smiley"
+        # - name: ERROR_FRACTION
+        #   value: "20"
+        - name: DELAY_BUCKETS
+          value: "0,100,200,500,1000"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smiley2
+  namespace: faces
+spec:
+  type: ClusterIP
+  selector:
+    service: smiley2
+  ports:
+  - port: 80
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smiley2
+  namespace: faces
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: smiley2
+  template:
+    metadata:
+      labels:
+        service: smiley2
+    spec:
+      containers:
+      - name: smiley2
+        image: dwflynn/faces-service:0.8.0
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "smiley"
+        - name: SMILEY
+          value: "HeartEyes"
+        # - name: ERROR_FRACTION
+        #   value: "20"
+        - name: DELAY_BUCKETS
+          value: "0,100,200,500,1000"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 512Mi

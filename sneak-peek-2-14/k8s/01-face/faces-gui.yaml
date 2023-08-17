@@ -1,0 +1,43 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: faces-gui
+  namespace: faces
+spec:
+  type: ClusterIP
+  selector:
+    service: faces-gui
+  ports:
+  - port: 80
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: faces-gui
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: faces-gui
+  template:
+    metadata:
+      labels:
+        service: faces-gui
+    spec:
+      containers:
+      - name: faces-gui
+        image: dwflynn/faces-gui:0.8.0
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi

@@ -1,0 +1,130 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: face
+  namespace: faces
+spec:
+  type: ClusterIP
+  selector:
+    service: face
+  ports:
+  - port: 80
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: face
+  namespace: faces
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: face
+  template:
+    metadata:
+      labels:
+        service: face
+    spec:
+      containers:
+      - name: face
+        image: dwflynn/faces-service:0.8.0
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "face"
+        # - name: ERROR_FRACTION
+        #   value: "20"
+        - name: DELAY_BUCKETS
+          value: "0,100,200,500,1000"
+        resources:
+          requests:
+            cpu: 300m     # The face service doesn't need much memory, but it does need more
+            memory: 64Mi  # CPU than the other backend services since it has to call the
+          limits:         # face and smiley services, then composite the results.
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smiley
+  namespace: faces
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: color
+  namespace: faces
+spec:
+  type: ClusterIP
+  selector:
+    service: color
+  ports:
+  - port: 80
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: color
+  namespace: faces
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: color
+  template:
+    metadata:
+      labels:
+        service: color
+    spec:
+      containers:
+      - name: color
+        image: dwflynn/faces-service:0.8.0
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "color"
+        # - name: ERROR_FRACTION
+        #   value: "20"
+        - name: DELAY_BUCKETS
+          value: "0,100,200,500,1000"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 512Mi
+---
+apiVersion: policy.linkerd.io/v1beta3
+kind: HTTPRoute
+metadata:
+  name: smiley-router
+  namespace: faces
+spec:
+  parentRefs:
+    - name: smiley
+      kind: Service
+      group: ""
+      port: 80
+  rules:
+  - backendRefs:
+    - name: smiley-smiley
+      port: 80
+      weight: 100
+    timeouts:
+      request: 5s
