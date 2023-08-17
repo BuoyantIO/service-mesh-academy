@@ -38,17 +38,16 @@ demo assumes that you've run both of those.
 
 So! To set everything up, first run
 
-    `demosh create-clusters.sh`
+    `bash create-clusters.sh`
 
 to create the clusters with all the necessary network setup, and then
 
-    `demosh setup-demo.sh`
+    `bash setup-demo.sh`
 
 to install Linkerd, the Linkerd multicluster extension, Emissary, and the
-multicluster Faces demo, and link the clusters together in the mesh.
-
-(You can run them with `bash` instead of `demosh` if you like, but it'll be
-much less clear what's going on.)
+multicluster Faces demo, and link the clusters together in the mesh. You are
+**strongly** encouraged to read these scripts, but recognize that some of
+`create-clusters.sh` is seriousy `k3d` wizardry. 🙂
 
 <!-- @wait_clear -->
 
