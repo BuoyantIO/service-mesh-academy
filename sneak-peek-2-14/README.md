@@ -47,7 +47,7 @@ to create the clusters with all the necessary network setup, and then
 to install Linkerd, the Linkerd multicluster extension, Emissary, and the
 multicluster Faces demo, and link the clusters together in the mesh. You are
 **strongly** encouraged to read these scripts, but recognize that some of
-`create-clusters.sh` is seriousy `k3d` wizardry. 🙂
+`create-clusters.sh` is serious `k3d` wizardry. 🙂
 
 <!-- @wait_clear -->
 
