@@ -114,10 +114,10 @@ also takes 30 seconds at the moment, so we'll only check one cluster):
 linkerd --context smiley multicluster gateways
 ```
 
-This is because links are _unidirectional_, and for multicluster Faces, we
-only need the `face` cluster to be able to reach out to the other two. Linking
-in both directions works fine, it's just unnecessary for what we're doing
-here.
+We see nothing because links are _unidirectional_, and for multicluster Faces,
+we only need the `face` cluster to be able to reach out to the other two.
+Linking in both directions works fine, it's just unnecessary for what we're
+doing here.
 
 <!-- @wait_clear -->
 
@@ -163,8 +163,8 @@ we'll see a bunch of information about the linked cluster:
 kubectl --context face get link -n linkerd-multicluster smiley -o yaml | bat -l yaml
 ```
 
-This also gives us a much better way to check the other clusters to observe
-that they have no links:
+This also gives us another way to check the other clusters to observe that
+they have no links:
 
 ```bash
 kubectl --context smiley get link -n linkerd-multicluster
@@ -248,8 +248,8 @@ Two endpoints, since we have two replicas. This makes sense.
 kubectl --context face get endpoints smiley-smiley -n faces
 ```
 
-No endpoints. On the face of it, this seems wrong: how can anything work with
-no endpoints? but what's going on here is that the Linkerd control plane is
+No endpoints. On the face of it, this seems wrong - how can anything work with
+no endpoints - but what's going on here is that the Linkerd control plane is
 tracking endpoints for us. The `linkerd diagnostics endpoints` command will
 show them to us (note that we have to give it the fully-qualified name of the
 Service):
