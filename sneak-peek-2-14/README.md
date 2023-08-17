@@ -263,7 +263,6 @@ the IP addresses are the same, which is a great sign since this is supposed to
 be a flat network.
 
 <!-- @wait_clear -->
-<!-- @SHOW -->
 
 ## Bringing in the Gateway API
 
@@ -324,3 +323,120 @@ HTTPRoutes in the same cluster: you can't stack them.)
 
 <!-- @wait_clear -->
 
+## HTTPRoute timeouts
+
+Let's see if we can put timeouts to work. Setting a 300ms timeout has worked
+out well in the past to improve the Faces user experience, so let's edit the
+HTTPRoute and change its timeout to 300ms.
+
+```bash
+kubectl --context face edit httproute smiley-router -n faces
+```
+
+If we flip to the browser, sure enough, we'll see fewer faded cells and more
+counts incrementing in the corners.
+
+<!-- @browser_then_terminal -->
+
+(The reason why the fading cells don't _all_ disappear is left as an exercise
+for the reader. 😇)
+
+<!-- @wait_clear -->
+<!-- @SHOW -->
+
+## Splitting across clusters
+
+We aren't limited, of course, to just redirecting all our traffic to another
+cluster. We can also use an HTTPRoute to split traffic across multiple
+clusters. Let's take 50% of our color traffic and send it across to the
+`color` cluster's `color2` Service as a demo.
+
+We need to start by mirroring the `color2` Service into our `face` cluster
+(which is already linked to the `color` cluster). All we need to make that
+happen is to put the correct label on the Service in the `color` cluster:
+
+```bash
+kubectl --context color -n faces label svc/color2 mirror.linkerd.io/exported=remote-discovery
+```
+
+As soon as we do that, we'll see the mirror Service `color2-color` appear in
+the `face` cluster:
+
+```bash
+kubectl --context face -n faces get svc
+```
+
+And, if we check out the endpoints, we should be good to go:
+
+```bash
+kubectl --context color get endpoints color2 -n faces
+linkerd --context face diagnostics endpoints color2-color.faces.svc.face:80
+```
+
+So Linkerd knows the right endpoints for the `color2-color` Service.
+
+<!-- @wait_clear -->
+
+At that point, we can add an HTTPRoute to split traffic.
+
+```bash
+#@immed
+bat k8s/02-canary/color-canary.yaml
+```
+
+Let's apply that and see how it goes:
+
+```bash
+kubectl --context face apply -f k8s/02-canary/color-canary.yaml
+```
+
+Back to the browser to see what we see...
+
+<!-- @browser_then_terminal -->
+
+Now that our split is working, we can do something kind of cool. We can
+migrate `color` completely off the `face` cluster just by editing the
+HTTPRoute. We'll use `kubectl edit` to delete the `backendRef` for the local
+`color` Service.
+
+```bash
+kubectl --context face edit httproute color-canary -n faces
+```
+
+At this point, we'll see all blue cells in the browser.
+
+<!-- @browser_then_terminal -->
+
+Just to round things out, let's delete the `color` Deployment in the `face`
+cluster...
+
+```bash
+kubectl --context face delete -n faces deployment color
+```
+
+...and prove that it's gone.
+
+```bash
+kubectl --context face get pods -n faces
+```
+
+This is an amazing thing about having multicluster running smoothly: you can
+migrate between clusters simply by deleting things. 🙂
+
+<!-- @wait_clear -->
+
+# Sneak Peek: Linkerd 2.14
+
+So there's a quick sampling of Linkerd 2.14 pod-to-pod multicluster, with a
+touch of timeouts thrown in. You can find the source for this demo at
+
+https://github.com/BuoyantIO/service-mesh-academy
+
+in the `sneak-peek-2-14` directory -- the black magic of setup, again, is in
+`create-clusters.sh` and `setup-demo.sh`.
+
+As always, we welcome feedback! Join us at https://slack.linkerd.io/
+for more.
+
+<!-- @wait -->
+<!-- @show_slides -->
