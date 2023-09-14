@@ -1,4 +1,4 @@
-# Sneak Peek: Linkerd 2.14
+# Certificate Management with Vault
 
 This is the documentation - and executable code! - for the Service Mesh
 Academy workshop about certificate management with Vault. The easiest way to
@@ -22,12 +22,12 @@ BAT_STYLE="grid,numbers"
 ```
 
 ---
-<!-- @SKIP -->
+<!-- @SHOW -->
 
 # Certificate Management with Vault
 
 Welcome to the Service Mesh Academy about Vault and certificates with Linkerd!
-We'll show off a fairly real-world scenario, where we'll installt Linkerd
+We'll show off a fairly real-world scenario, where we'll install Linkerd
 without generating any certificates by hand, and without having Linkerd
 generate the certificates itself. Instead, we'll use Vault running _outside_
 the cluster along with cert-manager running _inside_ the cluster to securely
@@ -117,7 +117,7 @@ docker run \
        hashicorp/vault \
        server \
        -dev -dev-listen-address 0.0.0.0:8200 \
-       -dev-root-token-id root
+       -dev-root-token-id my-token
 ```
 
 Let's break that down.
@@ -141,8 +141,8 @@ for Vault itself:
 - `server` is the command to run
 - `-dev -dev-listen-address 0.0.0.0:8200`: run Vault in dev mode, binding on
   all interfaces rather than just `localhost`
-- `-dev-root-token-id root`: set the dev-mode root "password" to `root`, so
-  that we can trivially log in later
+- `-dev-root-token-id my-token`: set the dev-mode root "password" to
+  `my-token`, which we will use to trivially log in later
 
 <!-- @wait -->
 
@@ -485,7 +485,7 @@ kubectl get secret \
     | base64 -d | inspect_cert
 ```
 
-Not a self-signed cert! And here's the info for the trust anchor again:
+Not a self-signed cert, good! And here's the info for the trust anchor again:
 
 ```bash
 #@immed
@@ -496,6 +496,8 @@ kubectl get configmap \
 ```
 
 So we can see that yes, the identity issuer was issued by the trust anchor.
+
+<!-- @wait -->
 
 Just for the fun of it, we can look at `ca.crt` in the identity issuer:
 
