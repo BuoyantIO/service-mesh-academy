@@ -14,7 +14,7 @@ spec:
     - name: color
       port: 80
       weight: 50
-    - name: color2-color
+    - name: color2-west
       port: 80
       weight: 50
 

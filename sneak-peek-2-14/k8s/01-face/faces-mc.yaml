@@ -5,7 +5,7 @@ metadata:
   name: face
   namespace: faces
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     service: face
   ports:
@@ -123,7 +123,7 @@ spec:
       port: 80
   rules:
   - backendRefs:
-    - name: smiley-smiley
+    - name: smiley-east
       port: 80
       weight: 100
     timeouts:

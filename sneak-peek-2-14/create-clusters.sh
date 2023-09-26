@@ -19,141 +19,98 @@
 
 # clear
 
-# Create three K3d clusters for the Faces application.
+cycle_cluster () {
+    port_args=
 
-# Ditch any old clusters...
-k3d cluster delete face &>/dev/null
-k3d cluster delete smiley &>/dev/null
-k3d cluster delete color &>/dev/null
+    case "$1" in
+        --map-ports)
+            port_args='-p 80:80@loadbalancer -p 443:443@loadbalancer'
+            shift
+            ;;
+        --*)
+            echo "Unknown option $1" >&2
+            exit 1
+            ;;
+    esac
+
+    ctx="$1"
+    cidr="$2"
+
+    k3d cluster delete $ctx >/dev/null 2>&1
+
+    k3d cluster create $ctx \
+        $port_args \
+        --agents=0 \
+        --servers=1 \
+        --network=face-network \
+        --k3s-arg '--disable=local-storage,traefik,metrics-server@server:*;agents:*' \
+        --k3s-arg "--cluster-cidr=${cidr}@server:*"
+        # --k3s-arg "--cluster-domain=${ctx}@server:*"
+
+    kubectl config delete-context $ctx >/dev/null 2>&1
+    kubectl config rename-context k3d-$ctx $ctx
+}
+
+get_network_info () {
+    ctx="$1"
+    REMAINING=60
+    echo "Getting $ctx cluster network info..." >&2
+
+    while true; do
+        cidr=$(kubectl --context $ctx get node k3d-$ctx-server-0 -o jsonpath='{.spec.podCIDR}')
+        router=$(kubectl --context $ctx get node k3d-$ctx-server-0 -o jsonpath='{.status.addresses[?(.type=="InternalIP")].address}')
+
+        echo "$ctx: cidr=$cidr router=$router" >&2
+
+        if [ -n "$cidr" -a -n "$router" ]; then break; fi
+        REMAINING=$(( $REMAINING - 1 ))
+        printf "." >&2
+        sleep 1
+    done
+
+    if [ $REMAINING -eq 0 ]; then
+        echo "Timed out waiting for $ctx network info" >&2
+        exit 1
+    else
+        printf "\n" >&2
+        echo "$cidr $router"
+    fi
+}
+
+#@SKIP
+
+# Create the three K3d clusters for the Faces application.
+
+cycle_cluster --map-ports north "10.23.0.0/24"
+cycle_cluster             east  "10.23.1.0/24"
+cycle_cluster             west  "10.23.2.0/24"
 
 #@SHOW
 
-# Expose ports 80 and 443 to the local host, so that our ingress can work.
-# Also, don't install traefik, since we'll be putting Linkerd on instead.
-k3d cluster create face \
-    -p "80:80@loadbalancer" -p "443:443@loadbalancer" \
-    --agents=0 \
-    --servers=1 \
-    --network=face-network \
-    --k3s-arg '--disable=local-storage,traefik,metrics-server@server:*;agents:*' \
-    --k3s-arg '--cluster-domain=face@server:*' \
-    --k3s-arg '--cluster-cidr=10.23.0.0/24@server:*'
+# Grab network info for each cluster...
 
-# Note that we do NOT map 80 & 443 here; no point and they're taken.
-k3d cluster create smiley \
-    --agents=0 \
-    --servers=1 \
-    --network=face-network \
-    --k3s-arg '--disable=local-storage,metrics-server@server:*;agents:*' \
-    --k3s-arg '--cluster-domain=smiley@server:*' \
-    --k3s-arg '--cluster-cidr=10.23.1.0/24@server:*'
+north_net=$(get_network_info north)
+east_net=$(get_network_info east)
+west_net=$(get_network_info west)
 
-# # Note that we do NOT map 80 & 443 here; no point and they're taken.
-k3d cluster create color \
-    --agents=0 \
-    --servers=1 \
-    --network=face-network \
-    --k3s-arg '--disable=local-storage,metrics-server@server:*;agents:*' \
-    --k3s-arg '--cluster-domain=color@server:*' \
-    --k3s-arg '--cluster-cidr=10.23.2.0/24@server:*'
+north_cidr=$(echo $north_net | cut -d' ' -f1)
+north_router=$(echo $north_net | cut -d' ' -f2)
+east_cidr=$(echo $east_net | cut -d' ' -f1)
+east_router=$(echo $east_net | cut -d' ' -f2)
+west_cidr=$(echo $west_net | cut -d' ' -f1)
+west_router=$(echo $west_net | cut -d' ' -f2)
 
-kubectl config delete-context face >/dev/null 2>&1
-kubectl config rename-context k3d-face face
-kubectl config delete-context smiley >/dev/null 2>&1
-kubectl config rename-context k3d-smiley smiley
-kubectl config delete-context color >/dev/null 2>&1
-kubectl config rename-context k3d-color color
+echo "north cluster: route ${east_cidr} via ${east_router}, ${west_cidr} via ${west_router}"
+docker exec -it k3d-north-server-0 ip route add ${east_cidr} via ${east_router}
+docker exec -it k3d-north-server-0 ip route add ${west_cidr} via ${west_router}
 
-face_cidr=
-face_router=
-smiley_cidr=
-smiley_router=
-color_cidr=
-color_router=
+echo "east cluster: route ${north_cidr} via ${north_router}, ${west_cidr} via ${west_router}"
+docker exec -it k3d-east-server-0 ip route add ${north_cidr} via ${north_router}
+docker exec -it k3d-east-server-0 ip route add ${west_cidr} via ${west_router}
 
-REMAINING=60 ;\
-echo "Getting face cluster network info..." ;\
-while true; do \
-    face_cidr=$(kubectl --context face get node k3d-face-server-0 -o jsonpath='{.spec.podCIDR}') ;\
-    face_router=$(kubectl --context face get node k3d-face-server-0 -o jsonpath='{.status.addresses[?(.type=="InternalIP")].address}') ;\
-    if [ -n "$face_cidr" -a -n "$face_router" ]; then break; fi ;\
-    REMAINING=$(( $REMAINING - 1 )) ;\
-    printf "." ;\
-    sleep 1 ;\
-done ;\
-if [ $REMAINING -eq 0 ]; then \
-    echo "Timed out waiting for face network info" ;\
-    exit 1 ;\
-else \
-    printf "\n" ;\
-fi
-
-REMAINING=60 ;\
-echo "Getting smiley cluster network info..." ;\
-while true; do \
-    smiley_cidr=$(kubectl --context smiley get node k3d-smiley-server-0 -o jsonpath='{.spec.podCIDR}') ;\
-    smiley_router=$(kubectl --context smiley get node k3d-smiley-server-0 -o jsonpath='{.status.addresses[?(.type=="InternalIP")].address}') ;\
-    if [ -n "$smiley_cidr" -a -n "$smiley_router" ]; then break; fi ;\
-    REMAINING=$(( $REMAINING - 1 )) ;\
-    printf "." ;\
-    sleep 1 ;\
-done ;\
-if [ $REMAINING -eq 0 ]; then \
-    echo "Timed out waiting for smiley network info" ;\
-    exit 1 ;\
-else \
-    printf "\n" ;\
-fi
-
-REMAINING=60 ;\
-echo "Getting color cluster network info..." ;\
-while true; do \
-    color_cidr=$(kubectl --context color get node k3d-color-server-0 -o jsonpath='{.spec.podCIDR}') ;\
-    color_router=$(kubectl --context color get node k3d-color-server-0 -o jsonpath='{.status.addresses[?(.type=="InternalIP")].address}') ;\
-    if [ -n "$color_cidr" -a -n "$color_router" ]; then break; fi ;\
-    REMAINING=$(( $REMAINING - 1 )) ;\
-    printf "." ;\
-    sleep 1 ;\
-done ;\
-if [ $REMAINING -eq 0 ]; then \
-    echo "Timed out waiting for color network info" ;\
-    exit 1 ;\
-else \
-    printf "\n" ;\
-fi
-
-echo "face cluster: route ${smiley_cidr} via ${smiley_router}, ${color_cidr} via ${color_router}"
-docker exec -it k3d-face-server-0 ip route add ${smiley_cidr} via ${smiley_router}
-docker exec -it k3d-face-server-0 ip route add ${color_cidr} via ${color_router}
-
-echo "smiley cluster: route ${face_cidr} via ${face_router}, ${color_cidr} via ${color_router}"
-docker exec -it k3d-smiley-server-0 ip route add ${face_cidr} via ${face_router}
-docker exec -it k3d-smiley-server-0 ip route add ${color_cidr} via ${color_router}
-
-echo "color cluster: route ${face_cidr} via ${face_router}, ${smiley_cidr} via ${smiley_router}"
-docker exec -it k3d-color-server-0 ip route add ${face_cidr} via ${face_router}
-docker exec -it k3d-color-server-0 ip route add ${smiley_cidr} via ${smiley_router}
-
-# Wait for the traefik (ugh) service IP addresses to be ready for the smiley
-# and color clusters.
-
-for ctx in smiley color; do \
-    echo "Waiting for traefik service in $ctx..." ;\
-    REMAINING=60 ;\
-    while [ $REMAINING -gt 0 ]; do \
-        APISERVER=$(kubectl --context $ctx get svc -n kube-system traefik -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null) ;\
-        if [ -n "$APISERVER" ]; then break; fi ;\
-        REMAINING=$(( $REMAINING - 1 )) ;\
-        printf "." ;\
-        sleep 1 ;\
-    done ;\
-    if [ $REMAINING -eq 0 ]; then \
-        echo "Timed out waiting for traefik service in $ctx" ;\
-        exit 1 ;\
-    else \
-        printf "\n" ;\
-    fi ;\
-done
+echo "west cluster: route ${north_cidr} via ${north_router}, ${east_cidr} via ${east_router}"
+docker exec -it k3d-west-server-0 ip route add ${north_cidr} via ${north_router}
+docker exec -it k3d-west-server-0 ip route add ${east_cidr} via ${east_router}
 
 #@SKIP
 #@wait
