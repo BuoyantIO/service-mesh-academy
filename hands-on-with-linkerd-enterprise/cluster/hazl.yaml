@@ -1,0 +1,23 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: hazl
+servers: 1
+agents: 3
+network: multiaz
+options:
+  k3d:
+    disableLoadbalancer: true
+  k3s:
+    extraArgs:
+      - arg: --disable=servicelb,traefik
+        nodeFilters: [server:*]
+      - arg: --debug
+        nodeFilters: [server:*]
+    nodeLabels:
+      - label: topology.kubernetes.io/zone=zone-a
+        nodeFilters: [agent:0]
+      - label: topology.kubernetes.io/zone=zone-b
+        nodeFilters: [agent:1]
+      - label: topology.kubernetes.io/zone=zone-c
+        nodeFilters: [agent:2]
