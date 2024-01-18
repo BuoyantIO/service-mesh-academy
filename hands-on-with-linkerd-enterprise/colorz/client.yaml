@@ -60,7 +60,7 @@ metadata:
     app: brush
 data:
   config.yml: |
-    requestsPerSecond: 100
+    requestsPerSecond: 50
     reportIntervalSeconds: 10
     uri: http://paint.colorz.svc.cluster.local
 ...

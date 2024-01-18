@@ -152,23 +152,27 @@ pe "linkerd policy generate | kubectl apply -f -"
 wait
 clear
 
+p "let's look at the policy in Buoyant Cloud"
+wait
+clear
+
 # Look at Hazl from linkerd-viz
+
+# pe "vim linkerd-control-plane-config.yaml"
+# wait
+# clear
 
 pe "kubectl apply -k colorz/"
 wait
 clear
 
-pe "vim linkerd-control-plane-config.yaml"
-wait
-clear
+p "fin"
+# pe "kubectl apply -f linkerd-control-plane-config.yaml"
+# wait
+# clear
 
-
-pe "kubectl apply -f linkerd-control-plane-config.yaml"
-wait
-clear
-
-pe "linkerd check"
-wait
-clear
+# pe "linkerd check"
+# wait
+# clear
 
 # watch k get pods -n colorz -o wide --sort-by .spec.nodeName
