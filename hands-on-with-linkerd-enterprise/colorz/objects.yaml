@@ -1,0 +1,132 @@
+service.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.app }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: {{ .Values.servicePort }}
+      targetPort: {{ .Values.containerPort }}
+      protocol: TCP
+  selector:
+    component: {{ .Values.app }}
+
+deployment.yaml
+---------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: berlin-group-bas
+  namespace: doruk-kutlu
+  labels:
+    app.kubernetes.io/name: berlin-group-bas
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: 0.0.0
+    helm.sh/chart: berlin-group-bas-0.0.0
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      component: berlin-group-bas
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        component: berlin-group-bas
+    spec:
+      imagePullSecrets:
+        - name: gitlab-registry
+      containers:
+        - name: berlin-group-bas
+          image: "registry.gitlab.figo.systems/connectivity/berlin-group-bas:0.0.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+service-profile.yaml
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: berlin-group-bas
+  namespace: doruk-kutlu
+  labels:
+    app.kubernetes.io/name: berlin-group-bas
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: 0.0.0
+    helm.sh/chart: berlin-group-bas-0.0.0
+spec:
+  routes:
+    - condition:
+        method: POST
+        pathRegex: /api/1/accounts/transactions/
+      timeout: 120s # 504 Gateway Timeout
+      name: getTransactions
+---
+service profile manifest
+Name:         berlin-group-bas
+Namespace:    ob-connectivity-s
+Labels:       app.kubernetes.io/instance=berlin-group-bas
+              app.kubernetes.io/managed-by=Helm
+              app.kubernetes.io/name=berlin-group-bas
+              app.kubernetes.io/version=2.5.2
+              helm.sh/chart=berlin-group-bas-2.5.2
+Annotations:  meta.helm.sh/release-name: berlin-group-bas
+              meta.helm.sh/release-namespace: ob-connectivity-s
+API Version:  linkerd.io/v1alpha2
+Kind:         ServiceProfile
+Metadata:
+  Creation Timestamp:  2023-06-19T10:33:29Z
+  Generation:          1
+  Managed Fields:
+    API Version:  linkerd.io/v1alpha2
+    Fields Type:  FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .:
+          f:meta.helm.sh/release-name:
+          f:meta.helm.sh/release-namespace:
+        f:labels:
+          .:
+          f:app.kubernetes.io/instance:
+          f:app.kubernetes.io/managed-by:
+          f:app.kubernetes.io/name:
+          f:app.kubernetes.io/version:
+          f:helm.sh/chart:
+      f:spec:
+        .:
+        f:routes:
+    Manager:         helm
+    Operation:       Update
+    Time:            2023-06-19T10:33:29Z
+  Resource Version:  1053284117
+  UID:               8f42ff30-2680-4dde-9aa4-55fbfac71829
+Spec:
+  Routes:
+    Condition:
+      Method:      POST
+      Path Regex:  /api/1/accounts/transactions/
+    Name:          getTransactions
+    Timeout:       120s
+Events:            <none>
