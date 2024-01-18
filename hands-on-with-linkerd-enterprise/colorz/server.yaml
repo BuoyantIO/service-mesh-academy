@@ -4,11 +4,6 @@ kind: Service
 metadata:
   name: paint
   namespace: colorz
-  annotations:
-    balancer.linkerd.io/mode: buoyant.io/cost-aware
-    cost-aware.buoyant.io/endpoint-load-band-high: "3.0"
-    cost-aware.buoyant.io/endpoint-load-band-low: "2.0"
-    # service.kubernetes.io/topology-mode: Auto
   labels:
     mirror.linkerd.io/exported: remote-discovery
 spec:

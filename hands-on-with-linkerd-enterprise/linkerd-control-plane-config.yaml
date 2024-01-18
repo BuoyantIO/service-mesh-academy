@@ -28,7 +28,7 @@ spec:
             scheme: kubernetes.io/tls
         destinationController:
           experimentalArgs:
-          # - -experimental-endpoint-zone-weights
+            - -experimental-endpoint-zone-weights
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
