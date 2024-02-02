@@ -60,7 +60,7 @@ This repository includes the `colorz` application, which generate traffic across
 
 ## Task 1: Clone the `deploying-bel-with-hazl` Repository
 
-[GitHub: Deploying Buoyant Enterprise for Linkerd with High Availability Zonal Load Balancing (HAZL)](https://github.com/southsidedean/deploying-bel-with-hazl)
+[GitHub: Deploying Buoyant Enterprise for Linkerd with High Availability Zonal Load Balancing (HAZL)](https://github.com/BuoyantIO/service-mesh-academy/tree/main/deploying-bel-with-hazl)
 
 Clone the GitHub repository to your working directory:
 
