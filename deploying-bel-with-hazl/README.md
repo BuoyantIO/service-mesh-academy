@@ -4,7 +4,7 @@
 
 ### Jason Morgan | Tom Dean | Buoyant
 
-### Last edit: 1/30/2024
+### Last edit: 2/2/2024
 
 ## Introduction
 
@@ -65,13 +65,13 @@ This repository includes the `colorz` application, which generate traffic across
 Clone the GitHub repository to your working directory:
 
 ```bash
-git clone https://github.com/southsidedean/deploying-bel-with-hazl.git
+git clone https://github.com/BuoyantIO/service-mesh-academy.git
 ```
 
 Change directory to the repository:
 
 ```bash
-cd deploying-bel-with-hazl
+cd service-mesh-academy/deploying-bel-with-hazl
 ```
 
 ## Task 2: Deploy a Cluster Using `k3d`

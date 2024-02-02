@@ -1,12 +1,12 @@
 #!/bin/bash
 # steps-repo.sh
 # Demo script for the deploying-bel-with-hazl GitHub repository
-# https://github.com/southsidedean/deploying-bel-with-hazl
+# https://github.com/BuoyantIO/service-mesh-academy/tree/main/deploying-bel-with-hazl
 # Full script, to match the README.md
 # Requires demo-magic.sh
 # Automates the demonstration
 # Jason Morgan | Tom Dean | Buoyant
-# Last edit: 1/30/2024
+# Last edit: 2/2/2024
 
 # Source the demo-magic.sh script
 source demo-magic.sh
