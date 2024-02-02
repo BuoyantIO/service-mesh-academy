@@ -226,7 +226,7 @@ curl -sL https://enterprise.buoyant.io/install-preview | sh
 Add the CLI executables to your `$PATH`:
 
 ```bash
-export PATH=/home/tdean/.linkerd2/bin:$PATH
+export PATH=~/.linkerd2/bin:$PATH
 ```
 
 ### Step 3: Run Pre-Checks
@@ -422,9 +422,26 @@ watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
 
 ### Create Security Policy
 
+Say something about creating Security Policies with BEL here.
+
+Use the `linkerd policy generate` command to have BEL generate policies from observed traffic:
 ```bash
-linkerd policy generate | kubectl apply -f -
+linkerd policy generate > linkerd-policy.yaml
 ```
+
+We've put these policies into a manifest in the `linkerd-policy.yaml`.  Let's take a look:
+```bash
+more linkerd-policy.yaml
+```
+
+We see...
+
+Now, let's apply the policies to our cluster:
+```bash
+kubectl apply -f linkerd-policy.yaml
+```
+
+Let's take a look at our new Security Policies in Buoyant Cloud.
 
 ## Monitor Traffic Without HAZL
 
