@@ -106,7 +106,7 @@ All prerequisites must be *installed* and *working properly* before proceeding. 
 
 ### Demo: Included Scripts
 
-There are three shell scripts provided with the repository that can be used if you'd like to use automation to work through the demonstration.
+There are three `bel-demo-*` shell scripts provided with the repository that can be used if you'd like to use automation to work through the demonstration.
 
 ```bash
 .
@@ -125,13 +125,13 @@ There are three shell scripts provided with the repository that can be used if y
 - `bel-demo-full-repo.sh`
   - Walks through the full repository, all steps demonstrated
 - `bel-demo-install.sh`
-  - Deploys the k3d cluster for you, walks through install, **HAZL** and policy demo
+  - Deploys the k3d cluster for you, walks through install, **HAZL** and policy demonstration steps
 - `bel-demo-hazl-policy.sh`
-  - Deploys the k3d cluster and BEL without HAZL for you, walks through **HAZL** and policy demo
+  - Deploys the k3d cluster and BEL without HAZL for you, walks through **HAZL** and policy demonstration steps
 
 These scripts leverage the `demo-magic.sh` script. There's no need to call `demo-magic.sh` directly.
 
-To execute a script, use:
+To execute a script, using the `full-repo` script as an example, use:
 
 ```bash
 ./bel-demo-full-repo.sh
@@ -143,7 +143,7 @@ For more information, look at the scripts. They're well-documented.
 
 This repository includes the **Colorwheel** application, which generates traffic across multiple availability zones in our Kubernetes cluster, allowing us to observe the effect that **High Availability Zonal Load Balancing (HAZL)** has on traffic.
 
-## Deploy a Kubernetes Cluster With Deploying Buoyant Enterprise for Linkerd
+## Demo 1: Deploy a Kubernetes Cluster With Buoyant Enterprise for Linkerd, With HAZL Disabled
 
 ### Task 1: Clone the `deploying-bel-with-hazl` Repository
 
