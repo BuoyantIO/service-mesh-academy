@@ -375,11 +375,14 @@ Let's give the CLI a quick check:
 linkerd version
 ```
 
-```bash
+We should see the following:
 
+```bash
+Client version: preview-24.1.5
+Server version: unavailable
 ```
 
-
+With the CLI installed and working, we can get on with running our pre-installation checks.
 
 #### Step 3: Run Pre-Checks
 
