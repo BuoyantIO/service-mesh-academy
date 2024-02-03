@@ -238,19 +238,21 @@ watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
 
 Now that we have a Kubernetes cluster, we can proceed with deploying Buoyant Enterprise for Linkerd.
 
-### Task 3: Create Certificates
-
-<<Why do we need certificates?  Explain that here, link to documentation here.>>
-
-#### Create Certificates Using `step`
+### Task 3: Create mTLS Root Certificates
 
 [Generating the certificates with `step`](https://linkerd.io/2.14/tasks/generate-certificates/#generating-the-certificates-with-step)
 
-If you'd like to generate your own secure certificates, you can use `step` to do so.
+In order to support **mTLS** connections between meshed pods, **Linkerd** needs a trust anchor certificate and an issuer certificate with its corresponding key.
+
+When using Helm to install Linkerd, it’s not possible to automatically generate them and you’re required to provide them.
+
+#### Create Certificates Using `step`
+
+You can generate these certificates using a tool like `openssl` or `step`. All certificates must use the ECDSA P-256 algorithm which is the default for step. To generate ECDSA P-256 certificates with openssl, you can use the `openssl ecparam -name prime256v1` command. In this section, we’ll walk you through how to to use the `step` CLI to do this.
 
 ##### Trust Anchor Certificate
 
-If you want to generate your own certificates using `step`, use the `certs` directory:
+To generate your certificates using `step`, use the `certs` directory:
 
 ```bash
 cd certs
@@ -287,23 +289,38 @@ Checking our certificates:
 ls -la
 ```
 
+We should see:
+
+```bash
+total 40
+drwxr-xr-x   7 tdean  staff  224 Feb  2 13:23 .
+drwxr-xr-x  10 tdean  staff  320 Feb  3 16:53 ..
+-rw-r--r--   1 tdean  staff   53 Feb  2 13:18 README.md
+-rw-------   1 tdean  staff  599 Feb  2 13:23 ca.crt
+-rw-------   1 tdean  staff  227 Feb  2 13:23 ca.key
+-rw-------   1 tdean  staff  648 Feb  2 13:23 issuer.crt
+-rw-------   1 tdean  staff  227 Feb  2 13:23 issuer.key
+```
+
 Change back to the parent directory:
 
 ```bash
 cd ..
 ```
 
+Now that we have mTLS root certificates, we can deploy BEL.
+
 ### Task 4: Deploy Buoyant Enterprise for Linkerd Without HAZL
 
-[Buoyant Enterprise for Linkerd: Installation](https://docs.buoyant.io/buoyant-enterprise-linkerd/installation/)
+[Installation: Buoyant Enterprise for Linkerd with Buoyant Cloud](https://docs.buoyant.io/buoyant-enterprise-linkerd/installation/managed-bel-cloud-install/)
 
-[Buoyant Enterprise for Linkerd Trial](https://docs.buoyant.io/buoyant-enterprise-linkerd/installation/trial/)
+[Installation: Buoyant Enterprise for Linkerd Trial](https://docs.buoyant.io/buoyant-enterprise-linkerd/installation/trial/)
 
-Next, we will walk through the process of installing **Buoyant Enterprise for Linkerd**, including **High Availability Zonal Load Balancing (HAZL)**.
+Next, we will walk through the process of installing **Buoyant Enterprise for Linkerd**.
 
 #### Step 1: Obtain Buoyant Enterprise for Linkerd (BEL) Trial Credentials
 
-To get credentials for accessing Buoyant Enterprise for Linkerd, go to the [Buoyant Enterprise for Linkerd Installation page](https://enterprise.buoyant.io/start_trial), and follow the instructions.
+To get credentials for accessing Buoyant Enterprise for Linkerd, [sign up here](https://enterprise.buoyant.io/start_trial), and follow the instructions.
 
 You should end up with a set of credentials in environment variables like this:
 
@@ -313,7 +330,7 @@ export API_CLIENT_SECRET=[CLIENT_SECRET]
 export BUOYANT_LICENSE=[LICENSE]
 ```
 
-Add these to a file in the root of the repository, named `settings.sh`, plus add a new line with the cluster name, `export CLUSTER_NAME=demo-cluster`, like this:
+Add these to a file in the root of the `service-mesh-academy/deploying-bel-with-hazl` directory, named `settings.sh`, plus add a new line with the cluster name, `export CLUSTER_NAME=demo-cluster`, like this:
 
 ```bash
 export API_CLIENT_ID=[CLIENT_ID]
@@ -334,7 +351,7 @@ Source the file, to load the variables:
 source settings.sh
 ```
 
-Your credentials have been loaded into environment variables, and we can proceed with installing Buoyant Enterprise Linkerd (BEL).
+Your credentials have been loaded into environment variables, and we can proceed with installing **Buoyant Enterprise Linkerd (BEL)**.
 
 #### Step 2: Download the BEL CLI
 
