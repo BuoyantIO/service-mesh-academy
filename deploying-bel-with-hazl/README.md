@@ -77,19 +77,20 @@ These constraints have real-world implications. As one customer put it when tryi
 
 ### Demonstration: Overview
 
-In this demonstration, we're going to do the following:
+**In this demonstration, we're going to do the following:**
 
 - Deploy a `k3d` Kubernetes cluster
-- Deploy **Buoyant Enterprise for Linkerd** with **HAZL** disabled
-- Deploy the **Colorwheel** application to generate multi-zonal traffic
-- Monitor traffic from the **Colorwheel** application, with **HAZL** disabled
+- Deploy **Buoyant Enterprise for Linkerd** with **HAZL** disabled on the cluster
+- Deploy the **Colorwheel** application to the cluster, to generate multi-zonal traffic
+  - Monitor traffic from the **Colorwheel** application, with **HAZL** disabled
 - Enable **High Availability Zonal Load Balancing (HAZL)**
-- Monitor traffic from the **Colorwheel** application, with **HAZL** enabled
+  - Monitor traffic from the **Colorwheel** application, with **HAZL** enabled
+  - Observe the effect on cross-az traffic
 - Increase the number of requests in the **Colorwheel** application
-- Monitor the increased traffic from the **Colorwheel** application
+  - Monitor the increased traffic from the **Colorwheel** application
   - Observe the effect on cross-az traffic
 - Decrease the number of requests in the **Colorwheel** application
-- Monitor the decreased traffic from the **Colorwheel** application
+  - Monitor the decreased traffic from the **Colorwheel** application
   - Observe the effect on cross-az traffic
 
 ### Demo: Prerequisites
