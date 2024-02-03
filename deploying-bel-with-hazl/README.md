@@ -310,13 +310,13 @@ cd ..
 
 Now that we have mTLS root certificates, we can deploy BEL.
 
-### Task 4: Deploy Buoyant Enterprise for Linkerd Without HAZL
+### Task 4: Deploy Buoyant Enterprise for Linkerd With HAZL Disabled
 
 [Installation: Buoyant Enterprise for Linkerd with Buoyant Cloud](https://docs.buoyant.io/buoyant-enterprise-linkerd/installation/managed-bel-cloud-install/)
 
 [Installation: Buoyant Enterprise for Linkerd Trial](https://docs.buoyant.io/buoyant-enterprise-linkerd/installation/trial/)
 
-Next, we will walk through the process of installing **Buoyant Enterprise for Linkerd**.
+Next, we will walk through the process of installing **Buoyant Enterprise for Linkerd**. We're going to start with **HAZL** disabled, and will enable **HAZL** during testing.
 
 #### Step 1: Obtain Buoyant Enterprise for Linkerd (BEL) Trial Credentials
 
@@ -345,7 +345,7 @@ Check the contents of the `settings.sh` file:
 more settings.sh
 ```
 
-Source the file, to load the variables:
+Once you're satisfied with the contents, `source` the file, to load the variables:
 
 ```bash
 source settings.sh
@@ -355,7 +355,9 @@ Your credentials have been loaded into environment variables, and we can proceed
 
 #### Step 2: Download the BEL CLI
 
-Next, download the **BEL** CLI:
+We'll be using the **Buoyant Enterprise Linkerd** CLI for many of our operations, so we'll need it *installed and properly configured*.
+
+First, download the **BEL** CLI:
 
 ```bash
 curl -sL https://enterprise.buoyant.io/install-preview | sh
@@ -366,6 +368,18 @@ Add the CLI executables to your `$PATH`:
 ```bash
 export PATH=~/.linkerd2/bin:$PATH
 ```
+
+Let's give the CLI a quick check:
+
+```bash
+linkerd version
+```
+
+```bash
+
+```
+
+
 
 #### Step 3: Run Pre-Checks
 
@@ -429,7 +443,7 @@ linkerd buoyant check
 
 #### Step 5: Create the Identity Secret
 
-
+<<Some context. What are we doing here?>>
 
 Use the [Linkerd Trust Root CA & Identity Certificates & Keys](https://linkerd.io/2/tasks/generate-certificates/#generating-the-certificates-with-step) to create a Kubernetes Secret that will be used by Helm at runtime. You will need `ca.crt`, `issuer.crt`, and `issuer.key` files.
 
@@ -469,12 +483,12 @@ metadata:
 spec:
   components:
     linkerd:
-      version: preview-24.1.3
+      version: preview-24.1.5
       license: $BUOYANT_LICENSE
       controlPlaneConfig:
         proxy:
           image:
-            version: preview-24.1.3-hazl
+            version: preview-24.1.5-hazl
         identityTrustAnchorsPEM: |
 $(sed 's/^/          /' < certs/ca.crt )
         identity:
@@ -514,10 +528,10 @@ You can verify the health and configuration of Linkerd by running the `linkerd c
 linkerd check
 ```
 
-#### Step 9: Create the Dataplane Objects for `linkerd-buoyant`
+#### Step 9: Create the DataPlane Objects for `linkerd-buoyant`
 
 ```bash
-kubectl apply -f - <<EOF
+cat <<EOF > linkerd-data-plane-config.yaml
 ---
 apiVersion: linkerd.buoyant.io/v1alpha1
 kind: DataPlane
@@ -530,7 +544,13 @@ spec:
 EOF
 ```
 
-With that you will see the Linkerd proxy get added to your Buoyant Cloud Agent.  You've successfully installed your trial of Buoyant Enterprise for Linkerd. You can now use Linkerd to manage and secure your Kubernetes applications.
+Apply the DataPlane CRD configuration to have the **BEL** operator create the Control Plane:
+
+```bash
+kubectl apply -f linkerd-data-plane-config.yaml
+```
+
+With that you will see the proxy get added to your **Buoyant Cloud Agent**.  You've successfully installed **Buoyant Enterprise for Linkerd**. You can now use **BEL** to manage and secure your Kubernetes applications.
 
 To make adjustments to your Linkerd deployment simply edit and re-apply the previously-created `linkerd-control-plane-config.yaml` CRD config.
 
