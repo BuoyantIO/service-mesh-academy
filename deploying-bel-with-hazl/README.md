@@ -243,6 +243,8 @@ Now that we have a Kubernetes cluster, we can proceed with deploying Buoyant Ent
 
 [Generating the certificates with `step`](https://linkerd.io/2.14/tasks/generate-certificates/#generating-the-certificates-with-step)
 
+[Linkerd Trust Root CA & Identity Certificates & Keys](https://linkerd.io/2/tasks/generate-certificates/#generating-the-certificates-with-step)
+
 In order to support **mTLS** connections between *meshed pods*, **Linkerd** needs a **trust anchor certificate** and an **issuer certificate** with its corresponding **key**.
 
 Since we're using **Helm** to install **BEL**, it’s not possible to automatically generate these certificates and keys. We'll need to generate certificates and keys, and we'll use `step`.
@@ -568,9 +570,9 @@ We may see a few warnings (!!), but we're good to procced as long as the overall
 
 #### Step 5: Create the Identity Secret
 
-<<Some context. What are we doing here?>>
+[Linkerd Trust Root CA & Identity Certificates & Keys](https://linkerd.io/2/tasks/generate-certificates/#generating-the-certificates-with-step)
 
-Use the [Linkerd Trust Root CA & Identity Certificates & Keys](https://linkerd.io/2/tasks/generate-certificates/#generating-the-certificates-with-step) to create a Kubernetes Secret that will be used by Helm at runtime. You will need `ca.crt`, `issuer.crt`, and `issuer.key` files.
+Now we're going to take those **certificates** and **keys** we created using `step`, and use the `ca.crt`, `issuer.crt`, and `issuer.key` to create a Kubernetes Secret that will be used by **Helm** at runtime.
 
 Generate the `linkerd-identity-secret.yaml` manifest:
 
@@ -589,11 +591,27 @@ type: kubernetes.io/tls
 EOF
 ```
 
-Create the `linkerd-identity-secret` secret:
+Create the `linkerd-identity-secret` secret from the manifest:
 
 ```bash
 kubectl apply -f linkerd-identity-secret.yaml
 ```
+
+
+
+```bash
+kubectl get secrets -A
+```
+
+We should see our `linkerd-identity-secret` secret.
+
+```bash
+
+```
+
+
+
+Now that we have our `linkerd-identity-issuer` secret, we can proceed with creating the ControlPlane CRD configuration manifest.
 
 #### Step 6: Create a Linkerd BEL Operator CRD
 
