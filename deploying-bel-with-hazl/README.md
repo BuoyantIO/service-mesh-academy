@@ -242,15 +242,15 @@ Now that we have a Kubernetes cluster, we can proceed with deploying Buoyant Ent
 
 [Generating the certificates with `step`](https://linkerd.io/2.14/tasks/generate-certificates/#generating-the-certificates-with-step)
 
-In order to support **mTLS** connections between meshed pods, **Linkerd** needs a trust anchor certificate and an issuer certificate with its corresponding key.
+In order to support **mTLS** connections between *meshed pods*, **Linkerd** needs a **trust anchor certificate** and an **issuer certificate** with its corresponding **key**.
 
-When using Helm to install Linkerd, it’s not possible to automatically generate them and you’re required to provide them.
+Since we're using **Helm** to install **BEL**, it’s not possible to automatically generate these certificates and keys. We'll need to generate certificates and keys, and we'll use `step`.
 
 #### Create Certificates Using `step`
 
 You can generate these certificates using a tool like `openssl` or `step`. All certificates must use the ECDSA P-256 algorithm which is the default for step. To generate ECDSA P-256 certificates with openssl, you can use the `openssl ecparam -name prime256v1` command. In this section, we’ll walk you through how to to use the `step` CLI to do this.
 
-##### Trust Anchor Certificate
+##### Step 1: Trust Anchor Certificate
 
 To generate your certificates using `step`, use the `certs` directory:
 
@@ -271,7 +271,7 @@ This generates the `ca.crt` and `ca.key` files. The `ca.crt` file is what you ne
 
 For a longer-lived trust anchor certificate, pass the `--not-after` argument to the step command with the desired value (e.g. `--not-after=87600h`).
 
-##### Issuer Certificate and Key
+##### Step 2: Issuer Certificate and Key
 
 Next, generate the intermediate certificate and key pair that will be used to sign the Linkerd proxies’ CSR.
 
@@ -384,7 +384,9 @@ Server version: unavailable
 
 With the CLI installed and working, we can get on with running our pre-installation checks.
 
-#### Step 3: Run Pre-Checks
+#### Step 3: Run Pre-Installation Checks
+
+Before we run the pre-checks, we'll double-check our environment variables.
 
 Check the `API_CLIENT_ID` environment variable:
 
@@ -410,22 +412,60 @@ Confirm the `CLUSTER_NAME` environment variable:
 echo $CLUSTER_NAME
 ```
 
-Validate that your cluster is ready for installation:
+Use the `linkerd check --pre` command to validate that your cluster is ready for installation:
 
 ```bash
 linkerd check --pre
 ```
 
+We should see all green checks:
+
+```bash
+kubernetes-api
+--------------
+√ can initialize the client
+√ can query the Kubernetes API
+
+kubernetes-version
+------------------
+√ is running the minimum Kubernetes API version
+
+pre-kubernetes-setup
+--------------------
+√ control plane namespace does not already exist
+√ can create non-namespaced resources
+√ can create ServiceAccounts
+√ can create Services
+√ can create Deployments
+√ can create CronJobs
+√ can create ConfigMaps
+√ can create Secrets
+√ can read Secrets
+√ can read extension-apiserver-authentication configmap
+√ no clock skew detected
+
+linkerd-version
+---------------
+√ can determine the latest version
+√ cli is up-to-date
+
+Status check results are √
+```
+
+With everything good and green, we can proceed with installing the **BEL operator**.
+
 #### Step 4: Install BEL Operator Components
 
-We'll use the `linkerd-buoyant` Helm chart to install the operator:
+Next, we'll install the **BEL operator**, which we will use to deploy the **ControlPlane** and **DataPlane** objects.
+
+Add the `linkerd-buoyant` Helm chart, and refresh **Helm** before installing the operator:
 
 ```bash
 helm repo add linkerd-buoyant https://helm.buoyant.cloud
 helm repo update
 ```
 
-Now, we can install the BEL operator itself:
+Now, we can install the **BEL operator** itself:
 
 ```bash
 helm install linkerd-buoyant \
@@ -437,12 +477,14 @@ helm install linkerd-buoyant \
 linkerd-buoyant/linkerd-buoyant
 ```
 
-After the install, wait for the metrics agent to be ready, then run the post-install operator health checks:
+After the install, wait for the `buoyant-cloud-metrics` agent to be ready, then run the post-install operator health checks:
 
 ```bash
 kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant
 linkerd buoyant check
 ```
+
+
 
 #### Step 5: Create the Identity Secret
 
