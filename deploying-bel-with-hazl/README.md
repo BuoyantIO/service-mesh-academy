@@ -477,6 +477,37 @@ helm install linkerd-buoyant \
 linkerd-buoyant/linkerd-buoyant
 ```
 
+You should see something like the following:
+
+```bash
+NAME: linkerd-buoyant
+LAST DEPLOYED: Sat Feb  3 17:40:38 2024
+NAMESPACE: linkerd-buoyant
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Thank you for installing linkerd-buoyant.
+
+Your release is named linkerd-buoyant.
+
+To help you manage linkerd-buoyant, you can install the CLI extension by
+running:
+
+  curl -sL https://buoyant.cloud/install | sh
+
+Alternatively, you can download the CLI directly via the linkerd-buoyant
+releases page:
+
+  https://github.com/BuoyantIO/linkerd-buoyant/releases
+
+To make sure everything works as expected, run the following:
+
+  linkerd-buoyant check
+
+Looking for more? Visit https://buoyant.io/linkerd
+```
+
 After the install, wait for the `buoyant-cloud-metrics` agent to be ready, then run the post-install operator health checks:
 
 ```bash
@@ -484,7 +515,55 @@ kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant
 linkerd buoyant check
 ```
 
+```bash
+daemon set "buoyant-cloud-metrics" successfully rolled out
+linkerd-buoyant
+---------------
+√ Linkerd health ok
+√ Linkerd vulnerability report ok
+√ Linkerd data plane upgrade assistance ok
+√ Linkerd trust anchor rotation assistance ok
 
+linkerd-buoyant-agent
+---------------------
+√ linkerd-buoyant can determine the latest version
+√ linkerd-buoyant cli is up-to-date
+√ linkerd-buoyant Namespace exists
+√ linkerd-buoyant Namespace has correct labels
+√ agent-metadata ConfigMap exists
+√ buoyant-cloud-org-credentials Secret exists
+√ buoyant-cloud-org-credentials Secret has correct labels
+√ buoyant-cloud-agent ClusterRole exists
+√ buoyant-cloud-agent ClusterRoleBinding exists
+√ buoyant-cloud-agent ServiceAccount exists
+√ buoyant-cloud-agent Deployment exists
+√ buoyant-cloud-agent Deployment is running
+‼ buoyant-cloud-agent Deployment is injected
+    could not find proxy container for buoyant-cloud-agent-57d767d88b-bl65r pod
+    see https://linkerd.io/checks#l5d-buoyant for hints
+√ buoyant-cloud-agent Deployment is up-to-date
+√ buoyant-cloud-agent Deployment is running a single pod
+√ buoyant-cloud-metrics DaemonSet exists
+√ buoyant-cloud-metrics DaemonSet is running
+‼ buoyant-cloud-metrics DaemonSet is injected
+    could not find proxy container for buoyant-cloud-metrics-cmq8r pod
+    see https://linkerd.io/checks#l5d-buoyant for hints
+√ buoyant-cloud-metrics DaemonSet is up-to-date
+√ linkerd-control-plane-operator Deployment exists
+√ linkerd-control-plane-operator Deployment is running
+√ linkerd-control-plane-operator Deployment is up-to-date
+√ linkerd-control-plane-operator Deployment is running a single pod
+√ controlplanes.linkerd.buoyant.io CRD exists
+√ linkerd-data-plane-operator Deployment exists
+√ linkerd-data-plane-operator Deployment is running
+√ linkerd-data-plane-operator Deployment is up-to-date
+√ linkerd-data-plane-operator Deployment is running a single pod
+√ dataplanes.linkerd.buoyant.io CRD exists
+
+Status check results are √
+```
+
+We may see a few warnings (!!), but we're good to procced as long as the overall status check results are good.
 
 #### Step 5: Create the Identity Secret
 
