@@ -101,14 +101,17 @@ In this demonstration, we're going to do the following:
 - [step](https://smallstep.com/docs/step-cli/installation/)
 - The `watch` command must be installed and working
 - [Buoyant Enterprise for Linkerd License](https://enterprise.buoyant.io/start_trial)
+- [The Demo Assets, from GitHub](https://github.com/BuoyantIO/service-mesh-academy/tree/main/deploying-bel-with-hazl)
 
-All prerequisites must be *installed* and *working properly* before proceeding.  The instructions in the provided links will get you there. A trial license for Buoyant Enterprise for Linkerd can be obtained from the link above.
+All prerequisites must be *installed* and *working properly* before proceeding. The instructions in the provided links will get you there. A trial license for Buoyant Enterprise for Linkerd can be obtained from the link above. Instructions on obtaining the demo assets from GitHub are below.
 
 ### Demo: Included Scripts
 
-There are three `bel-demo-*` shell scripts provided with the repository that can be used if you'd like to use automation to work through the demonstration.
+There are three `bel-demo-*` shell scripts provided with the repository, if you'd like to use CLI automation to work through the demonstration.
 
 ```bash
+Contents of service-mesh-academy/deploying-bel-with-hazl:
+
 .
 ├── README.md
 ├── bel-demo-full-repo.sh
@@ -125,9 +128,9 @@ There are three `bel-demo-*` shell scripts provided with the repository that can
 - `bel-demo-full-repo.sh`
   - Walks through the full repository, all steps demonstrated
 - `bel-demo-install.sh`
-  - Deploys the k3d cluster for you, walks through install, **HAZL** and policy demonstration steps
+  - Deploys the k3d cluster for you, walks through **BEL** install, **HAZL** and **policy** demonstration steps
 - `bel-demo-hazl-policy.sh`
-  - Deploys the k3d cluster and BEL without HAZL for you, walks through **HAZL** and policy demonstration steps
+  - Deploys the k3d cluster and **BEL** without **HAZL** for you, walks through **HAZL** and **policy** demonstration steps
 
 These scripts leverage the `demo-magic.sh` script. There's no need to call `demo-magic.sh` directly.
 
@@ -137,13 +140,15 @@ To execute a script, using the `full-repo` script as an example, use:
 ./bel-demo-full-repo.sh
 ```
 
-For more information, look at the scripts. They're well-documented.
+For more information, look at the scripts.
 
 ### The Colorwheel Application
 
 This repository includes the **Colorwheel** application, which generates traffic across multiple availability zones in our Kubernetes cluster, allowing us to observe the effect that **High Availability Zonal Load Balancing (HAZL)** has on traffic.
 
 ## Demo 1: Deploy a Kubernetes Cluster With Buoyant Enterprise for Linkerd, With HAZL Disabled
+
+First, we'll deploy a Kubernetes cluster using `k3d` and deploy Buoyant Enterprise for Linkerd (BEL).
 
 ### Task 1: Clone the `deploying-bel-with-hazl` Repository
 
@@ -157,15 +162,39 @@ Clone the `BuoyantIO/service-mesh-academy` GitHub repository to your working dir
 git clone https://github.com/BuoyantIO/service-mesh-academy.git
 ```
 
-Change directory to the repository:
+Change directory to the `deploying-bel-with-hazl` subdirectory in the `service-mesh-academy` repository:
 
 ```bash
 cd service-mesh-academy/deploying-bel-with-hazl
 ```
 
+Taking a look at the contents of `service-mesh-academy/deploying-bel-with-hazl`:
+
+```bash
+ls -la
+```
+
+You should see the following:
+
+```bash
+total 112
+drwxrwxr-x   9 tdean  staff    288 Feb  3 13:47 .
+drwxr-xr-x  23 tdean  staff    736 Feb  2 13:05 ..
+-rw-r--r--   1 tdean  staff  21495 Feb  3 13:43 README.md
+-rwxr-xr-x   1 tdean  staff   9367 Feb  2 13:37 bel-demo-full-repo.sh
+-rwxr-xr-x   1 tdean  staff  12581 Feb  2 13:37 bel-demo-hazl-policy.sh
+-rwxr-xr-x   1 tdean  staff  12581 Feb  2 13:37 bel-demo-install.sh
+drwxr-xr-x   3 tdean  staff     96 Feb  2 13:14 certs
+drwxr-xr-x   3 tdean  staff     96 Feb  2 13:14 cluster
+drwxr-xr-x   9 tdean  staff    288 Feb  2 13:14 colorz
+-rwxr-xr-x   1 tdean  staff   3963 Feb  2 13:14 demo-magic.sh
+```
+
+With the assets in place, we can proceed to creating a cluster with `k3d`.
+
 ### Task 2: Deploy a Kubernetes Cluster Using `k3d`
 
-
+Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need a Kubernetes cluster. Fortunately, we can use `k3d` for that.  There's a cluster configuration file in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
 
 We can use the following commands to have `k3d` create a cluster with 3 availability zones.
 
@@ -175,7 +204,7 @@ Check for existing `k3d` clusters:
 k3d cluster list
 ```
 
-If you'd like to *delete* any existing clusters, use:
+If you'd like to *delete* any existing clusters you might have, use:
 
 ```bash
 k3d cluster delete <<cluster-name>>
@@ -206,6 +235,8 @@ kubectl get nodes
 ```bash
 watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
 ```
+
+Now that we have a Kubernetes cluster, we can proceed with deploying Buoyant Enterprise for Linkerd.
 
 ### Task 3: Create Certificates
 
