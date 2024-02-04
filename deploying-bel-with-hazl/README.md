@@ -568,7 +568,7 @@ linkerd-buoyant-agent
 Status check results are √
 ```
 
-We may see a few warnings (!!), but we're good to procced as long as the overall status check results are good.
+We may see a few warnings (!!), but we're good to proceed as long as the overall status check results are good.
 
 #### Step 5: Create the Identity Secret
 
@@ -624,7 +624,11 @@ Now that we have our `linkerd-identity-issuer` secret, we can proceed with creat
 
 [Kubernetes Docs: Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
 
-We deploy the **BEL ControlPlane** and **DataPlane** using **Custom Resources**.  We'll create a manifest for each that contains their configuration. This **CRD configuration** also enables **High Availability Zonal Load Balancing (HAZL)**, using the `- -experimental-endpoint-zone-weights` `experimentalArgs`.  We're going to omit the `- -experimental-endpoint-zone-weights` in the `experimentalArgs` for now, by commenting it out with a `#` in the manifest.
+We deploy the **BEL ControlPlane** and **DataPlane** using **Custom Resources**.  We'll create a manifest for each that contains their configuration. We'll start with the **ControlPlane** first.
+
+This **CRD configuration** also enables **High Availability Zonal Load Balancing (HAZL)**, using the `- -experimental-endpoint-zone-weights` `experimentalArgs`.  We're going to omit the `- -experimental-endpoint-zone-weights` in the `experimentalArgs` for now, by commenting it out with a `#` in the manifest.
+
+Let's create the ControlPlane manifest:
 
 ```bash
 cat <<EOF > linkerd-control-plane-config.yaml
@@ -678,7 +682,139 @@ You can verify the health and configuration of Linkerd by running the `linkerd c
 linkerd check
 ```
 
+We should see something like the following:
+
+```bash
+kubernetes-api
+--------------
+√ can initialize the client
+√ can query the Kubernetes API
+
+kubernetes-version
+------------------
+√ is running the minimum Kubernetes API version
+
+linkerd-existence
+-----------------
+√ 'linkerd-config' config map exists
+√ heartbeat ServiceAccount exist
+√ control plane replica sets are ready
+√ no unschedulable pods
+√ control plane pods are ready
+√ cluster networks contains all node podCIDRs
+√ cluster networks contains all pods
+√ cluster networks contains all services
+
+linkerd-config
+--------------
+√ control plane Namespace exists
+√ control plane ClusterRoles exist
+√ control plane ClusterRoleBindings exist
+√ control plane ServiceAccounts exist
+√ control plane CustomResourceDefinitions exist
+√ control plane MutatingWebhookConfigurations exist
+√ control plane ValidatingWebhookConfigurations exist
+√ proxy-init container runs as root user if docker container runtime is used
+
+linkerd-identity
+----------------
+√ certificate config is valid
+√ trust anchors are using supported crypto algorithm
+√ trust anchors are within their validity period
+√ trust anchors are valid for at least 60 days
+√ issuer cert is using supported crypto algorithm
+√ issuer cert is within its validity period
+√ issuer cert is valid for at least 60 days
+√ issuer cert is issued by the trust anchor
+
+linkerd-webhooks-and-apisvc-tls
+-------------------------------
+√ proxy-injector webhook has valid cert
+√ proxy-injector cert is valid for at least 60 days
+√ sp-validator webhook has valid cert
+√ sp-validator cert is valid for at least 60 days
+√ policy-validator webhook has valid cert
+√ policy-validator cert is valid for at least 60 days
+
+linkerd-version
+---------------
+√ can determine the latest version
+√ cli is up-to-date
+
+control-plane-version
+---------------------
+√ can retrieve the control plane version
+√ control plane is up-to-date
+√ control plane and cli versions match
+
+linkerd-control-plane-proxy
+---------------------------
+√ control plane proxies are healthy
+‼ control plane proxies are up-to-date
+    some proxies are not running the current version:
+	* linkerd-identity-7d555cc69-sxcvm (preview-24.1.5-hazl)
+	* linkerd-proxy-injector-7b7cd7db4c-dbpg6 (preview-24.1.5-hazl)
+	* linkerd-destination-c8d8d684c-cbvnt (preview-24.1.5-hazl)
+    see https://linkerd.io/2/checks/#l5d-cp-proxy-version for hints
+‼ control plane proxies and cli versions match
+    linkerd-identity-7d555cc69-sxcvm running preview-24.1.5-hazl but cli running preview-24.1.5
+    see https://linkerd.io/2/checks/#l5d-cp-proxy-cli-version for hints
+
+linkerd-extension-checks
+------------------------
+√ namespace configuration for extensions
+
+linkerd-buoyant
+---------------
+√ Linkerd health ok
+√ Linkerd vulnerability report ok
+√ Linkerd data plane upgrade assistance ok
+√ Linkerd trust anchor rotation assistance ok
+
+linkerd-buoyant-agent
+---------------------
+√ linkerd-buoyant can determine the latest version
+√ linkerd-buoyant cli is up-to-date
+√ linkerd-buoyant Namespace exists
+√ linkerd-buoyant Namespace has correct labels
+√ agent-metadata ConfigMap exists
+√ buoyant-cloud-org-credentials Secret exists
+√ buoyant-cloud-org-credentials Secret has correct labels
+√ buoyant-cloud-agent ClusterRole exists
+√ buoyant-cloud-agent ClusterRoleBinding exists
+√ buoyant-cloud-agent ServiceAccount exists
+√ buoyant-cloud-agent Deployment exists
+√ buoyant-cloud-agent Deployment is running
+‼ buoyant-cloud-agent Deployment is injected
+    could not find proxy container for buoyant-cloud-agent-57d767d88b-bl65r pod
+    see https://linkerd.io/checks#l5d-buoyant for hints
+√ buoyant-cloud-agent Deployment is up-to-date
+√ buoyant-cloud-agent Deployment is running a single pod
+√ buoyant-cloud-metrics DaemonSet exists
+√ buoyant-cloud-metrics DaemonSet is running
+‼ buoyant-cloud-metrics DaemonSet is injected
+    could not find proxy container for buoyant-cloud-metrics-cmq8r pod
+    see https://linkerd.io/checks#l5d-buoyant for hints
+√ buoyant-cloud-metrics DaemonSet is up-to-date
+√ linkerd-control-plane-operator Deployment exists
+√ linkerd-control-plane-operator Deployment is running
+√ linkerd-control-plane-operator Deployment is up-to-date
+√ linkerd-control-plane-operator Deployment is running a single pod
+√ controlplanes.linkerd.buoyant.io CRD exists
+√ linkerd-data-plane-operator Deployment exists
+√ linkerd-data-plane-operator Deployment is running
+√ linkerd-data-plane-operator Deployment is up-to-date
+√ linkerd-data-plane-operator Deployment is running a single pod
+√ dataplanes.linkerd.buoyant.io CRD exists
+
+Status check results are √
+```
+
+Again, we may see a few warnings (!!), but we're good to proceed as long as the overall status check results are good.
+
 #### Step 8: Create the DataPlane Objects for `linkerd-buoyant`
+
+Now, we can deploy the **DataPlane**. Let's create the **DataPlane** manifest:
 
 ```bash
 cat <<EOF > linkerd-data-plane-config.yaml
@@ -694,15 +830,15 @@ spec:
 EOF
 ```
 
-Apply the DataPlane CRD configuration to have the **BEL** operator create the Control Plane:
+Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the DataPlane:
 
 ```bash
 kubectl apply -f linkerd-data-plane-config.yaml
 ```
 
-With that you will see the proxy get added to your **Buoyant Cloud Agent**.  You've successfully installed **Buoyant Enterprise for Linkerd**. You can now use **BEL** to manage and secure your Kubernetes applications.
+You'll see the proxy get added to your **Buoyant Cloud Agent**.  You've successfully installed **Buoyant Enterprise for Linkerd**. You can now use **BEL** to manage and secure your Kubernetes applications.
 
-To make adjustments to your Linkerd deployment simply edit and re-apply the previously-created `linkerd-control-plane-config.yaml` CRD config.
+To make adjustments to your **BEL ControlPlane** deployment *simply edit and re-apply the previously-created* `linkerd-control-plane-config.yaml` manifest.
 
 #### Step 9: Monitor Buoyant Cloud Metrics Rollout and Check Proxies
 
