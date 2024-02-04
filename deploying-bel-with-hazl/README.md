@@ -810,7 +810,7 @@ linkerd-buoyant-agent
 Status check results are √
 ```
 
-Again, we may see a few warnings (!!), but we're good to proceed as long as the overall status check results are good.
+Again, we may see a few warnings (!!), but we're good to proceed as long as the overall status is good.
 
 #### Step 8: Create the DataPlane Objects for `linkerd-buoyant`
 
@@ -830,11 +830,13 @@ spec:
 EOF
 ```
 
-Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the DataPlane:
+Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the **DataPlane**:
 
 ```bash
 kubectl apply -f linkerd-data-plane-config.yaml
 ```
+
+
 
 You'll see the proxy get added to your **Buoyant Cloud Agent**.  You've successfully installed **Buoyant Enterprise for Linkerd**. You can now use **BEL** to manage and secure your Kubernetes applications.
 
@@ -858,11 +860,13 @@ linkerd check --proxy -n linkerd-buoyant
 kubectl apply -k colorz
 ```
 
-We can check the status of Colorwheel by watching the rollout:
+We can check the status of the **Colorwheel** application by watching the rollout:
 
 ```bash
 watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
 ```
+
+With the **Colorwheel** application deployed, we now have some traffic to work with.
 
 ### Create Security Policy
 
