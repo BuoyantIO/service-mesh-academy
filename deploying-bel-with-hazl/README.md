@@ -844,17 +844,163 @@ To make adjustments to your **BEL ControlPlane** deployment *simply edit and re-
 
 #### Step 9: Monitor Buoyant Cloud Metrics Rollout and Check Proxies
 
+Now that both our **BEL ControlPlane** and **DataPlane** have been deployed, we'll check the status of our `buoyant-cloud-metrics` daemonset rollout:
+
 ```bash
 kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant
 ```
+
+Once the rollout is complete, we'll use `linkerd check --proxy` command to check the status of our **BEL** proxies:
 
 ```bash
 linkerd check --proxy -n linkerd-buoyant
 ```
 
+We should see something like the following:
+
+```bash
+kubernetes-api
+--------------
+√ can initialize the client
+√ can query the Kubernetes API
+
+kubernetes-version
+------------------
+√ is running the minimum Kubernetes API version
+
+linkerd-existence
+-----------------
+√ 'linkerd-config' config map exists
+√ heartbeat ServiceAccount exist
+√ control plane replica sets are ready
+√ no unschedulable pods
+√ control plane pods are ready
+√ cluster networks contains all node podCIDRs
+√ cluster networks contains all pods
+√ cluster networks contains all services
+
+linkerd-config
+--------------
+√ control plane Namespace exists
+√ control plane ClusterRoles exist
+√ control plane ClusterRoleBindings exist
+√ control plane ServiceAccounts exist
+√ control plane CustomResourceDefinitions exist
+√ control plane MutatingWebhookConfigurations exist
+√ control plane ValidatingWebhookConfigurations exist
+√ proxy-init container runs as root user if docker container runtime is used
+
+linkerd-identity
+----------------
+√ certificate config is valid
+√ trust anchors are using supported crypto algorithm
+√ trust anchors are within their validity period
+√ trust anchors are valid for at least 60 days
+√ issuer cert is using supported crypto algorithm
+√ issuer cert is within its validity period
+√ issuer cert is valid for at least 60 days
+√ issuer cert is issued by the trust anchor
+
+linkerd-webhooks-and-apisvc-tls
+-------------------------------
+√ proxy-injector webhook has valid cert
+√ proxy-injector cert is valid for at least 60 days
+√ sp-validator webhook has valid cert
+√ sp-validator cert is valid for at least 60 days
+√ policy-validator webhook has valid cert
+√ policy-validator cert is valid for at least 60 days
+
+linkerd-identity-data-plane
+---------------------------
+√ data plane proxies certificate match CA
+
+linkerd-version
+---------------
+√ can determine the latest version
+√ cli is up-to-date
+
+linkerd-control-plane-proxy
+---------------------------
+√ control plane proxies are healthy
+‼ control plane proxies are up-to-date
+    some proxies are not running the current version:
+	* linkerd-identity-7d555cc69-sxcvm (preview-24.1.5-hazl)
+	* linkerd-proxy-injector-7b7cd7db4c-dbpg6 (preview-24.1.5-hazl)
+	* linkerd-destination-c8d8d684c-cbvnt (preview-24.1.5-hazl)
+    see https://linkerd.io/2/checks/#l5d-cp-proxy-version for hints
+‼ control plane proxies and cli versions match
+    linkerd-identity-7d555cc69-sxcvm running preview-24.1.5-hazl but cli running preview-24.1.5
+    see https://linkerd.io/2/checks/#l5d-cp-proxy-cli-version for hints
+
+linkerd-data-plane
+------------------
+√ data plane namespace exists
+√ data plane proxies are ready
+‼ data plane is up-to-date
+    some proxies are not running the current version:
+	* buoyant-cloud-metrics-xjdd4 (preview-24.1.5-hazl)
+	* buoyant-cloud-metrics-sl5gw (preview-24.1.5-hazl)
+	* buoyant-cloud-metrics-mq97t (preview-24.1.5-hazl)
+	* buoyant-cloud-metrics-4288r (preview-24.1.5-hazl)
+	* buoyant-cloud-agent-7d8b6988fb-krn2j (preview-24.1.5-hazl)
+    see https://linkerd.io/2/checks/#l5d-data-plane-version for hints
+‼ data plane and cli versions match
+    buoyant-cloud-metrics-xjdd4 running preview-24.1.5-hazl but cli running preview-24.1.5
+    see https://linkerd.io/2/checks/#l5d-data-plane-cli-version for hints
+√ data plane pod labels are configured correctly
+√ data plane service labels are configured correctly
+√ data plane service annotations are configured correctly
+√ opaque ports are properly annotated
+
+linkerd-buoyant
+---------------
+√ Linkerd health ok
+√ Linkerd vulnerability report ok
+√ Linkerd data plane upgrade assistance ok
+√ Linkerd trust anchor rotation assistance ok
+
+linkerd-buoyant-agent
+---------------------
+√ linkerd-buoyant can determine the latest version
+√ linkerd-buoyant cli is up-to-date
+√ linkerd-buoyant Namespace exists
+√ linkerd-buoyant Namespace has correct labels
+√ agent-metadata ConfigMap exists
+√ buoyant-cloud-org-credentials Secret exists
+√ buoyant-cloud-org-credentials Secret has correct labels
+√ buoyant-cloud-agent ClusterRole exists
+√ buoyant-cloud-agent ClusterRoleBinding exists
+√ buoyant-cloud-agent ServiceAccount exists
+√ buoyant-cloud-agent Deployment exists
+√ buoyant-cloud-agent Deployment is running
+√ buoyant-cloud-agent Deployment is injected
+√ buoyant-cloud-agent Deployment is up-to-date
+√ buoyant-cloud-agent Deployment is running a single pod
+√ buoyant-cloud-metrics DaemonSet exists
+√ buoyant-cloud-metrics DaemonSet is running
+√ buoyant-cloud-metrics DaemonSet is injected
+√ buoyant-cloud-metrics DaemonSet is up-to-date
+√ linkerd-control-plane-operator Deployment exists
+√ linkerd-control-plane-operator Deployment is running
+√ linkerd-control-plane-operator Deployment is up-to-date
+√ linkerd-control-plane-operator Deployment is running a single pod
+√ controlplanes.linkerd.buoyant.io CRD exists
+√ linkerd-data-plane-operator Deployment exists
+√ linkerd-data-plane-operator Deployment is running
+√ linkerd-data-plane-operator Deployment is up-to-date
+√ linkerd-data-plane-operator Deployment is running a single pod
+√ dataplanes.linkerd.buoyant.io CRD exists
+
+Status check results are √
+```
+
+Again, we may see a few warnings (!!), but we're good to proceed as long as the overall status is good.
+
 ### Deploy the Colorwheel Application
 
-*Let's generate some traffic!*
+Now that **BEL** is fully deployed, we're going to need some traffic to observe.
+
+Deploy the **Colorwheel** application:
 
 ```bash
 kubectl apply -k colorz
@@ -863,7 +1009,7 @@ kubectl apply -k colorz
 We can check the status of the **Colorwheel** application by watching the rollout:
 
 ```bash
-watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
+watch -n 1 kubectl get pods -n colorz -o wide --sort-by .metadata.namespace
 ```
 
 With the **Colorwheel** application deployed, we now have some traffic to work with.
