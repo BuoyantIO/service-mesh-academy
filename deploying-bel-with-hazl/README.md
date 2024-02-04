@@ -570,8 +570,6 @@ We may see a few warnings (!!), but we're good to procced as long as the overall
 
 #### Step 5: Create the Identity Secret
 
-[Linkerd Trust Root CA & Identity Certificates & Keys](https://linkerd.io/2/tasks/generate-certificates/#generating-the-certificates-with-step)
-
 Now we're going to take those **certificates** and **keys** we created using `step`, and use the `ca.crt`, `issuer.crt`, and `issuer.key` to create a Kubernetes Secret that will be used by **Helm** at runtime.
 
 Generate the `linkerd-identity-secret.yaml` manifest:
@@ -597,7 +595,7 @@ Create the `linkerd-identity-secret` secret from the manifest:
 kubectl apply -f linkerd-identity-secret.yaml
 ```
 
-
+Checking the secrets on our cluster:
 
 ```bash
 kubectl get secrets -A
@@ -606,10 +604,17 @@ kubectl get secrets -A
 We should see our `linkerd-identity-secret` secret.
 
 ```bash
-
+NAMESPACE         NAME                                          TYPE                 DATA   AGE
+kube-system       k3s-serving                                   kubernetes.io/tls    2      64m
+kube-system       k3d-demo-cluster-agent-1.node-password.k3s    Opaque               1      64m
+kube-system       k3d-demo-cluster-agent-0.node-password.k3s    Opaque               1      64m
+kube-system       k3d-demo-cluster-agent-2.node-password.k3s    Opaque               1      64m
+kube-system       k3d-demo-cluster-server-0.node-password.k3s   Opaque               1      64m
+linkerd-buoyant   buoyant-cloud-org-credentials                 Opaque               2      19m
+linkerd-buoyant   linkerd-control-plane-validator               kubernetes.io/tls    2      19m
+linkerd-buoyant   sh.helm.release.v1.linkerd-buoyant.v1         helm.sh/release.v1   1      19m
+linkerd           linkerd-identity-issuer                       kubernetes.io/tls    3      6s
 ```
-
-
 
 Now that we have our `linkerd-identity-issuer` secret, we can proceed with creating the ControlPlane CRD configuration manifest.
 
