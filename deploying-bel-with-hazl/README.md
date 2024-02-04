@@ -459,6 +459,8 @@ With everything good and green, we can proceed with installing the **BEL operato
 
 #### Step 4: Install BEL Operator Components
 
+[Kubernetes Docs: Operator Pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
+
 Next, we'll install the **BEL operator**, which we will use to deploy the **ControlPlane** and **DataPlane** objects.
 
 Add the `linkerd-buoyant` Helm chart, and refresh **Helm** before installing the operator:
@@ -616,11 +618,13 @@ linkerd-buoyant   sh.helm.release.v1.linkerd-buoyant.v1         helm.sh/release.
 linkerd           linkerd-identity-issuer                       kubernetes.io/tls    3      6s
 ```
 
-Now that we have our `linkerd-identity-issuer` secret, we can proceed with creating the ControlPlane CRD configuration manifest.
+Now that we have our `linkerd-identity-issuer` secret, we can proceed with creating the **ControlPlane CRD** configuration manifest.
 
-#### Step 6: Create a Linkerd BEL Operator CRD
+#### Step 6: Create a ControlPlane Manifest
 
-Create a CRD config that will be used by the Linkerd BEL operator to install and manage the Linkerd control plane. You will need the `ca.crt` file from above.  This CRD configuration also enables High Availability Zonal Load Balancing (HAZL), using the `- -experimental-endpoint-zone-weights` `experimentalArgs`.  We're going to omit the `- -experimental-endpoint-zone-weights` in the `experimentalArgs` for now, by commenting it out with a `#` in the manifest.
+[Kubernetes Docs: Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
+
+We deploy the **BEL ControlPlane** and **DataPlane** using **Custom Resources**.  We'll create a manifest for each that contains their configuration. This **CRD configuration** also enables **High Availability Zonal Load Balancing (HAZL)**, using the `- -experimental-endpoint-zone-weights` `experimentalArgs`.  We're going to omit the `- -experimental-endpoint-zone-weights` in the `experimentalArgs` for now, by commenting it out with a `#` in the manifest.
 
 ```bash
 cat <<EOF > linkerd-control-plane-config.yaml
@@ -654,15 +658,13 @@ $(sed 's/^/          /' < certs/ca.crt )
 EOF
 ```
 
-#### Step 7: Install Linkerd
-
-Apply the ControlPlane CRD config to have the Linkerd BEL operator create the Linkerd control plane:
+Apply the ControlPlane CRD config to have the Linkerd BEL operator create the ControlPlane:
 
 ```bash
 kubectl apply -f linkerd-control-plane-config.yaml
 ```
 
-#### Step 8: Verify Linkerd Installation
+#### Step 7: Verify the ControlPlane Installation
 
 After the installation is complete, you can watch the deployment of the Control Plane using `kubectl`:
 
@@ -676,7 +678,7 @@ You can verify the health and configuration of Linkerd by running the `linkerd c
 linkerd check
 ```
 
-#### Step 9: Create the DataPlane Objects for `linkerd-buoyant`
+#### Step 8: Create the DataPlane Objects for `linkerd-buoyant`
 
 ```bash
 cat <<EOF > linkerd-data-plane-config.yaml
@@ -702,7 +704,7 @@ With that you will see the proxy get added to your **Buoyant Cloud Agent**.  You
 
 To make adjustments to your Linkerd deployment simply edit and re-apply the previously-created `linkerd-control-plane-config.yaml` CRD config.
 
-#### Step 10: Monitor Buoyant Cloud Metrics Rollout and Check Proxies
+#### Step 9: Monitor Buoyant Cloud Metrics Rollout and Check Proxies
 
 ```bash
 kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant
