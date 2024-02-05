@@ -323,7 +323,7 @@ Now that we have **mTLS** root certificates, we can deploy **BEL**.
 
 Next, we will walk through the process of installing **Buoyant Enterprise for Linkerd**. We're going to start with **HAZL** disabled, and will enable **HAZL** during testing.
 
-#### Step 1: Obtain Buoyant Enterprise for Linkerd (BEL) Trial Credentials
+#### Step 1: Obtain Buoyant Enterprise for Linkerd (BEL) Trial Credentials and Log In to Buoyant Cloud
 
 To get credentials for accessing **Buoyant Enterprise for Linkerd**, [sign up here](https://enterprise.buoyant.io/start_trial), and follow the instructions.
 
@@ -356,7 +356,17 @@ Once you're satisfied with the contents, `source` the file, to load the variable
 source settings.sh
 ```
 
-Your credentials have been loaded into environment variables, and we can proceed with installing **Buoyant Enterprise Linkerd (BEL)**.
+Now that you have a trial login, open an additional browser window or tab, and open **[Buoyant Cloud](https://buoyant.cloud)**.  *Log in with the credentials you used for your trial account*.
+
+<<What is Buoyant Cloud?>>
+
+![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
+
+<<Explain what we're seeing here>>
+
+We'll be working with **Buoyant Cloud** a little more in the coming sections.
+
+Our credentials have been loaded into environment variables, we're logged into **Buoyant Cloud**, and we can proceed with installing **Buoyant Enterprise Linkerd (BEL)**.
 
 #### Step 2: Download the BEL CLI
 
@@ -995,6 +1005,32 @@ Status check results are √
 Again, we may see a few warnings (!!), *but we're good to proceed as long as the overall status is good*.
 
 You'll see the proxy get added to your **Buoyant Cloud Agent**.  You've successfully installed **Buoyant Enterprise for Linkerd**. You can now use **BEL** to manage and secure your Kubernetes applications.
+
+#### Step 10: Examine the Status of Our Cluster Using Buoyant Cloud
+
+Earlier, when you signed up for a **Buoyant Enterprise for Linkerd** trial license, you were granted access to Buoyant Cloud for a short-term trial.
+
+<<What is Buoyant Cloud?>>
+
+![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
+
+<<Explain what we're seeing here>>
+
+<<Summary for Buoyant Cloud>>
+
+We'll be seeing more of Buoyant Cloud when in the **HAZL** demonstration.
 
 ## Demo 2: Observe the Effects of High Availability Zonal Load Balancing (HAZL)
 
