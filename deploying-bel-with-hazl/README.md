@@ -2,7 +2,7 @@
 
 ## deploying-bel-with-hazl
 
-### Jason Morgan | Tom Dean | Buoyant
+### Tom Dean | Jason Morgan | Buoyant
 
 ### Last edit: 2/4/2024
 
