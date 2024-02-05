@@ -219,10 +219,43 @@ Create the `demo-cluster` cluster, using the configuration file in `cluster/demo
 k3d cluster create -c cluster/demo-cluster.yaml --wait
 ```
 
+```bash
+INFO[0000] Using config file cluster/demo-cluster.yaml (k3d.io/v1alpha5#simple) 
+INFO[0000] Prep: Network                                
+INFO[0000] Created network 'multiaz'                    
+INFO[0000] Created image volume k3d-demo-cluster-images 
+INFO[0000] Starting new tools node...                   
+INFO[0000] Starting Node 'k3d-demo-cluster-tools'       
+INFO[0001] Creating node 'k3d-demo-cluster-server-0'    
+INFO[0001] Creating node 'k3d-demo-cluster-agent-0'     
+INFO[0001] Creating node 'k3d-demo-cluster-agent-1'     
+INFO[0001] Creating node 'k3d-demo-cluster-agent-2'     
+INFO[0001] Using the k3d-tools node to gather environment information 
+INFO[0001] Starting new tools node...                   
+INFO[0001] Starting Node 'k3d-demo-cluster-tools'       
+INFO[0002] Starting cluster 'demo-cluster'              
+INFO[0002] Starting servers...                          
+INFO[0002] Starting Node 'k3d-demo-cluster-server-0'    
+INFO[0005] Starting agents...                           
+INFO[0005] Starting Node 'k3d-demo-cluster-agent-1'     
+INFO[0005] Starting Node 'k3d-demo-cluster-agent-0'     
+INFO[0005] Starting Node 'k3d-demo-cluster-agent-2'     
+INFO[0010] All helpers already running.                 
+INFO[0010] Injecting records for hostAliases (incl. host.k3d.internal) and for 5 network members into CoreDNS configmap... 
+INFO[0012] Cluster 'demo-cluster' created successfully! 
+INFO[0012] You can now use it like this:                
+kubectl cluster-info
+```
+
 Check for our `demo-cluster` cluster:
 
 ```bash
 k3d cluster list
+```
+
+```bash
+NAME           SERVERS   AGENTS   LOADBALANCER
+demo-cluster   1/1       3/3      false
 ```
 
 Checking out cluster using `kubectl`:
@@ -233,11 +266,30 @@ Checking out cluster using `kubectl`:
 kubectl get nodes
 ```
 
+```bash
+NAME                        STATUS   ROLES                  AGE    VERSION
+k3d-demo-cluster-agent-1    Ready    <none>                 101s   v1.27.5+k3s1
+k3d-demo-cluster-agent-2    Ready    <none>                 99s    v1.27.5+k3s1
+k3d-demo-cluster-server-0   Ready    control-plane,master   104s   v1.27.5+k3s1
+k3d-demo-cluster-agent-0    Ready    <none>                 100s   v1.27.5+k3s1
+```
+
 *Pods:*
 
 ```bash
 watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
 ```
+
+```bash
+Every 1.0s: kubectl get pods -A -o wide --sort-by .metadata.namespace                                                           trans-am.dean33.com: Mon Feb  5 15:09:10 2024
+
+NAMESPACE     NAME                                     READY   STATUS    RESTARTS   AGE     IP          NODE                        NOMINATED NODE   READINESS GATES
+kube-system   local-path-provisioner-957fdf8bc-6dkl7   1/1     Running   0          2m21s   10.42.3.3   k3d-demo-cluster-server-0   <none>           <none>
+kube-system   coredns-77ccd57875-8jtff                 1/1     Running   0          2m21s   10.42.0.2   k3d-demo-cluster-agent-0    <none>           <none>
+kube-system   metrics-server-648b5df564-dm9r8          1/1     Running   0          2m21s   10.42.3.2   k3d-demo-cluster-server-0   <none>           <none>
+```
+
+***Use `CTRL-C` to exit the watch command.***
 
 Now that we have a Kubernetes cluster, we can proceed with deploying **Buoyant Enterprise for Linkerd**.
 
