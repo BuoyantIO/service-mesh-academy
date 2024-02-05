@@ -4,7 +4,7 @@
 
 ### Tom Dean | Jason Morgan | Buoyant
 
-### Last edit: 2/4/2024
+### Last edit: 2/5/2024
 
 ## Introduction
 
@@ -71,8 +71,7 @@ Finally, **Topology Hints** has a set of well-known constraints, including:
 - It does not work well with autoscaling. The autoscaler may not respond to increases in traffic, or respond by adding endpoints in other zones.
 - No affordance is made for cross-cluster traffic.
 
-These constraints have real-world implications. As one customer put it when trying **Istio** + **Topology Hints**: 
-"What we are seeing in *some* applications is that they won’t scale fast enough or at all (because maybe two or three pods out of 10 are getting the majority of the traffic and is not triggering the HPA) and *can cause a cyclic loop of pods crashing and the service going down*."
+These constraints have real-world implications. As one customer put it when trying **Istio** + **Topology Hints**: "What we are seeing in *some* applications is that they won’t scale fast enough or at all (because maybe two or three pods out of 10 are getting the majority of the traffic and is not triggering the HPA) and *can cause a cyclic loop of pods crashing and the service going down*."
 
 ### Demonstration: Overview
 
