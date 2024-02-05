@@ -1091,13 +1091,43 @@ Again, we may see a few warnings (!!), *but we're good to proceed as long as the
 
 We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use **BEL** to manage and secure our Kubernetes applications.
 
-#### Step 10: Examine the Status of Our Cluster Using Buoyant Cloud
+## Demo 2: Examine the Status of Our Cluster Using Buoyant Cloud
+
+### What is Buoyant Cloud?
+
+[Buoyant Cloud](https://buoyant.io/cloud)
 
 Earlier, when you signed up for a **Buoyant Enterprise for Linkerd** trial license, you were granted access to **Buoyant Cloud** for a short-term trial. You should already be logged in to **Buoyant Cloud**.
 
 <<What is Buoyant Cloud?>>
 
+### Our Cluster: A View Using Buoyant Cloud
+
 ![Buoyant Cloud: Overview - With Cluster](images/buoyant-cloud-overview-with-cluster.png)
+
+After installing **Buoyant Enterprise for Linkerd** in our cluster, we should see our **Buoyant Cloud** ***Overview*** page populated now.
+
+![Buoyant Cloud: Cluster - Initial State](images/buoyant-cloud-cluster-initial.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Cluster - Rename Cluster](images/buoyant-cloud-cluster-rename.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Cluster - Demo Cluster](images/buoyant-cloud-cluster-demo.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Control Plane](images/buoyant-cloud-control-plane.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Data Plane](images/buoyant-cloud-data-plane.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
 
 <<Explain what we're seeing here>>
 
