@@ -219,6 +219,8 @@ Create the `demo-cluster` cluster, using the configuration file in `cluster/demo
 k3d cluster create -c cluster/demo-cluster.yaml --wait
 ```
 
+Output:
+
 ```bash
 INFO[0000] Using config file cluster/demo-cluster.yaml (k3d.io/v1alpha5#simple) 
 INFO[0000] Prep: Network                                
@@ -253,6 +255,8 @@ Check for our `demo-cluster` cluster:
 k3d cluster list
 ```
 
+Output:
+
 ```bash
 NAME           SERVERS   AGENTS   LOADBALANCER
 demo-cluster   1/1       3/3      false
@@ -265,6 +269,8 @@ Checking out cluster using `kubectl`:
 ```bash
 kubectl get nodes
 ```
+
+Output:
 
 ```bash
 NAME                        STATUS   ROLES                  AGE    VERSION
@@ -279,6 +285,8 @@ k3d-demo-cluster-agent-0    Ready    <none>                 100s   v1.27.5+k3s1
 ```bash
 watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
 ```
+
+Output:
 
 ```bash
 Every 1.0s: kubectl get pods -A -o wide --sort-by .metadata.namespace                                                           trans-am.dean33.com: Mon Feb  5 15:09:10 2024
