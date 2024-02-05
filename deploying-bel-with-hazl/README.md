@@ -571,7 +571,7 @@ linkerd-buoyant-agent
 Status check results are √
 ```
 
-We may see a few warnings (!!), but we're good to proceed as long as the overall status check results are good.
+We may see a few warnings (!!), but we're good to proceed *as long as the overall status check results are good*.
 
 #### Step 5: Create the Identity Secret
 
@@ -813,7 +813,7 @@ linkerd-buoyant-agent
 Status check results are √
 ```
 
-Again, we may see a few warnings (!!), but we're good to proceed as long as the overall status is good.
+Again, we may see a few warnings (!!), but we're good to proceed *as long as the overall status is good*.
 
 #### Step 8: Create the DataPlane Objects for `linkerd-buoyant`
 
@@ -839,9 +839,7 @@ Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** 
 kubectl apply -f linkerd-data-plane-config.yaml
 ```
 
-You'll see the proxy get added to your **Buoyant Cloud Agent**.  You've successfully installed **Buoyant Enterprise for Linkerd**. You can now use **BEL** to manage and secure your Kubernetes applications.
-
-To make adjustments to your **BEL ControlPlane** deployment *simply edit and re-apply the previously-created* `linkerd-control-plane-config.yaml` manifest.
+To make adjustments to your **BEL ControlPlane** deployment *simply edit and re-apply the `linkerd-control-plane-config.yaml` manifest*.
 
 #### Step 9: Monitor Buoyant Cloud Metrics Rollout and Check Proxies
 
@@ -995,7 +993,9 @@ linkerd-buoyant-agent
 Status check results are √
 ```
 
-Again, we may see a few warnings (!!), but we're good to proceed as long as the overall status is good.
+Again, we may see a few warnings (!!), *but we're good to proceed as long as the overall status is good*.
+
+You'll see the proxy get added to your **Buoyant Cloud Agent**.  You've successfully installed **Buoyant Enterprise for Linkerd**. You can now use **BEL** to manage and secure your Kubernetes applications.
 
 ## Demo 2: Observe the Effects of High Availability Zonal Load Balancing (HAZL)
 
@@ -1003,7 +1003,7 @@ Again, we may see a few warnings (!!), but we're good to proceed as long as the 
 
 Now that **BEL** is fully deployed, we're going to need some traffic to observe.
 
-Deploy the **Colorwheel** application:
+Deploy the **Colorwheel** application, from the `colorz` directory:
 
 ```bash
 kubectl apply -k colorz
@@ -1028,11 +1028,21 @@ We can check the status of the **Colorwheel** application by watching the rollou
 watch -n 1 kubectl get pods -n colorz -o wide --sort-by .metadata.namespace
 ```
 
+If you don't have the `watch` command on your system, just run:
+
+```bash
+kubectl get pods -n colorz -o wide --sort-by .metadata.namespace
+```
+
 With the **Colorwheel** application deployed, we now have some traffic to work with.
 
-## Monitor Traffic Without HAZL
+### Monitor Traffic Without HAZL
 
-Let's take a look at traffic flow *without **HAZL** enabled* in **Buoyant Cloud**. This will give us a more visual representation of our baseline traffic.
+Let's take a look at traffic flow *without **HAZL** enabled* in **Buoyant Cloud**. This will give us a more visual representation of our baseline traffic. Head over to Buoyant Cloud, and 
+
+![Buoyant Cloud: Topology](images/colorwheel-no-hazl.png)
+
+<<Explain what we're seeing here>>
 
 ## Enable High Availability Zonal Load Balancing (HAZL)
 
@@ -1054,11 +1064,15 @@ kubectl apply -f linkerd-control-plane-config.yaml
 
 Now, we can see the effect **HAZL** has on the traffic in our multi-az cluster.
 
-## Monitor Traffic With HAZL Enabled
+### Monitor Traffic With HAZL Enabled
 
 Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoyant Cloud**.  This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-## Increase Number of Requests
+![Buoyant Cloud: Topology](images/colorwheel-with-hazl.png)
+
+<<Explain what we're seeing here>>
+
+### Increase Number of Requests
 
 <<Instructions on how to turn up requests>>
 
@@ -1066,13 +1080,21 @@ Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoy
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**.  This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-## Decrease Number of Requests
+![Buoyant Cloud: Topology](images/colorwheel-increase-requests-hazl.png)
+
+<<Explain what we're seeing here>>
+
+### Decrease Number of Requests
 
 <<Instructions on how to turn down requests>>
 
 ### Monitor Traffic Using Buoyant Cloud
 
 Let's take a look at what traffic looks like in **Buoyant Cloud**.  This will give us a more visual representation of the effect of **HAZL** on our traffic.
+
+![Buoyant Cloud: Topology](images/colorwheel-decrease-requests-hazl.png)
+
+<<Explain what we're seeing here>>
 
 ## Demo 3: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
 
@@ -1102,6 +1124,24 @@ kubectl apply -f linkerd-policy.yaml
 ```
 
 Let's take a look at our new Security Policies in Buoyant Cloud.
+
+### Examine Security Policies Using Buoyant Cloud
+
+Let's take a look at the Security Policies we just created in **Buoyant Cloud**.
+
+![Buoyant Cloud: Resources: Security Policies](images/colorwheel-security-policies-1.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Resources: Security Policies](images/colorwheel-security-policies-2.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Resources: Security Policies](images/colorwheel-security-policies-3.png)
+
+<<Explain what we're seeing here>>
+
+<<Security policies summary>>
 
 ## Summary
 
