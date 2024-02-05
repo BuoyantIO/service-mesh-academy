@@ -420,7 +420,7 @@ Now that you have a trial login, open an additional browser window or tab, and o
 
 ![Buoyant Cloud: Add Cluster](images/buoyant-cloud-addcluster.png)
 
-We'll be adding a cluster in a minute, so go ahead and click 'Cancel' for now.
+We'll be adding a cluster during **BEL** installation, so go ahead and click 'Cancel' for now.
 
 ![Buoyant Cloud: Overview](images/buoyant-cloud-overview.png)
 
