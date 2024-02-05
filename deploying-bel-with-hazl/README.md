@@ -453,7 +453,7 @@ linkerd version
 We should see the following:
 
 ```bash
-Client version: preview-24.1.5
+Client version: preview-24.2.1
 Server version: unavailable
 ```
 
@@ -663,7 +663,7 @@ type: kubernetes.io/tls
 EOF
 ```
 
-Create the `linkerd-identity-secret` secret from the manifest:
+Create the `linkerd-identity-issuer` secret from the `linkerd-identity-secret.yaml` manifest:
 
 ```bash
 kubectl apply -f linkerd-identity-secret.yaml
@@ -742,13 +742,38 @@ kubectl apply -f linkerd-control-plane-config.yaml
 
 #### Step 7: Verify the ControlPlane Installation
 
-After the installation is complete, you can watch the deployment of the Control Plane using `kubectl`:
+After the installation is complete, watch the deployment of the Control Plane using `kubectl`:
 
 ```bash
 watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
 ```
 
-You can verify the health and configuration of Linkerd by running the `linkerd check` command:
+We should see something similar to:
+
+```bash
+Every 1.0s: kubectl get pods -A -o wide --sort-by .metadata.namespace                                                           trans-am.dean33.com: Mon Feb  5 16:37:42 2024
+
+NAMESPACE         NAME                                               READY   STATUS    RESTARTS   AGE     IP           NODE                        NOMINATED NODE   READINESS
+ GATES
+kube-system       local-path-provisioner-957fdf8bc-6dkl7             1/1     Running   0          90m     10.42.3.3    k3d-demo-cluster-server-0   <none>           <none>
+kube-system       coredns-77ccd57875-8jtff                           1/1     Running   0          90m     10.42.0.2    k3d-demo-cluster-agent-0    <none>           <none>
+kube-system       metrics-server-648b5df564-dm9r8                    1/1     Running   0          90m     10.42.3.2    k3d-demo-cluster-server-0   <none>           <none>
+linkerd           linkerd-destination-7947d79867-rl2hg               3/4     Running   0          22s     10.42.3.9    k3d-demo-cluster-server-0   <none>           <none>
+linkerd           linkerd-proxy-injector-7fc465d98b-2bvtg            2/2     Running   0          22s     10.42.3.10   k3d-demo-cluster-server-0   <none>           <none>
+linkerd           linkerd-identity-66dcbc5d8c-fvh6w                  2/2     Running   0          22s     10.42.3.11   k3d-demo-cluster-server-0   <none>           <none>
+linkerd-buoyant   buoyant-cloud-metrics-tnlcg                        1/1     Running   0          5m11s   10.42.3.5    k3d-demo-cluster-server-0   <none>           <none>
+linkerd-buoyant   linkerd-data-plane-operator-74f8796dc8-88szz       1/1     Running   0          5m11s   10.42.3.6    k3d-demo-cluster-server-0   <none>           <none>
+linkerd-buoyant   buoyant-cloud-agent-57d767d88b-pfgvp               1/1     Running   0          5m11s   10.42.3.7    k3d-demo-cluster-server-0   <none>           <none>
+linkerd-buoyant   linkerd-control-plane-operator-5c765649f6-q5sgj    1/1     Running   0          5m11s   10.42.3.8    k3d-demo-cluster-server-0   <none>           <none>
+linkerd-buoyant   buoyant-cloud-metrics-vp65m                        1/1     Running   0          5m11s   10.42.1.3    k3d-demo-cluster-agent-1    <none>           <none>
+linkerd-buoyant   buoyant-cloud-metrics-sph88                        1/1     Running   0          5m11s   10.42.0.3    k3d-demo-cluster-agent-0    <none>           <none>
+linkerd-buoyant   buoyant-cloud-metrics-t95gj                        1/1     Running   0          5m11s   10.42.2.2    k3d-demo-cluster-agent-2    <none>           <none>
+linkerd-buoyant   linkerd-control-plane-validator-5d64f4bcd5-p688r   1/1     Running   0          5m11s   10.42.3.4    k3d-demo-cluster-server-0   <none>           <none
+```
+
+***Use `CTRL-C` to exit the watch command.***
+
+Let's can verify the health and configuration of Linkerd by running the `linkerd check` command:
 
 ```bash
 linkerd check
