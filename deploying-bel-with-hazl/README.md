@@ -213,7 +213,7 @@ If you'd like to *delete* any existing clusters you might have, use:
 k3d cluster delete <<cluster-name>>
 ```
 
-Create the `demo-cluster` cluster, using the configuration file in `cluster/hazl.yaml`:
+Create the `demo-cluster` cluster, using the configuration file in `cluster/demo-cluster.yaml`:
 
 ```bash
 k3d cluster create -c cluster/demo-cluster.yaml --wait
@@ -239,7 +239,7 @@ kubectl get nodes
 watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
 ```
 
-Now that we have a Kubernetes cluster, we can proceed with deploying Buoyant Enterprise for Linkerd.
+Now that we have a Kubernetes cluster, we can proceed with deploying **Buoyant Enterprise for Linkerd**.
 
 ### Task 3: Create mTLS Root Certificates
 
@@ -249,11 +249,11 @@ Now that we have a Kubernetes cluster, we can proceed with deploying Buoyant Ent
 
 In order to support **mTLS** connections between *meshed pods*, **Linkerd** needs a **trust anchor certificate** and an **issuer certificate** with its corresponding **key**.
 
-Since we're using **Helm** to install **BEL**, it’s not possible to automatically generate these certificates and keys. We'll need to generate certificates and keys, and we'll use `step`.
+Since we're using **Helm** to install **BEL**, it’s not possible to automatically generate these certificates and keys. We'll need to generate certificates and keys, and we'll use `step`for this.
 
 #### Create Certificates Using `step`
 
-You can generate these certificates using a tool like `openssl` or `step`. All certificates must use the ECDSA P-256 algorithm which is the default for step. To generate ECDSA P-256 certificates with openssl, you can use the `openssl ecparam -name prime256v1` command. In this section, we’ll walk you through how to to use the `step` CLI to do this.
+You can generate certificates using a tool like `step`. All certificates must use the ECDSA P-256 algorithm which is the default for `step`. In this section, we’ll walk you through how to to use the `step` CLI to do this.
 
 ##### Step 1: Trust Anchor Certificate
 
@@ -270,15 +270,15 @@ step certificate create root.linkerd.cluster.local ca.crt ca.key \
 --profile root-ca --no-password --insecure
 ```
 
-This generates the `ca.crt` and `ca.key` files. The `ca.crt` file is what you need to pass to the `--identity-trust-anchors-file` option when installing Linkerd with the CLI, and the `identityTrustAnchorsPEM` value when installing the `linkerd-control-plane` chart with Helm.
-
 *Note: We use `--no-password` `--insecure` to avoid encrypting those files with a passphrase.*
+
+This generates the `ca.crt` and `ca.key` files. The `ca.crt` file is what you need to pass to the `--identity-trust-anchors-file` option when installing **Linkerd** with the CLI, and the `identityTrustAnchorsPEM` value when installing the `linkerd-control-plane` chart with Helm.
 
 For a longer-lived trust anchor certificate, pass the `--not-after` argument to the step command with the desired value (e.g. `--not-after=87600h`).
 
-##### Step 2: Issuer Certificate and Key
+##### Step 2: Generate Intermediate Certificate and Key Pair
 
-Next, generate the intermediate certificate and key pair that will be used to sign the Linkerd proxies’ CSR.
+Next, generate the intermediate certificate and key pair that will be used to sign the **Linkerd** proxies’ CSR.
 
 ```bash
 step certificate create identity.linkerd.cluster.local issuer.crt issuer.key \
@@ -313,7 +313,7 @@ Change back to the parent directory:
 cd ..
 ```
 
-Now that we have mTLS root certificates, we can deploy BEL.
+Now that we have **mTLS** root certificates, we can deploy **BEL**.
 
 ### Task 4: Deploy Buoyant Enterprise for Linkerd With HAZL Disabled
 
@@ -325,7 +325,7 @@ Next, we will walk through the process of installing **Buoyant Enterprise for Li
 
 #### Step 1: Obtain Buoyant Enterprise for Linkerd (BEL) Trial Credentials
 
-To get credentials for accessing Buoyant Enterprise for Linkerd, [sign up here](https://enterprise.buoyant.io/start_trial), and follow the instructions.
+To get credentials for accessing **Buoyant Enterprise for Linkerd**, [sign up here](https://enterprise.buoyant.io/start_trial), and follow the instructions.
 
 You should end up with a set of credentials in environment variables like this:
 
@@ -641,12 +641,12 @@ metadata:
 spec:
   components:
     linkerd:
-      version: preview-24.1.5
+      version: preview-24.2.1
       license: $BUOYANT_LICENSE
       controlPlaneConfig:
         proxy:
           image:
-            version: preview-24.1.5-hazl
+            version: preview-24.2.1-hazl
         identityTrustAnchorsPEM: |
 $(sed 's/^/          /' < certs/ca.crt )
         identity:
