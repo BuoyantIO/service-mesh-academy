@@ -1097,7 +1097,7 @@ Earlier, when you signed up for a **Buoyant Enterprise for Linkerd** trial licen
 
 <<What is Buoyant Cloud?>>
 
-![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
+![Buoyant Cloud: Overview - With Cluster](images/buoyant-cloud-overview-with-cluster.png)
 
 <<Explain what we're seeing here>>
 
