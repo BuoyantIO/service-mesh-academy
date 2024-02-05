@@ -748,7 +748,7 @@ After the installation is complete, watch the deployment of the Control Plane us
 watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
 ```
 
-We should see something similar to:
+Once the Control Plane is deployed, we should see something similar to:
 
 ```bash
 Every 1.0s: kubectl get pods -A -o wide --sort-by .metadata.namespace                                                           trans-am.dean33.com: Mon Feb  5 16:37:42 2024
@@ -849,12 +849,12 @@ linkerd-control-plane-proxy
 √ control plane proxies are healthy
 ‼ control plane proxies are up-to-date
     some proxies are not running the current version:
-	* linkerd-identity-7d555cc69-sxcvm (preview-24.1.5-hazl)
-	* linkerd-proxy-injector-7b7cd7db4c-dbpg6 (preview-24.1.5-hazl)
-	* linkerd-destination-c8d8d684c-cbvnt (preview-24.1.5-hazl)
+	* linkerd-identity-66dcbc5d8c-fvh6w (preview-24.2.1-hazl)
+	* linkerd-proxy-injector-7fc465d98b-2bvtg (preview-24.2.1-hazl)
+	* linkerd-destination-7947d79867-rl2hg (preview-24.2.1-hazl)
     see https://linkerd.io/2/checks/#l5d-cp-proxy-version for hints
 ‼ control plane proxies and cli versions match
-    linkerd-identity-7d555cc69-sxcvm running preview-24.1.5-hazl but cli running preview-24.1.5
+    linkerd-identity-66dcbc5d8c-fvh6w running preview-24.2.1-hazl but cli running preview-24.2.1
     see https://linkerd.io/2/checks/#l5d-cp-proxy-cli-version for hints
 
 linkerd-extension-checks
@@ -883,14 +883,14 @@ linkerd-buoyant-agent
 √ buoyant-cloud-agent Deployment exists
 √ buoyant-cloud-agent Deployment is running
 ‼ buoyant-cloud-agent Deployment is injected
-    could not find proxy container for buoyant-cloud-agent-57d767d88b-bl65r pod
+    could not find proxy container for buoyant-cloud-agent-57d767d88b-pfgvp pod
     see https://linkerd.io/checks#l5d-buoyant for hints
 √ buoyant-cloud-agent Deployment is up-to-date
 √ buoyant-cloud-agent Deployment is running a single pod
 √ buoyant-cloud-metrics DaemonSet exists
 √ buoyant-cloud-metrics DaemonSet is running
 ‼ buoyant-cloud-metrics DaemonSet is injected
-    could not find proxy container for buoyant-cloud-metrics-cmq8r pod
+    could not find proxy container for buoyant-cloud-metrics-t95gj pod
     see https://linkerd.io/checks#l5d-buoyant for hints
 √ buoyant-cloud-metrics DaemonSet is up-to-date
 √ linkerd-control-plane-operator Deployment exists
@@ -1017,12 +1017,12 @@ linkerd-control-plane-proxy
 √ control plane proxies are healthy
 ‼ control plane proxies are up-to-date
     some proxies are not running the current version:
-	* linkerd-identity-7d555cc69-sxcvm (preview-24.1.5-hazl)
-	* linkerd-proxy-injector-7b7cd7db4c-dbpg6 (preview-24.1.5-hazl)
-	* linkerd-destination-c8d8d684c-cbvnt (preview-24.1.5-hazl)
+	* linkerd-identity-66dcbc5d8c-fvh6w (preview-24.2.1-hazl)
+	* linkerd-proxy-injector-7fc465d98b-2bvtg (preview-24.2.1-hazl)
+	* linkerd-destination-7947d79867-rl2hg (preview-24.2.1-hazl)
     see https://linkerd.io/2/checks/#l5d-cp-proxy-version for hints
 ‼ control plane proxies and cli versions match
-    linkerd-identity-7d555cc69-sxcvm running preview-24.1.5-hazl but cli running preview-24.1.5
+    linkerd-identity-66dcbc5d8c-fvh6w running preview-24.2.1-hazl but cli running preview-24.2.1
     see https://linkerd.io/2/checks/#l5d-cp-proxy-cli-version for hints
 
 linkerd-data-plane
@@ -1031,14 +1031,14 @@ linkerd-data-plane
 √ data plane proxies are ready
 ‼ data plane is up-to-date
     some proxies are not running the current version:
-	* buoyant-cloud-metrics-xjdd4 (preview-24.1.5-hazl)
-	* buoyant-cloud-metrics-sl5gw (preview-24.1.5-hazl)
-	* buoyant-cloud-metrics-mq97t (preview-24.1.5-hazl)
-	* buoyant-cloud-metrics-4288r (preview-24.1.5-hazl)
-	* buoyant-cloud-agent-7d8b6988fb-krn2j (preview-24.1.5-hazl)
+	* buoyant-cloud-metrics-td9rq (preview-24.2.1-hazl)
+	* buoyant-cloud-metrics-59psz (preview-24.2.1-hazl)
+	* buoyant-cloud-metrics-6tzgt (preview-24.2.1-hazl)
+	* buoyant-cloud-metrics-22ppw (preview-24.2.1-hazl)
+	* buoyant-cloud-agent-7f97666465-s4krd (preview-24.2.1-hazl)
     see https://linkerd.io/2/checks/#l5d-data-plane-version for hints
 ‼ data plane and cli versions match
-    buoyant-cloud-metrics-xjdd4 running preview-24.1.5-hazl but cli running preview-24.1.5
+    buoyant-cloud-metrics-td9rq running preview-24.2.1-hazl but cli running preview-24.2.1
     see https://linkerd.io/2/checks/#l5d-data-plane-cli-version for hints
 √ data plane pod labels are configured correctly
 √ data plane service labels are configured correctly
@@ -1089,11 +1089,11 @@ Status check results are √
 
 Again, we may see a few warnings (!!), *but we're good to proceed as long as the overall status is good*.
 
-You'll see the proxy get added to your **Buoyant Cloud Agent**.  You've successfully installed **Buoyant Enterprise for Linkerd**. You can now use **BEL** to manage and secure your Kubernetes applications.
+We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use **BEL** to manage and secure our Kubernetes applications.
 
 #### Step 10: Examine the Status of Our Cluster Using Buoyant Cloud
 
-Earlier, when you signed up for a **Buoyant Enterprise for Linkerd** trial license, you were granted access to Buoyant Cloud for a short-term trial.
+Earlier, when you signed up for a **Buoyant Enterprise for Linkerd** trial license, you were granted access to **Buoyant Cloud** for a short-term trial. You should already be logged in to **Buoyant Cloud**.
 
 <<What is Buoyant Cloud?>>
 
