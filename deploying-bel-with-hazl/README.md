@@ -358,13 +358,11 @@ source settings.sh
 
 Now that you have a trial login, open an additional browser window or tab, and open **[Buoyant Cloud](https://buoyant.cloud)**.  *Log in with the credentials you used for your trial account*.
 
-<<What is Buoyant Cloud?>>
-
 ![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
 
 <<Explain what we're seeing here>>
 
-We'll be working with **Buoyant Cloud** a little more in the coming sections.
+We'll be working with **Buoyant Cloud** a little more in the coming sections, so we'll set that aside for the moment.
 
 Our credentials have been loaded into environment variables, we're logged into **Buoyant Cloud**, and we can proceed with installing **Buoyant Enterprise Linkerd (BEL)**.
 
