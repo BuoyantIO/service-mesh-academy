@@ -4,15 +4,13 @@
 
 ### Jason Morgan | Tom Dean | Buoyant
 
-### Last edit: 2/3/2024
+### Last edit: 2/4/2024
 
 ## Introduction
 
-In this *hands-on demonstration*, we will deploy Buoyant **Enterprise for Linkerd** on a `k3d` Kubernetes cluster and will demonstrate how to quickly enable **High Availability Zonal Load Balancing (HAZL)**.  We'll then take a look at how **HAZL** works to keep network traffic in-zone where possible, and explore Security Policy generation.
+In this *hands-on demonstration*, we will deploy **Buoyant Enterprise for Linkerd** and demonstrate how to enable **High Availability Zonal Load Balancing (HAZL)**.  We'll then take a look at how **HAZL** works to keep network traffic *in-zone* where possible, and explore **Security Policy generation**.
 
-Feel free to follow along with *your own instance* if you'd like, using the resources and instructions provided in this repository.
-
-### What is Buoyant Enterprise for Linkerd (BEL)
+### Buoyant Enterprise for Linkerd (BEL)
 
 [Buoyant Enterprise for Linkerd](https://buoyant.io/enterprise-linkerd)
 
@@ -28,7 +26,7 @@ Feel free to follow along with *your own instance* if you'd like, using the reso
 
 We're going to try out **Security Policy Generation** and **HAZL** in this demo, but remember that we'll get all the **BEL** features, ***except for FIPS***, which isn't included in our Trial license.
 
-### What is High Availability Zonal Load Balancing (HAZL)?
+### High Availability Zonal Load Balancing (HAZL)
 
 **High Availability Zonal Load Balancing (HAZL)** is a dynamic request-level load balancer in **Buoyant Enterprise for Linkerd** that balances **HTTP** and **gRPC** traffic in environments with **multiple availability zones**. For Kubernetes clusters deployed across multiple zones, **HAZL** can **dramatically reduce cloud spend by minimizing cross-zone traffic**.
 
@@ -38,7 +36,7 @@ In **multi-zone** environments, **HAZL** can:
 
 - **Cut cloud spend** by eliminating cross-zone traffic both within and across cluster boundaries;
 - **Improve system reliability** by distributing traffic to additional zones as the system comes under stress;
-- **Prevent failures before they happe** by quickly reacting to increases in latency before the system begins to fail.
+- **Prevent failures before they happen** by quickly reacting to increases in latency before the system begins to fail.
 - **Preserve zone affinity for cross-cluster calls**, allowing for cost reduction in multi-cluster environments.
 
 Like **Linkerd** itself, **HAZL** is designed to *"just work"*. It works without operator involvement, can be applied to any Kubernetes service that speaks **HTTP** / **gRPC** regardless of the number of endpoints or distribution of workloads and traffic load across zones, and in the majority of cases *requires no tuning or configuration*.
@@ -58,8 +56,9 @@ In short: under normal conditions, **HAZL** keeps all traffic within the zone, b
 
 **HAZL** will also apply these same principles to cross-cluster / multi-cluster calls: it will preserve zone locality by default, but allow cross-zone traffic if necessary to preserve reliability.
 
-### HAZL vs Topology Hints
-**HAZL** was designed in response to limitations seen by customers using Kubernetes's native **Topology Hints** (aka **Topology-aware Routing**) mechanism. These limitations are shared by native Kubernetes balancing (**kubeproxy**) as well as systems such as open source **Linkerd** and **Istio** that make use of **Topology Hint**s to make routing decisions.
+### How High Availability Zonal Load Balancing (HAZL) vs Topology Hints
+
+**HAZL** was designed in response to limitations seen by customers using Kubernetes's native **Topology Hints** (aka **Topology-aware Routing**) mechanism. These limitations are shared by native Kubernetes balancing (**kubeproxy**) as well as systems such as open source **Linkerd** and **Istio** that make use of **Topology Hints** to make routing decisions.
 
 Within these systems, the endpoints for each service are allocated ahead of time to specific zones by the **Topology Hints** mechanism. This distribution is done at the Kubernetes API level, and attempts to allocate endpoints within the same zone (but note this behavior isn't guaranteed, and the Topology Hints mechanism may allocate endpoints from other zones). Once this allocation is done, it is static until endpoints are added or removed. It does not take into account traffic volumes, latency, or service health (except indirectly, if failing endpoints get removed via health checks).
 
@@ -77,6 +76,8 @@ These constraints have real-world implications. As one customer put it when tryi
 
 ### Demonstration: Overview
 
+In this *hands-on demonstration*, we will deploy **Buoyant Enterprise for Linkerd** on a `k3d` Kubernetes cluster and will demonstrate how to quickly enable **High Availability Zonal Load Balancing (HAZL)**.  We'll then take a look at how **HAZL** works to keep network traffic *in-zone* where possible, and explore **Security Policy generation**.
+
 **In this demonstration, we're going to do the following:**
 
 - Deploy a `k3d` Kubernetes cluster
@@ -92,6 +93,8 @@ These constraints have real-world implications. As one customer put it when tryi
 - Decrease the number of requests in the **Colorwheel** application
   - Monitor the decreased traffic from the **Colorwheel** application
   - Observe the effect on cross-az traffic
+
+Feel free to follow along with *your own instance* if you'd like, using the resources and instructions provided in this repository.
 
 ### Demo: Prerequisites
 
@@ -157,7 +160,7 @@ First, we'll deploy a Kubernetes cluster using `k3d` and deploy Buoyant Enterpri
 
 To get the resources we will be using in this demonstration, you will need to clone a copy of the GitHub `BuoyantIO/service-mesh-academy` repository. We'll be using the materials in the `service-mesh-academy/deploying-bel-with-hazl` subdirectory.
 
-Clone the `BuoyantIO/service-mesh-academy` GitHub repository to your working directory:
+Clone the `BuoyantIO/service-mesh-academy` GitHub repository to your preferred working directory:
 
 ```bash
 git clone https://github.com/BuoyantIO/service-mesh-academy.git
@@ -179,16 +182,16 @@ You should see the following:
 
 ```bash
 total 112
-drwxrwxr-x   9 tdean  staff    288 Feb  3 13:47 .
-drwxr-xr-x  23 tdean  staff    736 Feb  2 13:05 ..
--rw-r--r--   1 tdean  staff  21495 Feb  3 13:43 README.md
--rwxr-xr-x   1 tdean  staff   9367 Feb  2 13:37 bel-demo-full-repo.sh
--rwxr-xr-x   1 tdean  staff  12581 Feb  2 13:37 bel-demo-hazl-policy.sh
--rwxr-xr-x   1 tdean  staff  12581 Feb  2 13:37 bel-demo-install.sh
-drwxr-xr-x   3 tdean  staff     96 Feb  2 13:14 certs
-drwxr-xr-x   3 tdean  staff     96 Feb  2 13:14 cluster
-drwxr-xr-x   9 tdean  staff    288 Feb  2 13:14 colorz
--rwxr-xr-x   1 tdean  staff   3963 Feb  2 13:14 demo-magic.sh
+drwxrwxr-x   9 user  staff    288 Feb  3 13:47 .
+drwxr-xr-x  23 user  staff    736 Feb  2 13:05 ..
+-rw-r--r--   1 user  staff  21495 Feb  3 13:43 README.md
+-rwxr-xr-x   1 user  staff   9367 Feb  2 13:37 bel-demo-full-repo.sh
+-rwxr-xr-x   1 user  staff  12581 Feb  2 13:37 bel-demo-hazl-policy.sh
+-rwxr-xr-x   1 user  staff  12581 Feb  2 13:37 bel-demo-install.sh
+drwxr-xr-x   3 user  staff     96 Feb  2 13:14 certs
+drwxr-xr-x   3 user  staff     96 Feb  2 13:14 cluster
+drwxr-xr-x   9 user  staff    288 Feb  2 13:14 colorz
+-rwxr-xr-x   1 user  staff   3963 Feb  2 13:14 demo-magic.sh
 ```
 
 With the assets in place, we can proceed to creating a cluster with `k3d`.
@@ -296,13 +299,13 @@ We should see:
 
 ```bash
 total 40
-drwxr-xr-x   7 tdean  staff  224 Feb  2 13:23 .
-drwxr-xr-x  10 tdean  staff  320 Feb  3 16:53 ..
--rw-r--r--   1 tdean  staff   53 Feb  2 13:18 README.md
--rw-------   1 tdean  staff  599 Feb  2 13:23 ca.crt
--rw-------   1 tdean  staff  227 Feb  2 13:23 ca.key
--rw-------   1 tdean  staff  648 Feb  2 13:23 issuer.crt
--rw-------   1 tdean  staff  227 Feb  2 13:23 issuer.key
+drwxr-xr-x   7 user  staff  224 Feb  2 13:23 .
+drwxr-xr-x  10 user  staff  320 Feb  3 16:53 ..
+-rw-r--r--   1 user  staff   53 Feb  2 13:18 README.md
+-rw-------   1 user  staff  599 Feb  2 13:23 ca.crt
+-rw-------   1 user  staff  227 Feb  2 13:23 ca.key
+-rw-------   1 user  staff  648 Feb  2 13:23 issuer.crt
+-rw-------   1 user  staff  227 Feb  2 13:23 issuer.key
 ```
 
 Change back to the parent directory:
