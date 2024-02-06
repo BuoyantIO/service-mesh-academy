@@ -1278,6 +1278,43 @@ Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoy
 
 <<Instructions on how to turn up requests>>
 
+```bash
+kubectl get cm -n colorz
+```
+
+```bash
+kubectl edit -n colorz cm brush-config
+```
+
+We're going to change the value of `requestsPerSecond: 50` to `requestsPerSecond: 300`.
+
+```bash
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
+data:
+  config.yml: |
+    requestsPerSecond: 300
+    reportIntervalSeconds: 10
+    uri: http://paint.colorz.svc.cluster.local
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"config.yml":"requestsPerSecond: 50\nreportIntervalSeconds: 10\nuri: http://paint.colorz.svc.cluster.local\n"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app":"brush"},"name":"brush-config","namespace":"colorz"}}
+  creationTimestamp: "2024-02-06T02:35:53Z"
+  labels:
+    app: brush
+  name: brush-config
+  namespace: colorz
+  resourceVersion: "21137"
+  uid: 8007b421-163c-4650-9ca6-a99f38e3d2c8
+```
+
+Once we save our change with `:wq`, the number of requests will go from 50 to 300. Give things a minute to develop, then head over to **Buoyant Cloud**.
+
 ### Monitor Traffic Using Buoyant Cloud
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**.  This will give us a more visual representation of the effect of **HAZL** on our traffic.
@@ -1289,6 +1326,39 @@ Let's take a look at what the increased traffic looks like in **Buoyant Cloud**.
 ### Decrease Number of Requests
 
 <<Instructions on how to turn down requests>>
+
+```bash
+kubectl edit -n colorz cm brush-config
+```
+
+We're going to change the value of `requestsPerSecond: 300` to `requestsPerSecond: 50`.
+
+```bash
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
+data:
+  config.yml: |
+    requestsPerSecond: 50
+    reportIntervalSeconds: 10
+    uri: http://paint.colorz.svc.cluster.local
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"config.yml":"requestsPerSecond: 50\nreportIntervalSeconds: 10\nuri: http://paint.colorz.svc.cluster.local\n"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app":"brush"},"name":"brush-config","namespace":"colorz"}}
+  creationTimestamp: "2024-02-06T02:35:53Z"
+  labels:
+    app: brush
+  name: brush-config
+  namespace: colorz
+  resourceVersion: "21137"
+  uid: 8007b421-163c-4650-9ca6-a99f38e3d2c8
+```
+
+Once we save our change with `:wq`, the number of requests will go from 300 to 50. Give things a minute to develop, then head over to **Buoyant Cloud**.
 
 ### Monitor Traffic Using Buoyant Cloud
 
@@ -1316,13 +1386,249 @@ We've put these policies into a manifest in the `linkerd-policy.yaml`.  Let's ta
 more linkerd-policy.yaml
 ```
 
-```bash
+We can see the policies that `linkerd policy generate` created.
 
+```bash
+apiVersion: policy.linkerd.io/v1beta2
+kind: Server
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: blue-8080
+  namespace: colorz
+spec:
+  podSelector:
+    matchLabels:
+      app: paint
+      color: blue
+  port: 8080
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: blue-8080
+  namespace: colorz
+spec:
+  identityRefs:
+  - group: ""
+    kind: ServiceAccount
+    name: default
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: blue-8080
+  namespace: colorz
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: MeshTLSAuthentication
+    name: blue-8080
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: blue-8080
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: NetworkAuthentication
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: blue-8080-allow
+  namespace: colorz
+spec:
+  networks:
+  - cidr: 0.0.0.0/0
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: blue-8080-allow
+  namespace: colorz
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: NetworkAuthentication
+    name: blue-8080-allow
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: blue-8080
+---
+apiVersion: policy.linkerd.io/v1beta2
+kind: Server
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: green-8080
+  namespace: colorz
+spec:
+  podSelector:
+    matchLabels:
+      app: paint
+      color: green
+  port: 8080
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: green-8080
+  namespace: colorz
+spec:
+  identityRefs:
+  - group: ""
+    kind: ServiceAccount
+    name: default
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: green-8080
+  namespace: colorz
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: MeshTLSAuthentication
+    name: green-8080
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: green-8080
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: NetworkAuthentication
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: green-8080-allow
+  namespace: colorz
+spec:
+  networks:
+  - cidr: 0.0.0.0/0
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: green-8080-allow
+  namespace: colorz
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: NetworkAuthentication
+    name: green-8080-allow
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: green-8080
+---
+apiVersion: policy.linkerd.io/v1beta2
+kind: Server
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: red-8080
+  namespace: colorz
+spec:
+  podSelector:
+    matchLabels:
+      app: paint
+      color: red
+  port: 8080
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: red-8080
+  namespace: colorz
+spec:
+  identityRefs:
+  - group: ""
+    kind: ServiceAccount
+    name: default
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: red-8080
+  namespace: colorz
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: MeshTLSAuthentication
+    name: red-8080
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: red-8080
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: NetworkAuthentication
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: red-8080-allow
+  namespace: colorz
+spec:
+  networks:
+  - cidr: 0.0.0.0/0
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  annotations:
+    buoyant.io/created-by: linkerd policy generate
+  name: red-8080-allow
+  namespace: colorz
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: NetworkAuthentication
+    name: red-8080-allow
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: red-8080
 ```
 
 Now, let's apply the policies to our cluster:
 ```bash
 kubectl apply -f linkerd-policy.yaml
+```
+
+We should see:
+
+```bash
+server.policy.linkerd.io/blue-8080 created
+meshtlsauthentication.policy.linkerd.io/blue-8080 created
+authorizationpolicy.policy.linkerd.io/blue-8080 created
+networkauthentication.policy.linkerd.io/blue-8080-allow created
+authorizationpolicy.policy.linkerd.io/blue-8080-allow created
+server.policy.linkerd.io/green-8080 created
+meshtlsauthentication.policy.linkerd.io/green-8080 created
+authorizationpolicy.policy.linkerd.io/green-8080 created
+networkauthentication.policy.linkerd.io/green-8080-allow created
+authorizationpolicy.policy.linkerd.io/green-8080-allow created
+server.policy.linkerd.io/red-8080 created
+meshtlsauthentication.policy.linkerd.io/red-8080 created
+authorizationpolicy.policy.linkerd.io/red-8080 created
+networkauthentication.policy.linkerd.io/red-8080-allow created
+authorizationpolicy.policy.linkerd.io/red-8080-allow created
 ```
 
 Let's take a look at our new Security Policies in Buoyant Cloud.
