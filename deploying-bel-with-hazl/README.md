@@ -1091,6 +1091,11 @@ Again, we may see a few warnings (!!), *but we're good to proceed as long as the
 
 We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use **BEL** to manage and secure our Kubernetes applications.
 
+### Summary: Deploy a Kubernetes Cluster With BEL
+
+<<Summarize Deploy a Kubernetes Cluster With BEL>>
+
+
 ## Demo 2: Examine the Status of Our Cluster Using Buoyant Cloud
 
 ### What is Buoyant Cloud?
@@ -1171,6 +1176,7 @@ After installing **Buoyant Enterprise for Linkerd** in our cluster, we should se
 
 We'll be seeing more of Buoyant Cloud when in the **High Availability Zonal Load Balancing (HAZL)** demonstration.
 
+
 ## Demo 3: Observe the Effects of High Availability Zonal Load Balancing (HAZL)
 
 ### Deploy the Colorwheel Application
@@ -1246,7 +1252,7 @@ Let's take a look at traffic flow *without **HAZL** enabled* in **Buoyant Cloud*
 
 <<Explain what we're seeing here>>
 
-## Enable High Availability Zonal Load Balancing (HAZL)
+### Enable High Availability Zonal Load Balancing (HAZL)
 
 Let's take a look at how quick and easy we can enable **High Availability Zonal Load Balancing (HAZL)**.
 
@@ -1367,6 +1373,11 @@ Let's take a look at what traffic looks like in **Buoyant Cloud**.  This will gi
 ![Buoyant Cloud: Topology](images/colorwheel-decrease-requests-hazl.png)
 
 <<Explain what we're seeing here>>
+
+### Summary: Observe the Effects of HAZL
+
+<<Summary for the Observe the Effects of HAZL section>>
+
 
 ## Demo 4: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
 
@@ -1649,8 +1660,11 @@ Let's take a look at the Security Policies we just created in **Buoyant Cloud**.
 
 <<Explain what we're seeing here>>
 
+### Summary: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
+
 <<Security policies summary>>
 
-## Summary
+
+## Summary: Deploying BEL with HAZL
 
 <<Summarize the entire thing here.  Bullet points?>>
