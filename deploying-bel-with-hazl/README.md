@@ -1165,10 +1165,6 @@ After installing **Buoyant Enterprise for Linkerd** in our cluster, we should se
 
 <<Explain what we're seeing here>>
 
-![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
-
-<<Explain what we're seeing here>>
-
 ### Buoyant Cloud: Summary
 
 <<Summary for Buoyant Cloud>>
