@@ -1157,6 +1157,14 @@ After installing **Buoyant Enterprise for Linkerd** in our cluster, we should se
 
 <<Explain what we're seeing here>>
 
+![Buoyant Cloud: Alerting](images/buoyant-cloud-alerting.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Settings](images/buoyant-cloud-settings.png)
+
+<<Explain what we're seeing here>>
+
 ![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
 
 <<Explain what we're seeing here>>
