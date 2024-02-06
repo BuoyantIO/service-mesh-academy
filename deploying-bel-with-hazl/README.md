@@ -1103,11 +1103,17 @@ Earlier, when you signed up for a **Buoyant Enterprise for Linkerd** trial licen
 
 ### Our Cluster: A View Using Buoyant Cloud
 
-![Buoyant Cloud: Overview - With Cluster](images/buoyant-cloud-overview-with-cluster.png)
-
 After installing **Buoyant Enterprise for Linkerd** in our cluster, we should see our **Buoyant Cloud** ***Overview*** page populated now.
 
+![Buoyant Cloud: Overview - With Cluster](images/buoyant-cloud-overview-with-cluster.png)
+
+<<Explain what we're seeing here>>
+
 ![Buoyant Cloud: Cluster - Initial State](images/buoyant-cloud-cluster-initial.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Cluster - Initial State](images/buoyant-cloud-cluster-configure.png)
 
 <<Explain what we're seeing here>>
 
@@ -1127,7 +1133,27 @@ After installing **Buoyant Enterprise for Linkerd** in our cluster, we should se
 
 <<Explain what we're seeing here>>
 
-![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
+![Buoyant Cloud: Traffic](images/buoyant-cloud-traffic.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Topology](images/buoyant-cloud-topology.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Metrics](images/buoyant-cloud-metrics.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Workloads](images/buoyant-cloud-workloads.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Resources - Managed Control Plane](images/buoyant-cloud-resources-managed-cp.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Resources - Managed Data Plane](images/buoyant-cloud-resources-managed-dp.png)
 
 <<Explain what we're seeing here>>
 
@@ -1135,19 +1161,13 @@ After installing **Buoyant Enterprise for Linkerd** in our cluster, we should se
 
 <<Explain what we're seeing here>>
 
-![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
-
-<<Explain what we're seeing here>>
-
-![Buoyant Cloud: XXX](images/buoyant-cloud-xxx.png)
-
-<<Explain what we're seeing here>>
+### Buoyant Cloud: Summary
 
 <<Summary for Buoyant Cloud>>
 
-We'll be seeing more of Buoyant Cloud when in the **HAZL** demonstration.
+We'll be seeing more of Buoyant Cloud when in the **High Availability Zonal Load Balancing (HAZL)** demonstration.
 
-## Demo 2: Observe the Effects of High Availability Zonal Load Balancing (HAZL)
+## Demo 3: Observe the Effects of High Availability Zonal Load Balancing (HAZL)
 
 ### Deploy the Colorwheel Application
 
@@ -1246,7 +1266,7 @@ Let's take a look at what traffic looks like in **Buoyant Cloud**.  This will gi
 
 <<Explain what we're seeing here>>
 
-## Demo 3: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
+## Demo 4: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
 
 <<Talk about this, give some context>>
 
