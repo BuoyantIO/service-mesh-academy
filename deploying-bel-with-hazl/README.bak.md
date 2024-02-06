@@ -8,13 +8,13 @@
 
 ## Introduction
 
-In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linkerd** and demonstrate how to enable **High Availability Zonal Load Balancing (HAZL)**. We'll then take a look at how **HAZL** works to keep network traffic _in-zone_ where possible, and explore **Security Policy generation**.
+In this *hands-on demonstration*, we will deploy **Buoyant Enterprise for Linkerd** and demonstrate how to enable **High Availability Zonal Load Balancing (HAZL)**.  We'll then take a look at how **HAZL** works to keep network traffic *in-zone* where possible, and explore **Security Policy generation**.
 
 ### Buoyant Enterprise for Linkerd (BEL)
 
 [Buoyant Enterprise for Linkerd](https://buoyant.io/enterprise-linkerd)
 
-**Buoyant Enterprise for Linkerd** is an enterprise-grade service mesh for Kubernetes. It makes Kubernetes applications **reliable**, **secure**, and **cost-effective** _without requiring any changes to application code_. Buoyant Enterprise for Linkerd contains all the features of open-source Linkerd, the world's fastest, lightest service mesh, plus _additional_ enterprise-only features such as:
+**Buoyant Enterprise for Linkerd** is an enterprise-grade service mesh for Kubernetes. It makes Kubernetes applications **reliable**, **secure**, and **cost-effective** *without requiring any changes to application code*. Buoyant Enterprise for Linkerd contains all the features of open-source Linkerd, the world's fastest, lightest service mesh, plus *additional* enterprise-only features such as:
 
 - High Availability Zonal Load Balancing (HAZL)
 - Security Policy Generation
@@ -24,13 +24,13 @@ In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linker
 - Software Bills of Materials (SBOMs)
 - Strict SLAs Around CVE Remediation
 
-We're going to try out **Security Policy Generation** and **HAZL** in this demo, but remember that we'll get all the **BEL** features, **_except for FIPS_**, which isn't included in our Trial license.
+We're going to try out **Security Policy Generation** and **HAZL** in this demo, but remember that we'll get all the **BEL** features, ***except for FIPS***, which isn't included in our Trial license.
 
 ### High Availability Zonal Load Balancing (HAZL)
 
 **High Availability Zonal Load Balancing (HAZL)** is a dynamic request-level load balancer in **Buoyant Enterprise for Linkerd** that balances **HTTP** and **gRPC** traffic in environments with **multiple availability zones**. For Kubernetes clusters deployed across multiple zones, **HAZL** can **dramatically reduce cloud spend by minimizing cross-zone traffic**.
 
-Unlike other zone-aware options that use **Topology Hints** (including **Istio** and open source **Linkerd**), **HAZL** _never sacrifices reliability to achieve this cost reduction_.
+Unlike other zone-aware options that use **Topology Hints** (including **Istio** and open source **Linkerd**), **HAZL** *never sacrifices reliability to achieve this cost reduction*.
 
 In **multi-zone** environments, **HAZL** can:
 
@@ -39,7 +39,7 @@ In **multi-zone** environments, **HAZL** can:
 - **Prevent failures before they happen** by quickly reacting to increases in latency before the system begins to fail.
 - **Preserve zone affinity for cross-cluster calls**, allowing for cost reduction in multi-cluster environments.
 
-Like **Linkerd** itself, **HAZL** is designed to _"just work"_. It works without operator involvement, can be applied to any Kubernetes service that speaks **HTTP** / **gRPC** regardless of the number of endpoints or distribution of workloads and traffic load across zones, and in the majority of cases _requires no tuning or configuration_.
+Like **Linkerd** itself, **HAZL** is designed to *"just work"*. It works without operator involvement, can be applied to any Kubernetes service that speaks **HTTP** / **gRPC** regardless of the number of endpoints or distribution of workloads and traffic load across zones, and in the majority of cases *requires no tuning or configuration*.
 
 ### How High Availability Zonal Load Balancing (HAZL) Works
 
@@ -71,11 +71,11 @@ Finally, **Topology Hints** has a set of well-known constraints, including:
 - It does not work well with autoscaling. The autoscaler may not respond to increases in traffic, or respond by adding endpoints in other zones.
 - No affordance is made for cross-cluster traffic.
 
-These constraints have real-world implications. As one customer put it when trying **Istio** + **Topology Hints**: "What we are seeing in _some_ applications is that they won’t scale fast enough or at all (because maybe two or three pods out of 10 are getting the majority of the traffic and is not triggering the HPA) and _can cause a cyclic loop of pods crashing and the service going down_."
+These constraints have real-world implications. As one customer put it when trying **Istio** + **Topology Hints**: "What we are seeing in *some* applications is that they won’t scale fast enough or at all (because maybe two or three pods out of 10 are getting the majority of the traffic and is not triggering the HPA) and *can cause a cyclic loop of pods crashing and the service going down*."
 
 ### Demonstration: Overview
 
-In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linkerd** on a `k3d` Kubernetes cluster and will demonstrate how to quickly enable **High Availability Zonal Load Balancing (HAZL)**. We'll then take a look at how **HAZL** works to keep network traffic _in-zone_ where possible, and explore **Security Policy generation**.
+In this *hands-on demonstration*, we will deploy **Buoyant Enterprise for Linkerd** on a `k3d` Kubernetes cluster and will demonstrate how to quickly enable **High Availability Zonal Load Balancing (HAZL)**.  We'll then take a look at how **HAZL** works to keep network traffic *in-zone* where possible, and explore **Security Policy generation**.
 
 **In this demonstration, we're going to do the following:**
 
@@ -93,7 +93,7 @@ In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linker
   - Monitor the decreased traffic from the **Colorwheel** application
   - Observe the effect on cross-az traffic
 
-Feel free to follow along with _your own instance_ if you'd like, using the resources and instructions provided in this repository.
+Feel free to follow along with *your own instance* if you'd like, using the resources and instructions provided in this repository.
 
 ### Demo: Prerequisites
 
@@ -106,7 +106,7 @@ Feel free to follow along with _your own instance_ if you'd like, using the reso
 - [Buoyant Enterprise for Linkerd License](https://enterprise.buoyant.io/start_trial)
 - [The Demo Assets, from GitHub](https://github.com/BuoyantIO/service-mesh-academy/tree/main/deploying-bel-with-hazl)
 
-All prerequisites must be _installed_ and _working properly_ before proceeding. The instructions in the provided links will get you there. A trial license for Buoyant Enterprise for Linkerd can be obtained from the link above. Instructions on obtaining the demo assets from GitHub are below.
+All prerequisites must be *installed* and *working properly* before proceeding. The instructions in the provided links will get you there. A trial license for Buoyant Enterprise for Linkerd can be obtained from the link above. Instructions on obtaining the demo assets from GitHub are below.
 
 ### Demo: Included Scripts
 
@@ -197,7 +197,7 @@ With the assets in place, we can proceed to creating a cluster with `k3d`.
 
 ### Task 2: Deploy a Kubernetes Cluster Using `k3d`
 
-Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need a Kubernetes cluster. Fortunately, we can use `k3d` for that. There's a cluster configuration file in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
+Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need a Kubernetes cluster. Fortunately, we can use `k3d` for that.  There's a cluster configuration file in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
 
 We can use the following commands to have `k3d` create a cluster with 3 availability zones.
 
@@ -207,7 +207,7 @@ Check for existing `k3d` clusters:
 k3d cluster list
 ```
 
-If you'd like to _delete_ any existing clusters you might have, use:
+If you'd like to *delete* any existing clusters you might have, use:
 
 ```bash
 k3d cluster delete <<cluster-name>>
@@ -222,30 +222,30 @@ k3d cluster create -c cluster/demo-cluster.yaml --wait
 Output:
 
 ```bash
-INFO[0000] Using config file cluster/demo-cluster.yaml (k3d.io/v1alpha5#simple)
-INFO[0000] Prep: Network
-INFO[0000] Created network 'multiaz'
-INFO[0000] Created image volume k3d-demo-cluster-images
-INFO[0000] Starting new tools node...
-INFO[0000] Starting Node 'k3d-demo-cluster-tools'
-INFO[0001] Creating node 'k3d-demo-cluster-server-0'
-INFO[0001] Creating node 'k3d-demo-cluster-agent-0'
-INFO[0001] Creating node 'k3d-demo-cluster-agent-1'
-INFO[0001] Creating node 'k3d-demo-cluster-agent-2'
-INFO[0001] Using the k3d-tools node to gather environment information
-INFO[0001] Starting new tools node...
-INFO[0001] Starting Node 'k3d-demo-cluster-tools'
-INFO[0002] Starting cluster 'demo-cluster'
-INFO[0002] Starting servers...
-INFO[0002] Starting Node 'k3d-demo-cluster-server-0'
-INFO[0005] Starting agents...
-INFO[0005] Starting Node 'k3d-demo-cluster-agent-1'
-INFO[0005] Starting Node 'k3d-demo-cluster-agent-0'
-INFO[0005] Starting Node 'k3d-demo-cluster-agent-2'
-INFO[0010] All helpers already running.
-INFO[0010] Injecting records for hostAliases (incl. host.k3d.internal) and for 5 network members into CoreDNS configmap...
-INFO[0012] Cluster 'demo-cluster' created successfully!
-INFO[0012] You can now use it like this:
+INFO[0000] Using config file cluster/demo-cluster.yaml (k3d.io/v1alpha5#simple) 
+INFO[0000] Prep: Network                                
+INFO[0000] Created network 'multiaz'                    
+INFO[0000] Created image volume k3d-demo-cluster-images 
+INFO[0000] Starting new tools node...                   
+INFO[0000] Starting Node 'k3d-demo-cluster-tools'       
+INFO[0001] Creating node 'k3d-demo-cluster-server-0'    
+INFO[0001] Creating node 'k3d-demo-cluster-agent-0'     
+INFO[0001] Creating node 'k3d-demo-cluster-agent-1'     
+INFO[0001] Creating node 'k3d-demo-cluster-agent-2'     
+INFO[0001] Using the k3d-tools node to gather environment information 
+INFO[0001] Starting new tools node...                   
+INFO[0001] Starting Node 'k3d-demo-cluster-tools'       
+INFO[0002] Starting cluster 'demo-cluster'              
+INFO[0002] Starting servers...                          
+INFO[0002] Starting Node 'k3d-demo-cluster-server-0'    
+INFO[0005] Starting agents...                           
+INFO[0005] Starting Node 'k3d-demo-cluster-agent-1'     
+INFO[0005] Starting Node 'k3d-demo-cluster-agent-0'     
+INFO[0005] Starting Node 'k3d-demo-cluster-agent-2'     
+INFO[0010] All helpers already running.                 
+INFO[0010] Injecting records for hostAliases (incl. host.k3d.internal) and for 5 network members into CoreDNS configmap... 
+INFO[0012] Cluster 'demo-cluster' created successfully! 
+INFO[0012] You can now use it like this:                
 kubectl cluster-info
 ```
 
@@ -264,7 +264,7 @@ demo-cluster   1/1       3/3      false
 
 Checking out cluster using `kubectl`:
 
-_Nodes:_
+*Nodes:*
 
 ```bash
 kubectl get nodes
@@ -280,7 +280,7 @@ k3d-demo-cluster-server-0   Ready    control-plane,master   104s   v1.27.5+k3s1
 k3d-demo-cluster-agent-0    Ready    <none>                 100s   v1.27.5+k3s1
 ```
 
-_Pods:_
+*Pods:*
 
 ```bash
 watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
@@ -297,7 +297,7 @@ kube-system   coredns-77ccd57875-8jtff                 1/1     Running   0      
 kube-system   metrics-server-648b5df564-dm9r8          1/1     Running   0          2m21s   10.42.3.2   k3d-demo-cluster-server-0   <none>           <none>
 ```
 
-**_Use `CTRL-C` to exit the watch command._**
+***Use `CTRL-C` to exit the watch command.***
 
 Now that we have a Kubernetes cluster, we can proceed with deploying **Buoyant Enterprise for Linkerd**.
 
@@ -307,7 +307,7 @@ Now that we have a Kubernetes cluster, we can proceed with deploying **Buoyant E
 
 [Linkerd Trust Root CA & Identity Certificates & Keys](https://linkerd.io/2/tasks/generate-certificates/#generating-the-certificates-with-step)
 
-In order to support **mTLS** connections between _meshed pods_, **Linkerd** needs a **trust anchor certificate** and an **issuer certificate** with its corresponding **key**.
+In order to support **mTLS** connections between *meshed pods*, **Linkerd** needs a **trust anchor certificate** and an **issuer certificate** with its corresponding **key**.
 
 Since we're using **Helm** to install **BEL**, it’s not possible to automatically generate these certificates and keys. We'll need to generate certificates and keys, and we'll use `step`for this.
 
@@ -330,7 +330,7 @@ step certificate create root.linkerd.cluster.local ca.crt ca.key \
 --profile root-ca --no-password --insecure
 ```
 
-_Note: We use `--no-password` `--insecure` to avoid encrypting those files with a passphrase._
+*Note: We use `--no-password` `--insecure` to avoid encrypting those files with a passphrase.*
 
 This generates the `ca.crt` and `ca.key` files. The `ca.crt` file is what you need to pass to the `--identity-trust-anchors-file` option when installing **Linkerd** with the CLI, and the `identityTrustAnchorsPEM` value when installing the `linkerd-control-plane` chart with Helm.
 
@@ -416,7 +416,7 @@ Once you're satisfied with the contents, `source` the file, to load the variable
 source settings.sh
 ```
 
-Now that you have a trial login, open an additional browser window or tab, and open **[Buoyant Cloud](https://buoyant.cloud)**. _Log in with the credentials you used for your trial account_.
+Now that you have a trial login, open an additional browser window or tab, and open **[Buoyant Cloud](https://buoyant.cloud)**.  *Log in with the credentials you used for your trial account*.
 
 ![Buoyant Cloud: Add Cluster](images/buoyant-cloud-addcluster.png)
 
@@ -430,7 +430,7 @@ Our credentials have been loaded into environment variables, we're logged into *
 
 #### Step 2: Download the BEL CLI
 
-We'll be using the **Buoyant Enterprise Linkerd** CLI for many of our operations, so we'll need it _installed and properly configured_.
+We'll be using the **Buoyant Enterprise Linkerd** CLI for many of our operations, so we'll need it *installed and properly configured*.
 
 First, download the **BEL** CLI:
 
@@ -640,7 +640,7 @@ linkerd-buoyant-agent
 Status check results are √
 ```
 
-We may see a few warnings (!!), but we're good to proceed _as long as the overall status check results are good_.
+We may see a few warnings (!!), but we're good to proceed *as long as the overall status check results are good*.
 
 #### Step 5: Create the Identity Secret
 
@@ -696,9 +696,9 @@ Now that we have our `linkerd-identity-issuer` secret, we can proceed with creat
 
 [Kubernetes Docs: Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
 
-We deploy the **BEL ControlPlane** and **DataPlane** using **Custom Resources**. We'll create a manifest for each that contains their configuration. We'll start with the **ControlPlane** first.
+We deploy the **BEL ControlPlane** and **DataPlane** using **Custom Resources**.  We'll create a manifest for each that contains their configuration. We'll start with the **ControlPlane** first.
 
-This **CRD configuration** also enables **High Availability Zonal Load Balancing (HAZL)**, using the `- -experimental-endpoint-zone-weights` `experimentalArgs`. We're going to omit the `- -experimental-endpoint-zone-weights` in the `experimentalArgs` for now, by commenting it out with a `#` in the manifest.
+This **CRD configuration** also enables **High Availability Zonal Load Balancing (HAZL)**, using the `- -experimental-endpoint-zone-weights` `experimentalArgs`.  We're going to omit the `- -experimental-endpoint-zone-weights` in the `experimentalArgs` for now, by commenting it out with a `#` in the manifest.
 
 Let's create the ControlPlane manifest:
 
@@ -771,7 +771,7 @@ linkerd-buoyant   buoyant-cloud-metrics-t95gj                        1/1     Run
 linkerd-buoyant   linkerd-control-plane-validator-5d64f4bcd5-p688r   1/1     Running   0          5m11s   10.42.3.4    k3d-demo-cluster-server-0   <none>           <none
 ```
 
-**_Use `CTRL-C` to exit the watch command._**
+***Use `CTRL-C` to exit the watch command.***
 
 Let's can verify the health and configuration of Linkerd by running the `linkerd check` command:
 
@@ -907,7 +907,7 @@ linkerd-buoyant-agent
 Status check results are √
 ```
 
-Again, we may see a few warnings (!!), but we're good to proceed _as long as the overall status is good_.
+Again, we may see a few warnings (!!), but we're good to proceed *as long as the overall status is good*.
 
 #### Step 8: Create the DataPlane Objects for `linkerd-buoyant`
 
@@ -933,7 +933,7 @@ Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** 
 kubectl apply -f linkerd-data-plane-config.yaml
 ```
 
-To make adjustments to your **BEL ControlPlane** deployment _simply edit and re-apply the `linkerd-control-plane-config.yaml` manifest_.
+To make adjustments to your **BEL ControlPlane** deployment *simply edit and re-apply the `linkerd-control-plane-config.yaml` manifest*.
 
 #### Step 9: Monitor Buoyant Cloud Metrics Rollout and Check Proxies
 
@@ -1087,13 +1087,14 @@ linkerd-buoyant-agent
 Status check results are √
 ```
 
-Again, we may see a few warnings (!!), _but we're good to proceed as long as the overall status is good_.
+Again, we may see a few warnings (!!), *but we're good to proceed as long as the overall status is good*.
 
 We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use **BEL** to manage and secure our Kubernetes applications.
 
 ### Summary: Deploy a Kubernetes Cluster With BEL
 
 <<Summarize Deploy a Kubernetes Cluster With BEL>>
+
 
 ## Demo 2: Examine the Status of Our Cluster Using Buoyant Cloud
 
@@ -1107,7 +1108,7 @@ Earlier, when you signed up for a **Buoyant Enterprise for Linkerd** trial licen
 
 ### Our Cluster: A View Using Buoyant Cloud
 
-After installing **Buoyant Enterprise for Linkerd** in our cluster, we should see our **Buoyant Cloud** **_Overview_** page populated now.
+After installing **Buoyant Enterprise for Linkerd** in our cluster, we should see our **Buoyant Cloud** ***Overview*** page populated now.
 
 ![Buoyant Cloud: Overview - With Cluster](images/buoyant-cloud-overview-with-cluster.png)
 
@@ -1175,6 +1176,7 @@ After installing **Buoyant Enterprise for Linkerd** in our cluster, we should se
 
 We'll be seeing more of Buoyant Cloud when in the **High Availability Zonal Load Balancing (HAZL)** demonstration.
 
+
 ## Demo 3: Observe the Effects of High Availability Zonal Load Balancing (HAZL)
 
 ### Deploy the Colorwheel Application
@@ -1206,7 +1208,7 @@ We can check the status of the **Colorwheel** application by watching the rollou
 watch -n 1 kubectl get pods -n colorz -o wide --sort-by .metadata.namespace
 ```
 
-**_Use `CTRL-C` to exit the watch command._**
+***Use `CTRL-C` to exit the watch command.***
 
 If you don't have the `watch` command on your system, just run:
 
@@ -1232,7 +1234,7 @@ With the **Colorwheel** application deployed, we now have some traffic to work w
 
 ### Monitor Traffic Without HAZL
 
-Let's take a look at traffic flow _without **HAZL** enabled_ in **Buoyant Cloud**. This will give us a more visual representation of our baseline traffic. Head over to **Buoyant Cloud**, and
+Let's take a look at traffic flow *without **HAZL** enabled* in **Buoyant Cloud**. This will give us a more visual representation of our baseline traffic. Head over to **Buoyant Cloud**, and 
 
 ![Buoyant Cloud: Topology](images/colorwheel-topology-all.png)
 
@@ -1254,7 +1256,7 @@ Let's take a look at traffic flow _without **HAZL** enabled_ in **Buoyant Cloud*
 
 Let's take a look at how quick and easy we can enable **High Availability Zonal Load Balancing (HAZL)**.
 
-Remember, to make adjustments to your **BEL** deployment _simply edit and re-apply the previously-created `linkerd-control-plane-config.yaml` manifest_. We're going to **enable** the `- -experimental-endpoint-zone-weights` in the `experimentalArgs` for now, by uncommenting it in the manifest:
+Remember, to make adjustments to your **BEL** deployment *simply edit and re-apply the previously-created `linkerd-control-plane-config.yaml` manifest*.  We're going to **enable** the `- -experimental-endpoint-zone-weights` in the `experimentalArgs` for now, by uncommenting it in the manifest:
 
 Edit the `linkerd-control-plane-config.yaml` file:
 
@@ -1272,7 +1274,7 @@ Now, we can see the effect **HAZL** has on the traffic in our multi-az cluster.
 
 ### Monitor Traffic With HAZL Enabled
 
-Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoyant Cloud**.  This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
 ![Buoyant Cloud: Topology](images/colorwheel-with-hazl.png)
 
@@ -1321,7 +1323,7 @@ Once we save our change with `:wq`, the number of requests will go from 50 to 30
 
 ### Monitor Traffic Using Buoyant Cloud
 
-Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+Let's take a look at what the increased traffic looks like in **Buoyant Cloud**.  This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
 ![Buoyant Cloud: Topology](images/colorwheel-increase-requests-hazl.png)
 
@@ -1366,7 +1368,7 @@ Once we save our change with `:wq`, the number of requests will go from 300 to 5
 
 ### Monitor Traffic Using Buoyant Cloud
 
-Let's take a look at what traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+Let's take a look at what traffic looks like in **Buoyant Cloud**.  This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
 ![Buoyant Cloud: Topology](images/colorwheel-decrease-requests-hazl.png)
 
@@ -1375,6 +1377,7 @@ Let's take a look at what traffic looks like in **Buoyant Cloud**. This will giv
 ### Summary: Observe the Effects of HAZL
 
 <<Summary for the Observe the Effects of HAZL section>>
+
 
 ## Demo 4: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
 
@@ -1385,13 +1388,11 @@ Let's take a look at what traffic looks like in **Buoyant Cloud**. This will giv
 <<Say something about creating Security Policies with BEL here>>
 
 Use the `linkerd policy generate` command to have BEL generate policies from observed traffic:
-
 ```bash
 linkerd policy generate > linkerd-policy.yaml
 ```
 
-We've put these policies into a manifest in the `linkerd-policy.yaml`. Let's take a look:
-
+We've put these policies into a manifest in the `linkerd-policy.yaml`.  Let's take a look:
 ```bash
 more linkerd-policy.yaml
 ```
@@ -1617,7 +1618,6 @@ spec:
 ```
 
 Now, let's apply the policies to our cluster:
-
 ```bash
 kubectl apply -f linkerd-policy.yaml
 ```
@@ -1664,6 +1664,7 @@ Let's take a look at the Security Policies we just created in **Buoyant Cloud**.
 
 <<Security policies summary>>
 
+
 ## Summary: Deploying BEL with HAZL
 
-<<Summarize the entire thing here. Bullet points?>>
+<<Summarize the entire thing here.  Bullet points?>>
