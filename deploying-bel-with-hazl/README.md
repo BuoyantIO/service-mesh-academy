@@ -1202,17 +1202,45 @@ We can check the status of the **Colorwheel** application by watching the rollou
 watch -n 1 kubectl get pods -n colorz -o wide --sort-by .metadata.namespace
 ```
 
+***Use `CTRL-C` to exit the watch command.***
+
 If you don't have the `watch` command on your system, just run:
 
 ```bash
 kubectl get pods -n colorz -o wide --sort-by .metadata.namespace
 ```
 
+We should see something like the following.
+
+```bash
+Every 1.0s: kubectl get pods -n colorz -o wide --sort-by .metadata.namespace                                                    trans-am.dean33.com: Mon Feb  5 20:36:24 2024
+
+NAME                     READY   STATUS    RESTARTS   AGE   IP          NODE                       NOMINATED NODE   READINESS GATES
+brush-849b995c88-4r2ws   2/2     Running   0          31s   10.42.1.5   k3d-demo-cluster-agent-1   <none>           <none>
+blue-98d6fb5c9-k22kh     2/2     Running   0          31s   10.42.2.5   k3d-demo-cluster-agent-2   <none>           <none>
+green-d99b94756-frmbf    2/2     Running   0          31s   10.42.1.6   k3d-demo-cluster-agent-1   <none>           <none>
+red-5ccfc666d5-j2l62     2/2     Running   0          31s   10.42.0.5   k3d-demo-cluster-agent-0   <none>           <none>
+```
+
+Note that the `brush` and the `green` pod are on the same node, `k3d-demo-cluster-agent-1`, in this particular deployment. Pay attention to the distribution of pods in your particular deployment, and note which one is running on the same node as the `brush`.
+
 With the **Colorwheel** application deployed, we now have some traffic to work with.
 
 ### Monitor Traffic Without HAZL
 
-Let's take a look at traffic flow *without **HAZL** enabled* in **Buoyant Cloud**. This will give us a more visual representation of our baseline traffic. Head over to Buoyant Cloud, and 
+Let's take a look at traffic flow *without **HAZL** enabled* in **Buoyant Cloud**. This will give us a more visual representation of our baseline traffic. Head over to **Buoyant Cloud**, and 
+
+![Buoyant Cloud: Topology](images/colorwheel-topology-all.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Topology](images/colorwheel-topology-ns.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Topology](images/colorwheel-topology-rps.png)
+
+<<Explain what we're seeing here>>
 
 ![Buoyant Cloud: Topology](images/colorwheel-no-hazl.png)
 
