@@ -23,7 +23,6 @@ if kubectl get namespace linkerd >/dev/null 2>&1; then \
 fi
 ```
 
-<!-- @import demo-tools.sh -->
 ----
 <!-- @SHOW -->
 

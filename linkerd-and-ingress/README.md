@@ -17,7 +17,6 @@ cluster that will work well. If you want to use some other kind of cluster,
 make sure that the DNS is set up, and modify the DNS names to match for the
 rest of the instructions.
 
-<!-- @import demo-tools.sh -->
 <!-- @import check-requirements.sh -->
 <!-- @start_livecast -->
 ---
@@ -55,45 +54,54 @@ source at https://github.com/emissary-ingress/emissary.
 
 The simplest way to install Emissary-ingress is to follow the quick start:
 https://www.getambassador.io/docs/emissary/latest/tutorials/getting-started.
-The instructions below are taken directly from that, with two differences:
+The instructions below are taken directly from that, except that we're setting
+`replicaCount=1` to reduce the replice count from 3 to 1, to make things
+easier on the `k3d` cluster. (You wouldn't want to do this in production!)
 
-1. We use `sed` to reduce the replica count from 3 to 1, to make things easier
-   on the `k3d` cluster.
-
-2. We use `linkerd inject` to bring Emissary into the Linkerd mesh from the
-   moment of installation.
+First we'll get our Helm repo set up...
 
 ```bash
-EMISSARY_CRDS=https://app.getambassador.io/yaml/emissary/3.1.0/emissary-crds.yaml
-EMISSARY_INGRESS=https://app.getambassador.io/yaml/emissary/3.1.0/emissary-emissaryns.yaml
-
-kubectl create namespace emissary && \
-curl --proto '=https' --tlsv1.2 -sSfL $EMISSARY_CRDS | \
-    sed -e 's/replicas: 3/replicas: 1/' | \
-    kubectl apply -f -
-kubectl wait --timeout=90s --for=condition=available deployment emissary-apiext -n emissary-system
-
-curl --proto '=https' --tlsv1.2 -sSfL $EMISSARY_INGRESS | \
-    sed -e 's/replicas: 3/replicas: 1/' | \
-    linkerd inject - | \
-    kubectl apply -f -
+helm repo add datawire https://app.getambassador.io
+helm repo update
 ```
 
-Let's also annotate Emissary to skip incoming ports 8080 and 8443, in case we
-later want to use the client's incoming IP address (and we're using 8080 and
-8443 because those are the actual ports the Emissary Pods will see):
+...then we can install Emissary's CRDs.
 
 ```bash
-kubectl annotate -n emissary deploy/emissary-ingress config.linkerd.io/skip-incoming-ports=8080,8443
+kubectl apply -f https://app.getambassador.io/yaml/emissary/3.9.1/emissary-crds.yaml
+```
+
+Installing the CRDs also installs the conversion webhook, so let's wait for
+that.
+
+```bash
+kubectl rollout status -n emissary-system deploy
+```
+
+Once that's running, we create Emissary's namespace, including Linkerd's
+auto-injection annotation, so that Emissary's Pods will automatically get
+brought into the Linkerd mesh.
+
+```bash
+kubectl create ns emissary
+kubectl annotate ns emissary linkerd.io/inject=enabled
+```
+
+Then it's time to install Emissary itself:
+
+```bash
+helm install emissary-ingress --namespace emissary \
+     datawire/emissary-ingress \
+     --set replicaCount=1
 ```
 
 Then we can wait for the deployments to be ready:
 
 ```bash
-kubectl rollout status -n emissary deployments -lproduct=aes --timeout=30s
+kubectl rollout status -n emissary deployments
 ```
 
-<!-- @clear -->
+<!-- @wait_clear -->
 
 Now that Emissary-ingress is installed, let's quickly configure it. Emissary
 is configured using its own CRDs: at minimum, it requires a `Listener`, a
@@ -101,14 +109,15 @@ is configured using its own CRDs: at minimum, it requires a `Listener`, a
 to dig to far into these, but we'll take a quick look:
 
 ```bash
-less emissary-yaml/listeners-and-hosts.yaml
-less emissary-yaml/emojivoto-mapping.yaml
+bat emissary-yaml/listeners-and-hosts.yaml
+bat emissary-yaml/emojivoto-mapping.yaml
 ```
 
 We can install these resources with `kubectl apply`...
 
 ```bash
-kubectl apply -f emissary-yaml
+kubectl apply -f emissary-yaml/listeners-and-hosts.yaml
+kubectl apply -f emissary-yaml/emojivoto-mapping.yaml
 ```
 
 ...and Emissary should be happy to route requests for us now.
@@ -122,24 +131,24 @@ and that it's talking to Emojivoto's web service.
 linkerd viz dashboard
 ```
 
+<!-- @show_terminal -->
 <!-- @clear -->
 
-OK! Let's clean up Emissary-ingress to get ready for NGINX. First, scale
-Emissary's deployment to 0, just to lighten the load on `k3d`.
-
-```bash
-kubectl scale -n emissary deploy/emissary-ingress --replicas=0
-kubectl scale -n emissary deploy/emissary-ingress-agent --replicas=0
-```
-
-Next, delete the Service so that nothing is competing for the port we need to
-use for NGINX.
+OK! Let's clean up Emissary-ingress to get ready for NGINX. First, we'll
+delete the Service so that nothing is competing for the port we need to use
+for NGINX.
 
 ```bash
 kubectl delete svc -n emissary emissary-ingress
 ```
 
-<!-- @wait_clear -->
+Then we'll summarily delete Emissary's namespaces.
+
+```bash
+kubectl delete ns emissary emissary-system
+```
+
+<!-- @clear -->
 
 ## NGINX
 
@@ -153,22 +162,30 @@ https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-h
 ```bash
 helm repo add nginx-stable https://helm.nginx.com/stable
 helm repo update
-helm install nginx nginx-stable/nginx-ingress
 ```
 
-Once installed, we need to inject NGINX into the service mesh:
+We're modifying the instructions slightly to use an `nginx` namespace, which
+we've annotated for Linkerd injection.
 
 ```bash
-kubectl get deploy nginx-nginx-ingress -o yaml \
-    | linkerd inject - \
-    | kubectl apply -f -
+kubectl create ns nginx
+kubectl annotate ns nginx linkerd.io/inject=enabled
+helm install nginx \
+     -n nginx \
+     nginx-stable/nginx-ingress
+```
+
+Once installed, let's make sure everything is running.
+
+```bash
+kubectl rollout status -n nginx deploy
 ```
 
 For routing, NGINX uses an `Ingress` resource with the `nginx` `IngressClass`
 (which was just installed by Helm):
 
 ```bash
-less nginx-yaml/nginx-ingress.yaml
+bat nginx-yaml/nginx-ingress.yaml
 ```
 
 Applying it with `kubectl apply` should cause NGINX to route requests to
@@ -189,15 +206,17 @@ it's talking to Emojivoto's web service.
 linkerd viz dashboard
 ```
 
+<!-- @show_terminal -->
 <!-- @clear -->
 
-OK! Let's clean up NGINX by deleting its Helm installation.
+OK! Let's clean up NGINX the same way we dealt with Emissary.
 
 ```bash
-helm delete nginx
+kubectl delete svc -n nginx nginx-nginx-ingress-controller
+kubectl delete ns nginx
 ```
 
-<!-- @wait_clear -->
+<!-- @clear -->
 
 ## Envoy Gateway
 
@@ -207,12 +226,14 @@ the Gateway API. Read more about Envoy Gateway at https://gateway.envoyproxy.io/
 its source is at https://github.com/envoyproxy/gateway.
 
 We'll install Envoy Gateway using its quickstart, which you can find at
-https://gateway.envoyproxy.io/v0.2.0/user/quickstart.html:
+https://gateway.envoyproxy.io/v0.6.0/user/quickstart.html:
 
 ```bash
-kubectl apply -f https://github.com/envoyproxy/gateway/releases/download/v0.2.0/install.yaml
+kubectl apply -f https://github.com/envoyproxy/gateway/releases/download/v0.6.0/install.yaml
 kubectl wait --timeout=5m -n envoy-gateway-system deployment/envoy-gateway --for=condition=Available
 ```
+
+OK, we should be good to go!
 
 <!-- @wait_clear -->
 
@@ -232,21 +253,21 @@ After doing that, we'll need to restart the running Envoy Gateway controller:
 
 ```bash
 kubectl rollout restart -n envoy-gateway-system deployments
-kubectl rollout status -n envoy-gateway-system deployments --timeout=30s
+kubectl rollout status -n envoy-gateway-system deployments
 ```
 
 OK! Now, finally, we can install the Gateway API resources needed to route to
 Emojivoto:
 
 ```bash
-less envoy-gateway-yaml/gateway.yaml
+bat envoy-gateway-yaml/gateway.yaml
 kubectl apply -f envoy-gateway-yaml/gateway.yaml
 ```
 
 We should also wait for the Envoy Proxy deployment to be spun up:
 
 ```bash
-kubectl rollout status -n envoy-gateway-system deployments --timeout=30s
+kubectl rollout status -n envoy-gateway-system deployments
 ```
 
 At this point, Envoy Gateway should be able to route to Emojivoto for us.
@@ -260,7 +281,7 @@ meshed, and that it's talking to Emojivoto's web service.
 linkerd viz dashboard
 ```
 
-<!-- @SHOW -->
+<!-- @show_terminal -->
 <!-- @clear -->
 
 So there you have it! Three separate ingress controllers, all working cleanly

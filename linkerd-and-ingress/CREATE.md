@@ -16,13 +16,15 @@ We'll do nothing at all if there's already cluster named `ingress`.
 set -e
 DEMOSH_QUIET_FAILURE=true
 
-if kubectl --context ingress config get-contexts ingress >/dev/null 2>&1; then \
-    echo "Cluster 'ingress' already exists" >&2 ;\
+if k3d cluster list ingress >/dev/null 2>&1; then \
+    if ! kubectl --context ingress config get-contexts ingress >/dev/null 2>&1; then \
+        k3d kubeconfig merge -d -s ingress >/dev/null 2>&1;\
+    fi ;\
     exit 1 ;\
 fi
+set +e
 ```
 
-<!-- @import demo-tools.sh -->
 ----
 <!-- @SHOW -->
 
@@ -41,12 +43,9 @@ The only weird bits here are:
 
 ```bash
 k3d cluster create ingress \
-        --port "80:80@loadbalancer" \
-        --port "443:443@loadbalancer" \
-        --k3s-arg='--no-deploy=local-storage,metrics-server@server:*' \
-        --k3s-arg '--no-deploy=traefik@server:*;agents:*' \
-        --kubeconfig-update-default \
-        --kubeconfig-switch-context=false
+    -p 80:80@loadbalancer \
+    -p 443:443@loadbalancer \
+    --k3s-arg '--disable=local-storage,traefik,metrics-server@server:0'
 ```
 
 After that, rename the context so it doesn't start with `k3d-`...
@@ -58,7 +57,7 @@ kubectl config rename-context k3d-ingress ingress
 ...switch into it...
 
 ```bash
-kubectx ingress
+kubectl config use-context ingress
 ```
 
 ...and then wait until the cluster has some running pods. The `kubectl`
