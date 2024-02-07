@@ -1,0 +1,37 @@
+apiVersion: linkerd.buoyant.io/v1alpha1
+kind: ControlPlane
+metadata:
+  name: linkerd-control-plane
+spec:
+  components:
+    linkerd:
+      version: preview-24.1.3
+      license: eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJMaWNlbnNlZSI6InByb2QiLCJQcm9kdWN0IjoiQkVMIiwiTWFuYWdlZENvbnRyb2xQbGFuZUVuYWJsZWQiOmZhbHNlLCJNYW5hZ2VkRGF0YVBsYW5lRW5hYmxlZCI6ZmFsc2UsIkVudGVycHJpc2VFbmFibGVkIjp0cnVlLCJWZXJzaW9uIjoxLCJhdWQiOiJwcm9kIiwiZXhwIjoxNzA3ODYzOTg3LCJpc3MiOiJCdW95YW50IEluYyIsInN1YiI6ImxpY2Vuc2UifQ.bOmG2dPy-tcHlLYBr5Zp56plAOa19CD6wE1EfvtL0DcDyS2ESEy7J03XGIDOoq7M7oaOggRwDfIskGwx3A26Lw
+      controlPlaneConfig:
+        proxy:
+          image:
+            version: preview-24.1.3-hazl
+        identityTrustAnchorsPEM: |
+          -----BEGIN CERTIFICATE-----
+          MIIBjjCCATOgAwIBAgIQbOMlmJWqgxrtWYWbCwo3EjAKBggqhkjOPQQDAjAlMSMw
+          IQYDVQQDExpyb290LmxpbmtlcmQuY2x1c3Rlci5sb2NhbDAeFw0yNDAxMTYxNjMx
+          NThaFw0zNDAxMTMxNjMxNThaMCUxIzAhBgNVBAMTGnJvb3QubGlua2VyZC5jbHVz
+          dGVyLmxvY2FsMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEBbGV97H9eREG35wm
+          9/NWBifT+AKQ6LXy6K5WwVkNOPLLnCGze524fPU7Us5ueGOltwBx8N8+/P0b4zbA
+          TCo9Y6NFMEMwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQEwHQYD
+          VR0OBBYEFJMzkI/O44bQpxGshC1XCk843yuDMAoGCCqGSM49BAMCA0kAMEYCIQC7
+          /tUe+b2VuY/7mBrkf6n1bIRnh0s8XRKimDy6IUF+SgIhAIPloV10eRringHvnk75
+          IuL9R4eGSli6bSwh1yIVlQ8R
+          -----END CERTIFICATE-----
+        identity:
+          issuer:
+            scheme: kubernetes.io/tls
+        destinationController:
+          experimentalArgs:
+            - -experimental-endpoint-zone-weights
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: DoesNotExist

@@ -10,10 +10,24 @@ If you're following along and need a Kubernetes cluster with 3 azs use the follo
 k3d cluster create -c cluster/hazl.yaml --wait
 ```
 
+### Preloaded Manifests
+
+If you're following along with the workshop and you run into any issues creating certificates or loading them into you manifests you can use the manifests included in this repo. Please be aware these certificates should **ONLY** be used for a trial cluster.
+
+### Pregenerated certs
+
+If you'd like to skip the steps where you generate certificates you can use the certificates in the certs directory. Once again, these certs should be considered insecure and **ONLY** be used for a trial cluster.
+
 ## Deploying Emojivoto
 
 To deploy emojivoto in a multi az fashion use the included kustomization files to modify emojivoto:
 
 ```bash
 kubectl apply -k emojivoto/
+```
+
+## Deploying Colorz
+
+```bash
+kubectl apply -k colorz/
 ```
