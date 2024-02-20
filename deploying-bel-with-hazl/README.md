@@ -153,7 +153,7 @@ This repository includes the **Colorwheel** application, which generates traffic
 
 First, we'll deploy a Kubernetes cluster using `k3d` and deploy Buoyant Enterprise for Linkerd (BEL).
 
-### Task 1: Clone the `deploying-bel-with-hazl` Repository
+### Task 1: Clone the `deploying-bel-with-hazl` Assets
 
 [GitHub: Deploying Buoyant Enterprise for Linkerd with High Availability Zonal Load Balancing (HAZL)](https://github.com/BuoyantIO/service-mesh-academy/tree/main/deploying-bel-with-hazl)
 
@@ -304,8 +304,6 @@ Now that we have a Kubernetes cluster, we can proceed with deploying **Buoyant E
 ### Task 3: Create mTLS Root Certificates
 
 [Generating the certificates with `step`](https://linkerd.io/2.14/tasks/generate-certificates/#generating-the-certificates-with-step)
-
-[Linkerd Trust Root CA & Identity Certificates & Keys](https://linkerd.io/2/tasks/generate-certificates/#generating-the-certificates-with-step)
 
 In order to support **mTLS** connections between _meshed pods_, **Linkerd** needs a **trust anchor certificate** and an **issuer certificate** with its corresponding **key**.
 
@@ -548,7 +546,7 @@ Now, we can install the **BEL operator** itself:
 helm install linkerd-buoyant \
   --create-namespace \
   --namespace linkerd-buoyant \
-  --set metadata.agentName=cluster1 \
+  --set metadata.agentName=demo-cluster \
   --set api.clientID=$API_CLIENT_ID \
   --set api.clientSecret=$API_CLIENT_SECRET \
 linkerd-buoyant/linkerd-buoyant
