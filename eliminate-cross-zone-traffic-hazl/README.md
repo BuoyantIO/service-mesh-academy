@@ -1,10 +1,10 @@
-# Deploying Buoyant Enterprise for Linkerd (BEL) With High Availability Zonal Load Balancing (HAZL)
+# Eliminating Cross-Zone Kubernetes Traffic With High Availability Zonal Load Balancing (HAZL)
 
-## deploying-bel-with-hazl
+## eliminate-cross-zone-traffic-hazl
 
-### Tom Dean | Jason Morgan | Buoyant
+### Tom Dean | Buoyant
 
-### Last edit: 2/5/2024
+### Last edit: 2/20/2024
 
 ## Introduction
 
