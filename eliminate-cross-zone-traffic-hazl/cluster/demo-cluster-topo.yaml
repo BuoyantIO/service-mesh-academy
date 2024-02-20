@@ -1,10 +1,10 @@
 apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
-  name: demo-cluster
+  name: demo-cluster-topo
 servers: 1
 agents: 3
-network: multiaz
+network: multiaz-topo
 options:
   k3d:
     disableLoadbalancer: true
