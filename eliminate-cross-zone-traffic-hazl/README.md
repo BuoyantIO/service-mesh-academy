@@ -24,7 +24,7 @@ In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linker
 - Software Bills of Materials (SBOMs)
 - Strict SLAs Around CVE Remediation
 
-We're going to try out **Security Policy Generation** and **HAZL** in this demo, but remember that we'll get all the **BEL** features, **_except for FIPS_**, which isn't included in our Trial license.
+We're going to try out **HAZL** in this demo.
 
 ### High Availability Zonal Load Balancing (HAZL)
 
@@ -79,9 +79,11 @@ In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linker
 
 **In this demonstration, we're going to do the following:**
 
-- Deploy a `k3d` Kubernetes cluster
+- Deploy two `k3d` Kubernetes clusters
+  - One for HAZL
+  - One for Topology Aware Routing
 - Deploy **Buoyant Enterprise for Linkerd** with **HAZL** disabled on the cluster
-- Deploy the **Colorwheel** application to the cluster, to generate multi-zonal traffic
+- Deploy the **Colorwheel** application to the clusters, to generate multi-zonal traffic
   - Monitor traffic from the **Colorwheel** application, with **HAZL** disabled
 - Enable **High Availability Zonal Load Balancing (HAZL)**
   - Monitor traffic from the **Colorwheel** application, with **HAZL** enabled

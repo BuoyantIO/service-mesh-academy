@@ -1,0 +1,60 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-west
+  namespace: orders
+  labels:
+    app: orders
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orders
+  template:
+    metadata:
+      labels:
+        app: orders
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      containers:
+      - name: colorz
+        image: ghcr.io/olix0r/colorwheel:v1
+        imagePullPolicy: Always
+        env:
+          - name: RUST_LOG
+            value: info,colorwheel=debug
+        args:
+          - brush
+          - /colorwheel/brush/config.yml
+        volumeMounts:
+        - name: config-volume
+          mountPath: /colorwheel/brush
+      volumes:
+      - name: config-volume
+        configMap:
+          name: orders-west-config
+          optional: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-west]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orders-west-config
+  namespace: orders
+  labels:
+    app: orders
+data:
+  config.yml: |
+    requestsPerSecond: 50
+    reportIntervalSeconds: 10
+    uri: http://fulfillment.orders.svc.cluster.local
+...
