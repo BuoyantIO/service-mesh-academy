@@ -1,10 +1,10 @@
 apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
-  name: demo-cluster-hazl
+  name: demo-cluster-orders-hazl
 servers: 1
 agents: 3
-network: multiaz-hazl
+network: multiaz-orders-hazl
 options:
   k3d:
     disableLoadbalancer: true
@@ -15,9 +15,9 @@ options:
       - arg: --debug
         nodeFilters: [server:*]
     nodeLabels:
-      - label: topology.kubernetes.io/zone=zone-0
+      - label: topology.kubernetes.io/zone=zone-central
         nodeFilters: [agent:0]
-      - label: topology.kubernetes.io/zone=zone-1
+      - label: topology.kubernetes.io/zone=zone-west
         nodeFilters: [agent:1]
-      - label: topology.kubernetes.io/zone=zone-2
+      - label: topology.kubernetes.io/zone=zone-east
         nodeFilters: [agent:2]
