@@ -4,4 +4,4 @@ kind: Namespace
 metadata:
   name: colorz
   annotations:
-    linkerd.io/inject: disabled
+    linkerd.io/inject: enabled
