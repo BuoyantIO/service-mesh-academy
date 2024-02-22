@@ -1,14 +1,14 @@
-# Deploying Buoyant Enterprise for Linkerd (BEL) With High Availability Zonal Load Balancing (HAZL)
+# Eliminating Cross-Zone Kubernetes Traffic With High Availability Zonal Load Balancing (HAZL)
 
-## deploying-bel-with-hazl
+## eliminate-cross-zone-traffic-hazl
 
-### Tom Dean | Jason Morgan | Buoyant
+### Tom Dean | Buoyant
 
-### Last edit: 2/5/2024
+### Last edit: 2/20/2024
 
 ## Introduction
 
-In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linkerd** and demonstrate how to enable **High Availability Zonal Load Balancing (HAZL)**. We'll then take a look at how **HAZL** works to keep network traffic _in-zone_ where possible, and explore **Security Policy generation**.
+In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linkerd** and demonstrate how to enable **High Availability Zonal Load Balancing (HAZL)**. We'll then take a look at how **HAZL** works to keep network traffic _in-zone_ where possible, and compare **HAZL** to **Topology Aware Routing**.
 
 ### Buoyant Enterprise for Linkerd (BEL)
 
@@ -24,7 +24,7 @@ In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linker
 - Software Bills of Materials (SBOMs)
 - Strict SLAs Around CVE Remediation
 
-We're going to try out **Security Policy Generation** and **HAZL** in this demo, but remember that we'll get all the **BEL** features, **_except for FIPS_**, which isn't included in our Trial license.
+We're going to try out **HAZL** in this demo.
 
 ### High Availability Zonal Load Balancing (HAZL)
 
@@ -56,7 +56,7 @@ In short: under normal conditions, **HAZL** keeps all traffic within the zone, b
 
 **HAZL** will also apply these same principles to cross-cluster / multi-cluster calls: it will preserve zone locality by default, but allow cross-zone traffic if necessary to preserve reliability.
 
-### How High Availability Zonal Load Balancing (HAZL) vs Topology Hints
+### High Availability Zonal Load Balancing (HAZL) vs Topology Hints
 
 **HAZL** was designed in response to limitations seen by customers using Kubernetes's native **Topology Hints** (aka **Topology-aware Routing**) mechanism. These limitations are shared by native Kubernetes balancing (**kubeproxy**) as well as systems such as open source **Linkerd** and **Istio** that make use of **Topology Hints** to make routing decisions.
 
@@ -79,9 +79,11 @@ In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linker
 
 **In this demonstration, we're going to do the following:**
 
-- Deploy a `k3d` Kubernetes cluster
+- Deploy two `k3d` Kubernetes clusters
+  - One for HAZL
+  - One for Topology Aware Routing
 - Deploy **Buoyant Enterprise for Linkerd** with **HAZL** disabled on the cluster
-- Deploy the **Colorwheel** application to the cluster, to generate multi-zonal traffic
+- Deploy the **Colorwheel** application to the clusters, to generate multi-zonal traffic
   - Monitor traffic from the **Colorwheel** application, with **HAZL** disabled
 - Enable **High Availability Zonal Load Balancing (HAZL)**
   - Monitor traffic from the **Colorwheel** application, with **HAZL** enabled
