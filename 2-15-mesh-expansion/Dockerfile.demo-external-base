@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: 2024 Buoyant Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2024 Buoyant Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+#       http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+ARG PROXY_VERSION=no-proxy-version-set
+ARG VERSION=no-version-set
+ARG RUNTIME_IMAGE=docker.io/library/debian:bookworm-slim
+
+FROM cr.l5d.io/linkerd/proxy:$PROXY_VERSION AS proxy_bin
+FROM $RUNTIME_IMAGE as runtime
+ARG TARGETARCH
+# It's so very stupid that we have to duplicate these ARGs now that we've switched
+# the FROM line. But we do.
+ARG PROXY_VERSION
+ARG VERSION
+
+# This is associated with the service-mesh-academy repo.
+LABEL org.opencontainers.image.source=https://github.com/BuoyantIO/service-mesh-academy
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    iptables \
+    wget \
+    iproute2 \
+    jq \
+    curl \
+    gcc \
+    ca-certificates \
+    systemd \
+    dnsutils \
+    procps
+
+COPY --from=proxy_bin /usr/lib/linkerd/linkerd2-proxy /opt/linkerd/linkerd2-proxy
+
+WORKDIR /opt/spire
+
+# Install SPIRE. Make sure that we're getting the correct architecture.
+RUN wget --no-check-certificate https://github.com/spiffe/spire/releases/download/v1.8.2/spire-1.8.2-linux-$TARGETARCH-musl.tar.gz && \
+    tar zvxf spire-1.8.2-linux-$TARGETARCH-musl.tar.gz && \
+    cp -r spire-1.8.2/. /opt/spire/ && \
+    ln -s /opt/spire/bin/spire-server /usr/bin/spire-server && \
+    ln -s /opt/spire/bin/spire-agent /usr/bin/spire-agent
+
+COPY spire-config/server.cfg spire-config/agent.cfg ./
+
+COPY --chmod=0755 bin/bootstrap bin/bootstrap
+RUN sed -i \
+        -e s/%%VERSION%%/$VERSION/g \
+        -e s/%%PROXY_VERSION%%/$PROXY_VERSION/g \
+        bin/bootstrap
+COPY --chmod=0755 bin/no-workload /workload/start
+COPY --chmod=0755 bin/run-proxy /opt/linkerd/run-proxy
+
+
+RUN adduser app_user
+RUN usermod -G root app_user
+
+ENTRYPOINT ["/opt/spire/bin/bootstrap"]

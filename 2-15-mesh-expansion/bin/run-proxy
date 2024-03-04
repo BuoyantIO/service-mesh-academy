@@ -1,0 +1,50 @@
+#!/usr/bin/env sh
+
+# SPDX-FileCopyrightText: 2024 Buoyant Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2024 Buoyant Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+#       http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -eu
+
+export LINKERD2_PROXY_LOG="info"
+export LINKERD2_PROXY_LOG_FORMAT="plain"
+export LINKERD2_PROXY_DESTINATION_SVC_ADDR="linkerd-dst-headless.linkerd.svc.cluster.local.:8086"
+export LINKERD2_PROXY_DESTINATION_PROFILE_NETWORKS="10.0.0.0/8,100.64.0.0/10,172.16.0.0/12,192.168.0.0/16"
+export LINKERD2_PROXY_POLICY_SVC_ADDR="linkerd-policy.linkerd.svc.cluster.local.:8090"
+export LINKERD2_PROXY_INBOUND_DEFAULT_POLICY="all-unauthenticated"
+export LINKERD2_PROXY_POLICY_CLUSTER_NETWORKS="10.0.0.0/8,100.64.0.0/10,172.16.0.0/12,192.168.0.0/16"
+export LINKERD2_PROXY_CONTROL_STREAM_INITIAL_TIMEOUT="3s"
+export LINKERD2_PROXY_CONTROL_STREAM_IDLE_TIMEOUT="5m"
+export LINKERD2_PROXY_CONTROL_STREAM_LIFETIME="1h"
+export LINKERD2_PROXY_INBOUND_CONNECT_TIMEOUT="100ms"
+export LINKERD2_PROXY_OUTBOUND_CONNECT_TIMEOUT="1000ms"
+export LINKERD2_PROXY_OUTBOUND_DISCOVERY_IDLE_TIMEOUT="5s"
+export LINKERD2_PROXY_INBOUND_DISCOVERY_IDLE_TIMEOUT="90s"
+export LINKERD2_PROXY_CONTROL_LISTEN_ADDR="0.0.0.0:4190"
+export LINKERD2_PROXY_ADMIN_LISTEN_ADDR="0.0.0.0:4191"
+export LINKERD2_PROXY_OUTBOUND_LISTEN_ADDR="127.0.0.1:4140"
+export LINKERD2_PROXY_INBOUND_LISTEN_ADDR="0.0.0.0:4143"
+export LINKERD2_PROXY_INBOUND_PORTS=""
+export LINKERD2_PROXY_DESTINATION_PROFILE_SUFFIXES="svc.cluster.local."
+export LINKERD2_PROXY_INBOUND_ACCEPT_KEEPALIVE="10000ms"
+export LINKERD2_PROXY_OUTBOUND_CONNECT_KEEPALIVE="10000ms"
+export LINKERD2_PROXY_INBOUND_PORTS_DISABLE_PROTOCOL_DETECTION="25,587,3306,4444,5432,6379,9300,11211"
+export LINKERD2_PROXY_IDENTITY_TRUST_ANCHORS=`cat /opt/spire/certs/ca.crt`
+export LINKERD2_PROXY_DESTINATION_SVC_NAME="linkerd-destination.linkerd.serviceaccount.identity.linkerd.cluster.local"
+export LINKERD2_PROXY_POLICY_SVC_NAME="linkerd-destination.linkerd.serviceaccount.identity.linkerd.cluster.local"
+export LINKERD2_PROXY_IDENTITY_SPIRE_SOCKET="unix:///tmp/spire-agent/public/api.sock"
+
+./linkerd2-proxy
