@@ -104,7 +104,8 @@ Feel free to follow along with _your own instance_ if you'd like, using the reso
 - [Docker](https://docs.docker.com/get-docker/)
 - [k3d](https://k3d.io)
 - [step](https://smallstep.com/docs/step-cli/installation/)
-- The `watch` command must be installed and working
+- The `watch` command must be installed and working, if you want to use it
+- The `kubectx` command must be installed and working, if you want to use it
 - [Buoyant Enterprise for Linkerd License](https://enterprise.buoyant.io/start_trial)
 - [The Demo Assets, from GitHub](https://github.com/BuoyantIO/service-mesh-academy/tree/main/eliminate-cross-zone-traffic-hazl)
 
@@ -148,25 +149,25 @@ With the assets in place, we can proceed to creating a cluster with `k3d`.
 
 Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need two Kubernetes clusters. Fortunately, we can use `k3d` for that. There are two cluster configuration files in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
 
-Create the `demo-cluster-orders` cluster, using the configuration file in `cluster/demo-cluster-orders.yaml`:
+Create the `demo-cluster-orders-hazl` cluster, using the configuration file in `cluster/demo-cluster-orders-hazl.yaml`:
 
 ```bash
-k3d cluster create -c cluster/demo-cluster-orders.yaml --wait
+k3d cluster create -c cluster/demo-cluster-orders-hazl.yaml --wait
 ```
 
-Create the `demo-cluster-orders` cluster, using the configuration file in `cluster/demo-cluster-orders.yaml`:
+Create the `demo-cluster-orders-topo` cluster, using the configuration file in `cluster/demo-cluster-orders-topo.yaml`:
 
 ```bash
-k3d cluster create -c cluster/demo-cluster-orders.yaml --wait
+k3d cluster create -c cluster/demo-cluster-orders-topo.yaml --wait
 ```
 
-Check for our `demo-cluster-orders` cluster:
+Check for our clusters:
 
 ```bash
 k3d cluster list
 ```
 
-Now that we have a Kubernetes cluster, we can proceed with deploying **Buoyant Enterprise for Linkerd**.
+Now that we have our Kubernetes clusters, we can proceed with deploying **Buoyant Enterprise for Linkerd**.
 
 ### Task 3: Create mTLS Root Certificates
 
