@@ -278,13 +278,14 @@ export API_CLIENT_SECRET=[CLIENT_SECRET]
 export BUOYANT_LICENSE=[LICENSE]
 ```
 
-Add these to a file in the root of the `linkerd-demos/demo-orders` directory, named `settings.sh`, plus add a new line with the cluster name, `export CLUSTER_NAME=demo-cluster-orders`, like this:
+Add these to a file in the root of the `linkerd-demos/demo-orders` directory, named `settings.sh`, plus add two new lines with the cluster names, `export CLUSTER_NAME=demo-cluster-orders-hazl` and`export CLUSTER_NAME=demo-cluster-orders-topo`, like this:
 
 ```bash
 export API_CLIENT_ID=[CLIENT_ID]
 export API_CLIENT_SECRET=[CLIENT_SECRET]
 export BUOYANT_LICENSE=[LICENSE]
-export CLUSTER_NAME=demo-cluster-orders
+export CLUSTER1_NAME=demo-cluster-orders-hazl
+export CLUSTER2_NAME=demo-cluster-orders-topo
 ```
 
 Check the contents of the `settings.sh` file:
@@ -375,7 +376,7 @@ helm install linkerd-buoyant \
   --create-namespace \
   --namespace linkerd-buoyant \
   --kube-context hazl \
-  --set metadata.agentName=$CLUSTER_NAME \
+  --set metadata.agentName=$CLUSTER1_NAME \
   --set api.clientID=$API_CLIENT_ID \
   --set api.clientSecret=$API_CLIENT_SECRET \
   --set metrics.debugMetrics=true \
@@ -391,7 +392,7 @@ helm install linkerd-buoyant \
   --create-namespace \
   --namespace linkerd-buoyant \
   --kube-context topo \
-  --set metadata.agentName=$CLUSTER_NAME \
+  --set metadata.agentName=$CLUSTER2_NAME \
   --set api.clientID=$API_CLIENT_ID \
   --set api.clientSecret=$API_CLIENT_SECRET \
   --set metrics.debugMetrics=true \
