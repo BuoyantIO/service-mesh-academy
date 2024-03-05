@@ -337,15 +337,13 @@ With the CLI installed and working, we can get on with running our pre-installat
 
 #### Step 3: Run Pre-Installation Checks
 
-Use the `linkerd check --pre` command to validate that your clusters are ready for installation:
+Use the `linkerd check --pre` command to validate that your clusters are ready for installation.
 
 Check the `hazl` cluster:
 
 ```bash
 linkerd check --pre --context=hazl
 ```
-
-Use the `linkerd check --pre` command to validate that your clusters are ready for installation:
 
 Check the `topo` cluster:
 
@@ -368,7 +366,7 @@ helm repo add linkerd-buoyant https://helm.buoyant.cloud
 helm repo update
 ```
 
-_In order to access the Grafana dashboard in Buoyant Cloud, you'll need to deploy the **BEL operator** with **debug** enabled:_
+_**INTERNAL:** In order to access the Grafana dashboard in Buoyant Cloud, you'll need to deploy the **BEL operator** with **debug** enabled!_
 
 Deploy the **BEL Operator** to the `hazl` cluster:
 
@@ -402,7 +400,7 @@ helm install linkerd-buoyant \
 linkerd-buoyant/linkerd-buoyant
 ```
 
-After the installs, wait for the `buoyant-cloud-metrics` agents to be ready, then run the post-install operator health checks:
+After the installs, wait for the `buoyant-cloud-metrics` agents to be ready, then run the post-install operator health checks.
 
 On the `hazl` cluster:
 
@@ -441,7 +439,7 @@ type: kubernetes.io/tls
 EOF
 ```
 
-Create the `linkerd-identity-issuer` secret from the `linkerd-identity-secret.yaml` manifest:
+Create the `linkerd-identity-issuer` secret from the `linkerd-identity-secret.yaml` manifest.
 
 On the `hazl` cluster:
 
@@ -455,7 +453,7 @@ On the `topo` cluster:
 kubectl apply -f linkerd-identity-secret.yaml --context=topo
 ```
 
-Checking the secrets on our cluster:
+Let's check the secrets on our cluster.
 
 On the `hazl` cluster:
 
@@ -507,7 +505,7 @@ $(sed 's/^/          /' < certs/ca.crt )
 EOF
 ```
 
-Apply the ControlPlane CRD config to have the Linkerd BEL operator create the ControlPlane:
+Apply the ControlPlane CRD config to have the Linkerd BEL operator create the ControlPlane.
 
 On the `hazl` cluster:
 
@@ -525,7 +523,7 @@ To make adjustments to your **BEL ControlPlane** deployment _simply edit and re-
 
 #### Step 7: Verify the ControlPlane Installation
 
-After the installation is complete, watch the deployment of the Control Plane using `kubectl`:
+After the installation is complete, watch the deployment of the Control Plane using `kubectl`.
 
 On the `hazl` cluster:
 
@@ -541,7 +539,7 @@ watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace --context=t
 
 **_Use `CTRL-C` to exit the watch command._**
 
-Let's can verify the health and configuration of Linkerd by running the `linkerd check` command:
+Let's can verify the health and configuration of Linkerd by running the `linkerd check` command.
 
 On the `hazl` cluster:
 
@@ -575,7 +573,7 @@ spec:
 EOF
 ```
 
-Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the **DataPlane**:
+Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the **DataPlane**.
 
 On the `hazl` cluster:
 
@@ -591,16 +589,32 @@ kubectl apply -f linkerd-data-plane-config.yaml --context=topo
 
 #### Step 9: Monitor Buoyant Cloud Metrics Rollout and Check Proxies
 
-Now that both our **BEL ControlPlane** and **DataPlane** have been deployed, we'll check the status of our `buoyant-cloud-metrics` daemonset rollout:
+Now that both our **BEL ControlPlane** and **DataPlane** have been deployed, we'll check the status of our `buoyant-cloud-metrics` daemonset rollout.
+
+On the `hazl` cluster:
 
 ```bash
-kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant
+kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context=hazl
 ```
 
-Once the rollout is complete, we'll use `linkerd check --proxy` command to check the status of our **BEL** proxies:
+On the `topo` cluster:
 
 ```bash
-linkerd check --proxy -n linkerd-buoyant
+kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context=topo
+```
+
+Once the rollout is complete, we'll use `linkerd check --proxy` command to check the status of our **BEL** proxies.
+
+On the `hazl` cluster:
+
+```bash
+linkerd check --proxy -n linkerd-buoyant --context hazl
+```
+
+On the `topo` cluster:
+
+```bash
+linkerd check --proxy -n linkerd-buoyant --context topo
 ```
 
 Again, we may see a few warnings (!!), _but we're good to proceed as long as the overall status is good_.
@@ -613,25 +627,35 @@ We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use
 
 Now that **BEL** is fully deployed, we're going to need some traffic to observe.
 
-Deploy the **Orders** application, from the `orders` directory:
+Deploy the **Orders** application, from the `orders` directory.
+
+On the `hazl` cluster:
 
 ```bash
-kubectl apply -k orders
+kubectl apply -k orders --context=hazl
 ```
 
-We can check the status of the **Orders** application by watching the rollout:
+On the `topo` cluster:
 
 ```bash
-watch -n 1 kubectl get pods -n orders -o wide --sort-by .metadata.namespace
+kubectl apply -k orders --context=topo
+```
+
+We can check the status of the **Orders** application by watching the rollout.
+
+On the `hazl` cluster:
+
+```bash
+watch -n 1 kubectl get pods -n orders -o wide --sort-by .metadata.namespace --context=hazl
+```
+
+On the `topo` cluster:
+
+```bash
+watch -n 1 kubectl get pods -n orders -o wide --sort-by .metadata.namespace --context=topo
 ```
 
 **_Use `CTRL-C` to exit the watch command._**
-
-If you don't have the `watch` command on your system, just run:
-
-```bash
-kubectl get pods -n orders -o wide --sort-by .metadata.namespace
-```
 
 ### Create a DataPlane Object for the `orders` Namespace
 
@@ -651,10 +675,18 @@ spec:
 EOF
 ```
 
-Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the **DataPlane** object for the `orders` namespace:
+Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the **DataPlane** object for the `orders` namespace.
+
+On the `hazl` cluster:
 
 ```bash
-kubectl apply -f linkerd-data-plane-orders-config.yaml
+kubectl apply -f linkerd-data-plane-orders-config.yaml --context=hazl
+```
+
+On the `topo` cluster:
+
+```bash
+kubectl apply -f linkerd-data-plane-orders-config.yaml --context=topo
 ```
 
 With the **Orders** application deployed, we now have some traffic to work with.
