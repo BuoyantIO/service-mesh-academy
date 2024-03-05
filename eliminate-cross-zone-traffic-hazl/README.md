@@ -180,19 +180,19 @@ kubectx hazl=k3d-demo-cluster-orders-hazl
 kubectx topo=k3d-demo-cluster-orders-topo
 ```
 
-Checking our contexts again:
-
-```bash
-kubectx
-```
-
 Finally, we'll switch to the `hazl` context:
 
 ```bash
 kubectx hazl
 ```
 
-Now that we have our Kubernetes clusters, we can proceed with deploying **Buoyant Enterprise for Linkerd**.
+Checking our contexts again:
+
+```bash
+kubectx
+```
+
+Now that we have our Kubernetes clusters and contexts up and configured, we can proceed with deploying **Buoyant Enterprise for Linkerd** on them.
 
 ### Task 3: Create mTLS Root Certificates
 
@@ -465,13 +465,13 @@ Let's check the secrets on our cluster.
 On the `hazl` cluster:
 
 ```bash
-kubectl get secrets -A --context=hazl
+kubectl get secrets  -n linkerd --context=hazl
 ```
 
 On the `topo` cluster:
 
 ```bash
-kubectl get secrets -A --context=topo
+kubectl get secrets  -n linkerd --context=topo
 ```
 
 Now that we have our `linkerd-identity-issuer` secrets, we can proceed with creating the **ControlPlane CRD** configuration manifest.
