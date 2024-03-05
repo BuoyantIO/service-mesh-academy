@@ -180,6 +180,12 @@ kubectx hazl=k3d-demo-cluster-orders-hazl
 kubectx topo=k3d-demo-cluster-orders-topo
 ```
 
+Checking our contexts again:
+
+```bash
+kubectx
+```
+
 Finally, we'll switch to the `hazl` context:
 
 ```bash
