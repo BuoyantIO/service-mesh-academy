@@ -167,6 +167,25 @@ Check for our clusters:
 k3d cluster list
 ```
 
+Checking our contexts:
+
+```bash
+kubectx
+```
+
+Let's shorten our context names, for ease of use:
+
+```bash
+kubectx hazl=k3d-demo-cluster-orders-hazl
+kubectx topo=k3d-demo-cluster-orders-topo
+```
+
+Finally, we'll switch to the `hazl` context:
+
+```bash
+kubectx hazl
+```
+
 Now that we have our Kubernetes clusters, we can proceed with deploying **Buoyant Enterprise for Linkerd**.
 
 ### Task 3: Create mTLS Root Certificates
