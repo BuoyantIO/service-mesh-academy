@@ -4,7 +4,7 @@
 
 ### Tom Dean | Buoyant
 
-### Last edit: 3/4/2024
+### Last edit: 3/5/2024
 
 ## Introduction
 
@@ -106,7 +106,7 @@ Feel free to follow along with _your own instance_ if you'd like, using the reso
 - [step](https://smallstep.com/docs/step-cli/installation/)
 - The `watch` command must be installed and working
 - [Buoyant Enterprise for Linkerd License](https://enterprise.buoyant.io/start_trial)
-- [The Demo Assets, from GitHub](https://github.com/BuoyantIO/service-mesh-academy/tree/main/deploying-bel-with-hazl)
+- [The Demo Assets, from GitHub](https://github.com/BuoyantIO/service-mesh-academy/tree/main/eliminate-cross-zone-traffic-hazl)
 
 All prerequisites must be _installed_ and _working properly_ before proceeding. The instructions in the provided links will get you there. A trial license for Buoyant Enterprise for Linkerd can be obtained from the link above. Instructions on obtaining the demo assets from GitHub are below.
 
@@ -118,25 +118,25 @@ This repository includes the **Orders** application, which generates traffic acr
 
 First, we'll deploy a Kubernetes cluster using `k3d` and deploy Buoyant Enterprise for Linkerd (BEL).
 
-### Task 1: Clone the `demo-orders` Assets
+### Task 1: Clone the `eliminate-cross-zone-traffic-hazl` Assets
 
-[GitHub: Demonstration: Orders Application With High Availability Zonal Load Balancing (HAZL)](https://github.com/southsidedean/linkerd-demos/tree/main/demo-orders)
+[GitHub: Deploying Buoyant Enterprise for Linkerd with High Availability Zonal Load Balancing (HAZL)](https://github.com/BuoyantIO/service-mesh-academy/tree/main/eliminate-cross-zone-traffic-hazl)
 
-To get the resources we will be using in this demonstration, you will need to clone a copy of the GitHub `southsidedean/linkerd-demos` repository. We'll be using the materials in the `demo-orders` subdirectory.
+To get the resources we will be using in this demonstration, you will need to clone a copy of the GitHub `BuoyantIO/service-mesh-academy` repository. We'll be using the materials in the `service-mesh-academy/eliminate-cross-zone-traffic-hazl` subdirectory.
 
-Clone the `southsidedean/linkerd-demos` GitHub repository to your preferred working directory:
-
-```bash
-git clone https://github.com/southsidedean/linkerd-demos.git
-```
-
-Change directory to the `demo-orders` subdirectory in the `linkerd-demos` repository:
+Clone the `BuoyantIO/service-mesh-academy` GitHub repository to your preferred working directory:
 
 ```bash
-cd linkerd-demos/demo-orders
+git clone https://github.com/BuoyantIO/service-mesh-academy.git
 ```
 
-Taking a look at the contents of `linkerd-demos/demo-orders`:
+Change directory to the `eliminate-cross-zone-traffic-hazl` subdirectory in the `service-mesh-academy` repository:
+
+```bash
+cd service-mesh-academy/eliminate-cross-zone-traffic-hazl
+```
+
+Taking a look at the contents of `service-mesh-academy/eliminate-cross-zone-traffic-hazl`:
 
 ```bash
 ls -la
@@ -144,9 +144,15 @@ ls -la
 
 With the assets in place, we can proceed to creating a cluster with `k3d`.
 
-### Task 2: Deploy a Kubernetes Cluster Using `k3d`
+### Task 2: Deploy two Kubernetes Clusters Using `k3d`
 
-Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need a Kubernetes cluster. Fortunately, we can use `k3d` for that. There's a cluster configuration file in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
+Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need two Kubernetes clusters. Fortunately, we can use `k3d` for that. There are two cluster configuration files in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
+
+Create the `demo-cluster-orders` cluster, using the configuration file in `cluster/demo-cluster-orders.yaml`:
+
+```bash
+k3d cluster create -c cluster/demo-cluster-orders.yaml --wait
+```
 
 Create the `demo-cluster-orders` cluster, using the configuration file in `cluster/demo-cluster-orders.yaml`:
 
