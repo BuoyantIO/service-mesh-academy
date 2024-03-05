@@ -704,10 +704,6 @@ Let's take a look at traffic flow _without **HAZL** enabled_ in **Buoyant Cloud*
 
 ![Buoyant Cloud: Topology](images/orders-no-hazl-bcloud.png)
 
-Taking a look at the CAR Playground Grafana Dashboard:
-
-![Grafana: Dashboard](images/orders-no-hazl-grafana.png)
-
 We can see...
 
 ### Enable High Availability Zonal Load Balancing (HAZL)
@@ -738,14 +734,6 @@ Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoy
 
 Taking a look at the CAR Playground Grafana Dashboard:
 
-![Grafana: Dashboard](images/orders-hazl-grafana-1.png)
-
-We can see...
-
-![Grafana: Dashboard](images/orders-hazl-grafana-2.png)
-
-We can see...
-
 <<Explain what we're seeing here>>
 
 ### Increase Number of Requests
@@ -770,8 +758,6 @@ Let's take a look at what the increased traffic looks like in **Buoyant Cloud**.
 
 ![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
-
 We can see...
 
 <<Explain what we're seeing here>>
@@ -790,12 +776,6 @@ Let's head over to **Buoyant Cloud**.
 Let's take a look at what traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
 ![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
-
-![Grafana: Dashboard](images/orders-hazl-scaled-warehouse-grafana-1.png)
-
-We can see...
-
-![Grafana: Dashboard](images/orders-hazl-scaled-warehouse-grafana-2.png)
 
 We can see...
 
