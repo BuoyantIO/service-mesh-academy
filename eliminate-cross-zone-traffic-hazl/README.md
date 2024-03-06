@@ -718,10 +718,10 @@ Edit the `linkerd-control-plane-config.yaml` file:
 vi linkerd-control-plane-config.yaml
 ```
 
-Apply the ControlPlane CRD config to have the Linkerd BEL operator update the Linkerd control plane configuration, and enable HAZL:
+Apply the ControlPlane CRD config to have the Linkerd BEL operator update the Linkerd control plane configuration, and enable HAZL _on the `hazl` cluster only_:
 
 ```bash
-kubectl apply -f linkerd-control-plane-config.yaml
+kubectl apply -f linkerd-control-plane-config.yaml --context=hazl
 ```
 
 Now, we can see the effect **HAZL** has on the traffic in our multi-az cluster.
@@ -732,20 +732,22 @@ Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoy
 
 ![Buoyant Cloud: Topology](images/orders-hazl-bcloud.png)
 
-Taking a look at the CAR Playground Grafana Dashboard:
+We can see...
 
-<<Explain what we're seeing here>>
-
-### Increase Number of Requests
+### Increase Number of Requests From the `orders-central` Requestor
 
 <<Instructions on how to turn up requests>>
 
 ```bash
-kubectl get cm -n orders
+kubectl get cm -n orders --context=hazl
 ```
 
 ```bash
-kubectl edit -n orders cm orders-central-config
+kubectl edit -n orders cm orders-central-config --context=hazl
+```
+
+```bash
+kubectl edit -n orders cm orders-central-config --context=topo
 ```
 
 We're going to change the value of `requestsPerSecond: 50` to `requestsPerSecond: 400`.
@@ -784,58 +786,6 @@ We can see...
 ### Summary: Observe the Effects of HAZL
 
 <<Summary for the Observe the Effects of HAZL section>>
-
-## Demo 4: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
-
-<<Talk about this, give some context>>
-
-### Creating Zero-Trust Security Policies
-
-<<Say something about creating Security Policies with BEL here>>
-
-Use the `linkerd policy generate` command to have BEL generate policies from observed traffic:
-
-```bash
-linkerd policy generate > linkerd-policy.yaml
-```
-
-We've put these policies into a manifest in the `linkerd-policy.yaml`. Let's take a look:
-
-```bash
-more linkerd-policy.yaml
-```
-
-We can see the policies that `linkerd policy generate` created.
-
-Now, let's apply the policies to our cluster:
-
-```bash
-kubectl apply -f linkerd-policy.yaml
-```
-
-We should see the policies being applied to our cluster.
-
-Let's take a look at our new Security Policies in Buoyant Cloud.
-
-### Examine Security Policies Using Buoyant Cloud
-
-Let's take a look at the Security Policies we just created in **Buoyant Cloud**.
-
-![Buoyant Cloud: Resources: Security Policies](images/orders-security-policies-1.png)
-
-<<Explain what we're seeing here>>
-
-![Buoyant Cloud: Resources: Security Policies](images/orders-security-policies-2.png)
-
-<<Explain what we're seeing here>>
-
-![Buoyant Cloud: Resources: Security Policies](images/orders-security-policies-3.png)
-
-<<Explain what we're seeing here>>
-
-### Summary: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
-
-<<Security policies summary>>
 
 ## Summary: Deploying the Orders Application With High Availability Zonal Load Balancing (HAZL)
 
