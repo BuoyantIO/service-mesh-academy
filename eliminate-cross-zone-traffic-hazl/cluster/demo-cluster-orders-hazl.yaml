@@ -3,7 +3,7 @@ kind: Simple
 metadata:
   name: demo-cluster-orders-hazl
 servers: 1
-agents: 3
+agents: 9
 network: multiaz-orders-hazl
 image: rancher/k3s:v1.29.2-k3s1
 options:
@@ -18,7 +18,19 @@ options:
     nodeLabels:
       - label: topology.kubernetes.io/zone=zone-central
         nodeFilters: [agent:0]
-      - label: topology.kubernetes.io/zone=zone-west
+      - label: topology.kubernetes.io/zone=zone-central
         nodeFilters: [agent:1]
-      - label: topology.kubernetes.io/zone=zone-east
+      - label: topology.kubernetes.io/zone=zone-central
         nodeFilters: [agent:2]
+      - label: topology.kubernetes.io/zone=zone-west
+        nodeFilters: [agent:3]
+      - label: topology.kubernetes.io/zone=zone-west
+        nodeFilters: [agent:4]
+      - label: topology.kubernetes.io/zone=zone-west
+        nodeFilters: [agent:5]
+      - label: topology.kubernetes.io/zone=zone-east
+        nodeFilters: [agent:6]
+      - label: topology.kubernetes.io/zone=zone-east
+        nodeFilters: [agent:7]
+      - label: topology.kubernetes.io/zone=zone-east
+        nodeFilters: [agent:8]
