@@ -634,18 +634,18 @@ We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use
 
 Now that **BEL** is fully deployed, we're going to need some traffic to observe.
 
-Deploy the **Orders** application, from the `orders` directory.
+Deploy the **Orders** application, from the `orders` directory for the `hazl` cluster, and from the `orders-topo` directory for the `topo` cluster.  The `orders-topo` application is the same as the `orders` application, but is configured for Topology Aware Routing.
 
-On the `hazl` cluster:
+On the `hazl` cluster, deploy from the `orders` directory:
 
 ```bash
 kubectl apply -k orders --context=hazl
 ```
 
-On the `topo` cluster:
+On the `topo` cluster, deploy from the `orders-topo` directory:
 
 ```bash
-kubectl apply -k orders --context=topo
+kubectl apply -k orders-topo --context=topo
 ```
 
 We can check the status of the **Orders** application by watching the rollout.
