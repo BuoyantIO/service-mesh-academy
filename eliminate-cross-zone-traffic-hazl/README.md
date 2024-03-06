@@ -480,14 +480,14 @@ Now that we have our `linkerd-identity-issuer` secrets, we can proceed with crea
 
 [Kubernetes Docs: Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
 
-We deploy the **BEL ControlPlane** and **DataPlane** using **Custom Resources**. We'll create a manifest for each that contains the object's configuration. We'll start with the **ControlPlane** first.
+We deploy the **BEL ControlPlanes** and **DataPlanes** using **Custom Resources**. We'll create a manifest for each that contains the object's configuration. We'll start with the **ControlPlanes** first.
 
 This **CRD configuration** also enables **High Availability Zonal Load Balancing (HAZL)**, using the `- -ext-endpoint-zone-weights` `experimentalArgs`. We're going to omit the `- -ext-endpoint-zone-weights` in the `experimentalArgs` for now, by commenting it out with a `#` in the manifest.
 
-Let's create the ControlPlane manifest:
+Let's create the ControlPlane manifest for the `hazl` cluster:
 
 ```bash
-cat <<EOF > linkerd-control-plane-config.yaml
+cat <<EOF > linkerd-control-plane-config-hazl.yaml
 apiVersion: linkerd.buoyant.io/v1alpha1
 kind: ControlPlane
 metadata:
@@ -512,18 +512,43 @@ $(sed 's/^/          /' < certs/ca.crt )
 EOF
 ```
 
-Apply the ControlPlane CRD config to have the Linkerd BEL operator create the ControlPlane.
+Next, we'll create the ControlPlane manifest for the `topo` cluster:
+
+```bash
+cat <<EOF > linkerd-control-plane-config-topo.yaml
+apiVersion: linkerd.buoyant.io/v1alpha1
+kind: ControlPlane
+metadata:
+  name: linkerd-control-plane
+spec:
+  components:
+    linkerd:
+      version: enterprise-2.15.1-1
+      license: $BUOYANT_LICENSE
+      controlPlaneConfig:
+        proxy:
+          image:
+            version: enterprise-2.15.1-1
+        identityTrustAnchorsPEM: |
+$(sed 's/^/          /' < certs/ca.crt )
+        identity:
+          issuer:
+            scheme: kubernetes.io/tls
+EOF
+```
+
+Apply the ControlPlane CRD configurations to have the Linkerd BEL operator create the **ControlPlanes**.
 
 On the `hazl` cluster:
 
 ```bash
-kubectl apply -f linkerd-control-plane-config.yaml --context=hazl
+kubectl apply -f linkerd-control-plane-config-hazl.yaml --context=hazl
 ```
 
 On the `topo` cluster:
 
 ```bash
-kubectl apply -f linkerd-control-plane-config.yaml --context=topo
+kubectl apply -f linkerd-control-plane-config-topo.yaml --context=topo
 ```
 
 To make adjustments to your **BEL ControlPlane** deployment _simply edit and re-apply the `linkerd-control-plane-config.yaml` manifest_.
