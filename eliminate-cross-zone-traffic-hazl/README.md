@@ -736,7 +736,7 @@ We can see...
 
 ### Increase Number of Requests From the `orders-central` Requestor
 
-<<Instructions on how to turn up requests>>
+Instructions on how to turn up requests
 
 ```bash
 kubectl get cm -n orders --context=hazl
