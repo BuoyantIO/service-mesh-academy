@@ -35,7 +35,7 @@ spec:
             cpu: 5m # Underprovision
             memory: 5Mi # Underprovision
           limits:
-            cpu: 100m # Underprovision
+            cpu: 10m # Underprovision
             memory: 10Mi # Underprovision
         livenessProbe:
           tcpSocket:
@@ -75,4 +75,4 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: warehouse-boston
-  targetCPUUtilizationPercentage: 20
+  targetCPUUtilizationPercentage: 10
