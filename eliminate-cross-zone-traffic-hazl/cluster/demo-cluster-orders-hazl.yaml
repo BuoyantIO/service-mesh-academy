@@ -14,6 +14,8 @@ options:
         nodeFilters: [server:*]
       - arg: --debug
         nodeFilters: [server:*]
+      - arg: --image=docker.io/rancher/k3s:v1.28.3-rc3-k3s2
+        nodeFilters: [server:*]
     nodeLabels:
       - label: topology.kubernetes.io/zone=zone-central
         nodeFilters: [agent:0]
