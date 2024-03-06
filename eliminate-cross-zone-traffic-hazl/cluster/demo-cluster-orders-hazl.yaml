@@ -5,7 +5,7 @@ metadata:
 servers: 1
 agents: 3
 network: multiaz-orders-hazl
-image: rancher/k3s:v1.29.2-rc3-k3s1
+image: rancher/k3s:v1.29.2-k3s1
 options:
   k3d:
     disableLoadbalancer: true
