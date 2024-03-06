@@ -5,6 +5,7 @@ metadata:
 servers: 1
 agents: 3
 network: multiaz-orders-topo
+image: rancher/k3s:v1.28.3-rc3-k3s2
 options:
   k3d:
     disableLoadbalancer: true
@@ -13,8 +14,6 @@ options:
       - arg: --disable=servicelb,traefik
         nodeFilters: [server:*]
       - arg: --debug
-        nodeFilters: [server:*]
-      - arg: --image=docker.io/rancher/k3s:v1.28.3-rc3-k3s2
         nodeFilters: [server:*]
     nodeLabels:
       - label: topology.kubernetes.io/zone=zone-central
