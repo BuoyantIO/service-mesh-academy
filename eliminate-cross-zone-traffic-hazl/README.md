@@ -551,7 +551,7 @@ On the `topo` cluster:
 kubectl apply -f linkerd-control-plane-config-topo.yaml --context=topo
 ```
 
-To make adjustments to your **BEL ControlPlane** deployment _simply edit and re-apply the `linkerd-control-plane-config.yaml` manifest_.
+To make adjustments to your **BEL ControlPlane** deployment _simply edit and re-apply the `linkerd-control-plane-config-*.yaml` manifest_.
 
 #### Step 7: Verify the ControlPlane Installation
 
@@ -735,18 +735,18 @@ We can see...
 
 Let's take a look at how quick and easy we can enable **High Availability Zonal Load Balancing (HAZL)**.
 
-Remember, to make adjustments to your **BEL** deployment _simply edit and re-apply the previously-created `linkerd-control-plane-config.yaml` manifest_. We're going to **enable** the `- -ext-endpoint-zone-weights` in the `experimentalArgs` for now, by uncommenting it in the manifest:
+Remember, to make adjustments to your **BEL** deployment _simply edit and re-apply the previously-created `linkerd-control-plane-config-hazl.yaml` manifest_. We're going to **enable** the `- -ext-endpoint-zone-weights` in the `experimentalArgs` for now, by uncommenting it in the manifest:
 
-Edit the `linkerd-control-plane-config.yaml` file:
+Edit the `linkerd-control-plane-config-hazl.yaml` file:
 
 ```bash
-vi linkerd-control-plane-config.yaml
+vi linkerd-control-plane-config-hazl.yaml
 ```
 
 Apply the ControlPlane CRD config to have the Linkerd BEL operator update the Linkerd control plane configuration, and enable HAZL _on the `hazl` cluster only_:
 
 ```bash
-kubectl apply -f linkerd-control-plane-config.yaml --context=hazl
+kubectl apply -f linkerd-control-plane-config-hazl.yaml --context=hazl
 ```
 
 Now, we can see the effect **HAZL** has on the traffic in our multi-az cluster.
