@@ -698,7 +698,7 @@ kubectl apply -f linkerd-data-plane-orders-config.yaml --context=topo
 
 With the **Orders** application deployed, we now have some traffic to work with.
 
-### Monitor Traffic Without HAZL
+### Monitor Traffic Without HAZL Enabled and Topology Aware Routing
 
 Let's take a look at traffic flow _without **HAZL** enabled_ in **Buoyant Cloud**. This will give us a more visual representation of our baseline traffic. Head over to **Buoyant Cloud**, and take a look at the contents of the `orders` namespace in the Topology tab.
 
