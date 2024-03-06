@@ -32,7 +32,7 @@ spec:
         - /colorwheel/paint/blue.yml
         resources:
           requests:
-            cpu: 10m # Overprovision
+            cpu: 5m # Underprovision
             memory: 10Mi
           limits:
             cpu: 1000m
@@ -63,3 +63,16 @@ spec:
               - key: topology.kubernetes.io/zone
                 operator: In
                 values: [zone-east]
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: warehouse-boston
+spec:
+  maxReplicas: 9
+  minReplicas: 3
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: warehouse-boston
+  targetCPUUtilizationPercentage: 30
