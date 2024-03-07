@@ -85,4 +85,4 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: warehouse-boston
-  targetCPUUtilizationPercentage: 10
+  targetCPUUtilizationPercentage: 20
