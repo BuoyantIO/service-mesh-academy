@@ -8,7 +8,7 @@ metadata:
     color: warehouse-chicago
     app: fulfillment
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       color: warehouse-chicago

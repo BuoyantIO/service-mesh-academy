@@ -8,7 +8,7 @@ metadata:
     color: warehouse-boston
     app: fulfillment
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       color: warehouse-boston
@@ -72,8 +72,8 @@ metadata:
   name: warehouse-boston
   namespace: orders
 spec:
-  maxReplicas: 9
-  minReplicas: 3
+  maxReplicas: 6
+  minReplicas: 1
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
