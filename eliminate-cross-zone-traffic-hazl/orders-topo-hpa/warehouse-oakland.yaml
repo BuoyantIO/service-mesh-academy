@@ -18,6 +18,8 @@ spec:
       labels:
         color: warehouse-oakland
         app: fulfillment
+      annotations:
+        config.linkerd.io/proxy-cpu-request: "0.5"
     spec:
       containers:
       - name: colorz
@@ -70,3 +72,17 @@ spec:
           labelSelector:
             matchLabels:
               app: fulfillment
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: warehouse-oakland
+  namespace: orders
+spec:
+  maxReplicas: 9
+  minReplicas: 3
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: warehouse-oakland
+  targetCPUUtilizationPercentage: 20

@@ -2,22 +2,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: warehouse-oakland
+  name: warehouse-boston
   namespace: orders
   labels:
-    color: warehouse-oakland
+    color: warehouse-boston
     app: fulfillment
 spec:
   replicas: 3
   selector:
     matchLabels:
-      color: warehouse-oakland
+      color: warehouse-boston
       app: fulfillment
   template:
     metadata:
       labels:
-        color: warehouse-oakland
+        color: warehouse-boston
         app: fulfillment
+      annotations:
+        config.linkerd.io/proxy-cpu-request: "0.5"
     spec:
       containers:
       - name: colorz
@@ -29,7 +31,7 @@ spec:
           value: info
         args:
         - paint
-        - /colorwheel/paint/red.yml
+        - /colorwheel/paint/blue.yml
         resources:
           requests:
             cpu: 10m # Overprovision
@@ -62,11 +64,18 @@ spec:
             - matchExpressions:
               - key: topology.kubernetes.io/zone
                 operator: In
-                values: [zone-west]
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: topology.kubernetes.io/zone
-          whenUnsatisfiable: DoNotSchedule
-          labelSelector:
-            matchLabels:
-              app: fulfillment
+                values: [zone-east]
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: warehouse-boston
+  namespace: orders
+spec:
+  maxReplicas: 9
+  minReplicas: 3
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: warehouse-boston
+  targetCPUUtilizationPercentage: 20
