@@ -678,13 +678,13 @@ We can check the status of the **Orders** application by watching the rollout.
 On the `hazl` cluster:
 
 ```bash
-watch -n 1 kubectl get pods -n orders -o wide --sort-by .metadata.namespace --context=hazl
+watch -n 1 kubectl get pods -n orders -o wide --sort-by .spec.nodeName --context=hazl
 ```
 
 On the `topo` cluster:
 
 ```bash
-watch -n 1 kubectl get pods -n orders -o wide --sort-by .metadata.namespace --context=topo
+watch -n 1 kubectl get pods -n orders -o wide --sort-by .spec.nodeName --context=topo
 ```
 
 **_Use `CTRL-C` to exit the watch command._**
