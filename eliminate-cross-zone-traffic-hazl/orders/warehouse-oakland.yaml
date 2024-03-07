@@ -34,11 +34,11 @@ spec:
         - /colorwheel/paint/red.yml
         resources:
           requests:
-            cpu: 5m # Underprovision
-            memory: 5Mi # Underprovision
-          limits:
             cpu: 10m # Underprovision
             memory: 10Mi # Underprovision
+          limits:
+            cpu: 50m # Underprovision
+            memory: 50Mi # Underprovision
         livenessProbe:
           tcpSocket:
             port: 8080

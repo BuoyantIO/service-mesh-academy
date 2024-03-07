@@ -61,7 +61,7 @@ metadata:
     app: orders
 data:
   config.yml: |
-    requestsPerSecond: 800
+    requestsPerSecond: 600
     reportIntervalSeconds: 10
     uri: http://fulfillment.orders.svc.cluster.local
 ...
