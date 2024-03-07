@@ -86,3 +86,6 @@ spec:
     kind: Deployment
     name: warehouse-boston
   targetCPUUtilizationPercentage: 10
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 30

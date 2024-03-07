@@ -86,3 +86,6 @@ spec:
     kind: Deployment
     name: warehouse-chicago
   targetCPUUtilizationPercentage: 10
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 30

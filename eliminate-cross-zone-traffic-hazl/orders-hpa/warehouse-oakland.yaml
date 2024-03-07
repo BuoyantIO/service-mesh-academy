@@ -79,3 +79,6 @@ spec:
     kind: Deployment
     name: warehouse-oakland
   targetCPUUtilizationPercentage: 10
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 30
