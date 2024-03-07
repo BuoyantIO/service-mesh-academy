@@ -68,6 +68,7 @@ apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
   name: warehouse-boston
+  namespace: orders
 spec:
   maxReplicas: 9
   minReplicas: 3
