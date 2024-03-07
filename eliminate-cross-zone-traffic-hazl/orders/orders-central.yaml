@@ -7,7 +7,7 @@ metadata:
   labels:
     app: orders
 spec:
-  replicas: 6
+  replicas: 3
   selector:
     matchLabels:
       app: orders
@@ -54,7 +54,7 @@ metadata:
     app: orders
 data:
   config.yml: |
-    requestsPerSecond: 400
+    requestsPerSecond: 800
     reportIntervalSeconds: 10
     uri: http://fulfillment.orders.svc.cluster.local
 ...
