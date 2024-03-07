@@ -32,11 +32,11 @@ spec:
         - /colorwheel/paint/blue.yml
         resources:
           requests:
-            cpu: 10m # Overprovision
-            memory: 10Mi
+            cpu: 5m
+            memory: 5Mi
           limits:
-            cpu: 1000m
-            memory: 100Mi
+            cpu: 500m
+            memory: 50Mi
         livenessProbe:
           tcpSocket:
             port: 8080
