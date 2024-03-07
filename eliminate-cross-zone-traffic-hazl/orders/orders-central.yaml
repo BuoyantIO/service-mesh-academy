@@ -57,4 +57,3 @@ data:
     requestsPerSecond: 150
     reportIntervalSeconds: 10
     uri: http://fulfillment.orders.svc.cluster.local
-...
