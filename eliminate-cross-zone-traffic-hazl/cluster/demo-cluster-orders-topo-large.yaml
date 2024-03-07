@@ -1,0 +1,36 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: demo-cluster-orders-topo
+servers: 1
+agents: 9
+network: multiaz-orders-topo
+image: rancher/k3s:v1.29.2-k3s1
+options:
+  k3d:
+    disableLoadbalancer: true
+  k3s:
+    extraArgs:
+      - arg: --disable=servicelb,traefik
+        nodeFilters: [server:*]
+      - arg: --debug
+        nodeFilters: [server:*]
+    nodeLabels:
+      - label: topology.kubernetes.io/zone=zone-central
+        nodeFilters: [agent:0]
+      - label: topology.kubernetes.io/zone=zone-central
+        nodeFilters: [agent:1]
+      - label: topology.kubernetes.io/zone=zone-central
+        nodeFilters: [agent:2]
+      - label: topology.kubernetes.io/zone=zone-west
+        nodeFilters: [agent:3]
+      - label: topology.kubernetes.io/zone=zone-west
+        nodeFilters: [agent:4]
+      - label: topology.kubernetes.io/zone=zone-west
+        nodeFilters: [agent:5]
+      - label: topology.kubernetes.io/zone=zone-east
+        nodeFilters: [agent:6]
+      - label: topology.kubernetes.io/zone=zone-east
+        nodeFilters: [agent:7]
+      - label: topology.kubernetes.io/zone=zone-east
+        nodeFilters: [agent:8]
