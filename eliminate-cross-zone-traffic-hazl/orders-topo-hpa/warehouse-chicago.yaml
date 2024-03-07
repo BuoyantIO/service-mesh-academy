@@ -34,11 +34,11 @@ spec:
         - /colorwheel/paint/green.yml
         resources:
           requests:
-            cpu: 5m
-            memory: 5Mi
+            cpu: 10m # Overprovision
+            memory: 10Mi
           limits:
-            cpu: 500m
-            memory: 50Mi
+            cpu: 1000m
+            memory: 100Mi
         livenessProbe:
           tcpSocket:
             port: 8080
@@ -85,4 +85,4 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: warehouse-chicago
-  targetCPUUtilizationPercentage: 20
+  targetCPUUtilizationPercentage: 10
