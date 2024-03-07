@@ -18,6 +18,8 @@ spec:
       labels:
         color: warehouse-chicago
         app: fulfillment
+      annotations:
+        config.linkerd.io/proxy-cpu-request: "0.5"
     spec:
       containers:
       - name: colorz
