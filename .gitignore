@@ -1,3 +1,4 @@
 .vscode/
 *.crt
 *.key
+.DS_Store
