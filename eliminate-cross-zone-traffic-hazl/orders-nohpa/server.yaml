@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fulfillment
+  namespace: orders
+  labels:
+    mirror.linkerd.io/exported: remote-discovery
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: fulfillment
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: warehouse-config
+  namespace: orders
+  labels:
+    app: fulfillment
+data:
+  red.yml: |
+    color: "#ff0000"
+    averageResponseTime: 0.020
+  green.yml: |
+    color: "#00ff00"
+    averageResponseTime: 0.020
+  blue.yml: |
+    color: "#0000ff"
+    averageResponseTime: 0.020
