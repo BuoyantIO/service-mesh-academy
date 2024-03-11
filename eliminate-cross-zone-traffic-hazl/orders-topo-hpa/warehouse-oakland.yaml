@@ -8,7 +8,7 @@ metadata:
     color: warehouse-oakland
     app: fulfillment
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       color: warehouse-oakland
@@ -79,13 +79,19 @@ metadata:
   name: warehouse-oakland
   namespace: orders
 spec:
-  maxReplicas: 5
-  minReplicas: 2
+  maxReplicas: 2
+  minReplicas: 1
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: warehouse-oakland
-  targetCPUUtilizationPercentage: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 10
   behavior:
     scaleDown:
       stabilizationWindowSeconds: 30
