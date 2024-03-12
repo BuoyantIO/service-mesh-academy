@@ -72,7 +72,7 @@ metadata:
   name: warehouse-boston
   namespace: orders
 spec:
-  maxReplicas: 2
+  maxReplicas: 3
   minReplicas: 1
   scaleTargetRef:
     apiVersion: apps/v1
