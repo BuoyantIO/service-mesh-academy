@@ -12,6 +12,8 @@ k3d cluster create -c cluster/demo-cluster-orders-hazl.yaml --wait
 k3d cluster create -c cluster/demo-cluster-orders-topo.yaml --wait
 k3d cluster list
 
+kubectx -d hazl
+kuebctx -d topo
 kubectx hazl=k3d-demo-cluster-orders-hazl
 kubectx topo=k3d-demo-cluster-orders-topo
 kubectx hazl
