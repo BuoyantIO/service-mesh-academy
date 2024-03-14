@@ -17,7 +17,7 @@ k3d cluster list
 # Configure the kubectl contexts: hazl and topo
 
 kubectx -d hazl
-kuebctx -d topo
+kubectx -d topo
 kubectx hazl=k3d-demo-cluster-orders-hazl
 kubectx topo=k3d-demo-cluster-orders-topo
 kubectx hazl

@@ -15,7 +15,7 @@ k3d cluster list
 # Remove the kubectl contexts: hazl and topo
 
 kubectx -d hazl
-kuebctx -d topo
+kubectx -d topo
 kubectx
 
 exit 0
