@@ -102,8 +102,10 @@ Feel free to follow along with _your own instance_ if you'd like, using the reso
 **If you'd like to follow along, you're going to need the following:**
 
 - [Docker](https://docs.docker.com/get-docker/)
+- [Helm](https://helm.sh/docs/intro/install/)
 - [k3d](https://k3d.io)
 - [step](https://smallstep.com/docs/step-cli/installation/)
+- The `kubectl` command must be installed and working
 - The `watch` command must be installed and working, if you want to use it
 - The `kubectx` command must be installed and working, if you want to use it
 - [Buoyant Enterprise for Linkerd License](https://enterprise.buoyant.io/start_trial)
