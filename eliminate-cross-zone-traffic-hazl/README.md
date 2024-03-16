@@ -657,6 +657,37 @@ We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use
 
 ## Demo 2: Observe the Effects of High Availability Zonal Load Balancing (HAZL)
 
+High-level statement of what we're doing here.
+
+### Enable Outgoing Metrics to Buoyant Cloud (OPTIONAL)
+
+Overview of what we're doing here and why.
+
+Enable outbound latency in the `buoyant-cloud-metrics` agent:
+
+```bash
+kubectl -n linkerd-buoyant edit cm/buoyant-cloud-metrics
+```
+
+Remove this block from the configmap:
+
+```yaml
+          # drop high-cardinality outbound latency histograms
+          - source_labels:
+            - __name__
+            - direction
+            regex: 'response_latency_ms_bucket;outbound'
+            action: drop
+```
+
+Save the changes, then perform a `rollout restart` on the `buoyant-cloud-metrics` daemonset:
+
+```bash
+kubectl -n linkerd-buoyant rollout restart ds buoyant-cloud-metrics
+```
+
+Outbound metrics are now enabled, so we can track metrics from the `orders-*` deployments in Buoyant's Grafana dashboards.
+
 ### Deploy the Orders Application
 
 Now that **BEL** is fully deployed, we're going to need some traffic to observe.
@@ -725,7 +756,7 @@ kubectl apply -f linkerd-data-plane-orders-config.yaml --context=topo
 
 With the **Orders** application deployed, we now have some traffic to work with.
 
-### Monitor Traffic Without HAZL Enabled and Topology Aware Routing
+### Monitor Traffic Without HAZL Enabled
 
 Let's take a look at traffic flow _without **HAZL** enabled_ in **Buoyant Cloud**. This will give us a more visual representation of our baseline traffic. Head over to **Buoyant Cloud**, and take a look at the contents of the `orders` namespace in the Topology tab.
 
