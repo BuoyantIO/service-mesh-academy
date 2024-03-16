@@ -8,7 +8,7 @@ metadata:
     color: warehouse-oakland
     app: fulfillment
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       color: warehouse-oakland
@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: colorz
-        image: ghcr.io/olix0r/colorwheel:v2
+        image: ghcr.io/olix0r/colorwheel:v3
         ports:
         - containerPort: 8080
         env:
@@ -79,8 +79,8 @@ metadata:
   name: warehouse-oakland
   namespace: orders
 spec:
-  maxReplicas: 3
-  minReplicas: 1
+  maxReplicas: 5
+  minReplicas: 3
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
