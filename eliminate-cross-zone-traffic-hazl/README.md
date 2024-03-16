@@ -8,7 +8,7 @@
 
 ## Introduction
 
-In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linkerd** and demonstrate how to enable **High Availability Zonal Load Balancing (HAZL)**. We'll then take a look at how **HAZL** works to keep network traffic _in-zone_ where possible, and compare **HAZL** to **Topology Aware Routing**.
+In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linkerd** and demonstrate how to enable **High Availability Zonal Load Balancing (HAZL)**. We'll then take a look at how **HAZL** works to keep network traffic _in-zone_ where possible by exploring some different traffic, load and availability situations.
 
 ### Buoyant Enterprise for Linkerd (BEL)
 
@@ -147,9 +147,9 @@ ls -la
 
 With the assets in place, we can proceed to creating a cluster with `k3d`.
 
-### Task 2: Deploy two Kubernetes Clusters Using `k3d`
+### Task 2: Deploy a Kubernetes Cluster Using `k3d`
 
-Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need two Kubernetes clusters. Fortunately, we can use `k3d` for that. There are two cluster configuration files in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
+Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need a Kubernetes cluster. Fortunately, we can use `k3d` for that. There are a few cluster configuration files in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
 
 Create the `demo-cluster-orders-hazl` cluster, using the configuration file in `cluster/demo-cluster-orders-hazl.yaml`:
 
@@ -157,13 +157,7 @@ Create the `demo-cluster-orders-hazl` cluster, using the configuration file in `
 k3d cluster create -c cluster/demo-cluster-orders-hazl.yaml --wait
 ```
 
-Create the `demo-cluster-orders-topo` cluster, using the configuration file in `cluster/demo-cluster-orders-topo.yaml`:
-
-```bash
-k3d cluster create -c cluster/demo-cluster-orders-topo.yaml --wait
-```
-
-Check for our clusters:
+Check for our cluster:
 
 ```bash
 k3d cluster list
@@ -175,11 +169,10 @@ Checking our contexts:
 kubectx
 ```
 
-Let's shorten our context names, for ease of use:
+Let's shorten our context name, for ease of use:
 
 ```bash
 kubectx hazl=k3d-demo-cluster-orders-hazl
-kubectx topo=k3d-demo-cluster-orders-topo
 ```
 
 Finally, we'll switch to the `hazl` context:
@@ -194,7 +187,7 @@ Checking our contexts again:
 kubectx
 ```
 
-Now that we have our Kubernetes clusters and contexts up and configured, we can proceed with deploying **Buoyant Enterprise for Linkerd** on them.
+Now that we have our Kubernetes cluster and context up and configured, we can proceed with deploying **Buoyant Enterprise for Linkerd** on it.
 
 ### Task 3: Create mTLS Root Certificates
 
