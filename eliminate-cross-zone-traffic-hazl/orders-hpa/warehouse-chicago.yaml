@@ -8,7 +8,7 @@ metadata:
     color: warehouse-chicago
     app: fulfillment
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       color: warehouse-chicago
@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: colorz
-        image: ghcr.io/olix0r/colorwheel:v2
+        image: ghcr.io/olix0r/colorwheel:v3
         ports:
         - containerPort: 8080
         env:
@@ -72,8 +72,8 @@ metadata:
   name: warehouse-chicago
   namespace: orders
 spec:
-  maxReplicas: 4
-  minReplicas: 1
+  maxReplicas: 5
+  minReplicas: 3
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
@@ -84,7 +84,7 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 20
+          averageUtilization: 25
   behavior:
     scaleDown:
       stabilizationWindowSeconds: 90

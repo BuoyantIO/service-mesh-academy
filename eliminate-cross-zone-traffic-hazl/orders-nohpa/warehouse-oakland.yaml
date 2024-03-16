@@ -8,7 +8,7 @@ metadata:
     color: warehouse-oakland
     app: fulfillment
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       color: warehouse-oakland
@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: colorz
-        image: ghcr.io/olix0r/colorwheel:v2
+        image: ghcr.io/olix0r/colorwheel:v3
         ports:
         - containerPort: 8080
         env:

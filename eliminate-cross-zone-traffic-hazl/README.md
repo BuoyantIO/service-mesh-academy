@@ -4,11 +4,11 @@
 
 ### Tom Dean | Buoyant
 
-### Last edit: 3/11/2024
+### Last edit: 3/16/2024
 
 ## Introduction
 
-In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linkerd** and demonstrate how to enable **High Availability Zonal Load Balancing (HAZL)**. We'll then take a look at how **HAZL** works to keep network traffic _in-zone_ where possible, and compare **HAZL** to **Topology Aware Routing**.
+In this _hands-on workshop_, we will deploy **Buoyant Enterprise for Linkerd** and demonstrate how to enable **High Availability Zonal Load Balancing (HAZL)**. We'll then take a look at how **HAZL** works to keep network traffic _in-zone_ where possible by exploring some different traffic, load and availability situations.
 
 ### Buoyant Enterprise for Linkerd (BEL)
 
@@ -16,15 +16,22 @@ In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linker
 
 **Buoyant Enterprise for Linkerd** is an enterprise-grade service mesh for Kubernetes. It makes Kubernetes applications **reliable**, **secure**, and **cost-effective** _without requiring any changes to application code_. Buoyant Enterprise for Linkerd contains all the features of open-source Linkerd, the world's fastest, lightest service mesh, plus _additional_ enterprise-only features such as:
 
-- High Availability Zonal Load Balancing (HAZL)
-- Security Policy Generation
+- High-Availability Zonal Load Balancing (HAZL)
+- Security Policy Management
 - FIPS-140-2/3 Compliance
 - Lifecycle Automation
+- Buoyant Cloud
+- Mesh Expansion
+
+**Plus:**
+
 - Enterprise-Hardened Images
 - Software Bills of Materials (SBOMs)
 - Strict SLAs Around CVE Remediation
+- 24x7x365 Support With SLAs
+- Quarterly Outcomes and Strategy Reviews
 
-We're going to try out **HAZL** in this demo.
+We're going to try out **High-Availability Zonal Load Balancing (HAZL)** in this workshop.
 
 ### High Availability Zonal Load Balancing (HAZL)
 
@@ -73,17 +80,15 @@ Finally, **Topology Hints** has a set of well-known constraints, including:
 
 These constraints have real-world implications. As one customer put it when trying **Istio** + **Topology Hints**: "What we are seeing in _some_ applications is that they won’t scale fast enough or at all (because maybe two or three pods out of 10 are getting the majority of the traffic and is not triggering the HPA) and _can cause a cyclic loop of pods crashing and the service going down_."
 
-### Demonstration: Overview
+### Workshop: Overview
 
-In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linkerd** on a `k3d` Kubernetes cluster and will demonstrate how to quickly enable **High Availability Zonal Load Balancing (HAZL)**. We'll then take a look at how **HAZL** works to keep network traffic _in-zone_ where possible, and explore **Security Policy generation**.
+In this _hands-on workshop_, we will deploy **Buoyant Enterprise for Linkerd** on a `k3d` Kubernetes cluster and will demonstrate how to quickly enable **High Availability Zonal Load Balancing (HAZL)**. We'll then take a look at how **HAZL** works to keep network traffic _in-zone_ where possible.
 
 **In this demonstration, we're going to do the following:**
 
-- Deploy two `k3d` Kubernetes clusters
-  - One for HAZL
-  - One for Topology Aware Routing
+- Deploy a `k3d` Kubernetes cluster
 - Deploy **Buoyant Enterprise for Linkerd** with **HAZL** disabled on the cluster
-- Deploy the **Orders** application to the clusters, to generate multi-zonal traffic
+- Deploy the **Orders** application to the cluster, to generate multi-zonal traffic
   - Monitor traffic from the **Orders** application, with **HAZL** disabled
 - Enable **High Availability Zonal Load Balancing (HAZL)**
   - Monitor traffic from the **Orders** application, with **HAZL** enabled
@@ -97,13 +102,15 @@ In this _hands-on demonstration_, we will deploy **Buoyant Enterprise for Linker
 
 Feel free to follow along with _your own instance_ if you'd like, using the resources and instructions provided in this repository.
 
-### Demo: Prerequisites
+### Workshop: Prerequisites
 
 **If you'd like to follow along, you're going to need the following:**
 
 - [Docker](https://docs.docker.com/get-docker/)
+- [Helm](https://helm.sh/docs/intro/install/)
 - [k3d](https://k3d.io)
 - [step](https://smallstep.com/docs/step-cli/installation/)
+- The `kubectl` command must be installed and working
 - The `watch` command must be installed and working, if you want to use it
 - The `kubectx` command must be installed and working, if you want to use it
 - [Buoyant Enterprise for Linkerd License](https://enterprise.buoyant.io/start_trial)
@@ -111,11 +118,86 @@ Feel free to follow along with _your own instance_ if you'd like, using the reso
 
 All prerequisites must be _installed_ and _working properly_ before proceeding. The instructions in the provided links will get you there. A trial license for Buoyant Enterprise for Linkerd can be obtained from the link above. Instructions on obtaining the demo assets from GitHub are below.
 
-### The Orders Application
+### Workshop: Included Assets
+
+Describe the repository assets here.
+
+```bash
+.
+├── README.md
+├── certs
+├── cluster
+├── cluster_destroy.sh
+├── cluster_setup.sh
+├── images
+├── orders -> orders-nohpa
+├── orders-hpa
+└── orders-nohpa
+```
+
+Describe the repository assets here.
+
+#### Automation
+
+The repository contains the following automation:
+
+- cluster_setup.sh
+- cluster_destroy.sh
+
+Describe the scripts here.
+
+#### Cluster Configurations
+
+Describe the cluster configurations here.
+
+```bash
+.
+├── cluster
+│   ├── demo-cluster-orders-hazl-large.yaml
+│   ├── demo-cluster-orders-hazl-medium.yaml
+│   ├── demo-cluster-orders-hazl-small.yaml
+│   └── demo-cluster-orders-hazl.yaml -> demo-cluster-orders-hazl-small.yaml
+```
+
+Describe the cluster configurations here.
+
+#### The Orders Application
 
 This repository includes the **Orders** application, which generates traffic across multiple availability zones in our Kubernetes cluster, allowing us to observe the effect that **High Availability Zonal Load Balancing (HAZL)** has on traffic.
 
-## Demo 1: Deploy a Kubernetes Cluster With Buoyant Enterprise for Linkerd, With HAZL Disabled
+```bash
+.
+├── orders -> orders-nohpa
+├── orders-hpa
+│   ├── kustomization.yaml
+│   ├── ns.yaml
+│   ├── orders-central.yaml
+│   ├── orders-east.yaml
+│   ├── orders-west.yaml
+│   ├── server.yaml
+│   ├── warehouse-boston.yaml
+│   ├── warehouse-chicago.yaml
+│   └── warehouse-oakland.yaml
+└── orders-nohpa
+    ├── kustomization.yaml
+    ├── ns.yaml
+    ├── orders-central.yaml
+    ├── orders-east.yaml
+    ├── orders-west.yaml
+    ├── server.yaml
+    ├── warehouse-boston.yaml
+    ├── warehouse-chicago.yaml
+    └── warehouse-oakland.yaml
+```
+
+The repository contains two copies of the Orders application:
+
+- `orders-hpa`: HAZL version of the orders app with Horizontal Pod Autoscaling
+- `orders-nohpa`: HAZL version of the orders app without Horizontal Pod Autoscaling
+
+An  `orders` soft link points to the `nohpa` version of the application (`orders -> orders-nohpa`).  We will reference the `orders`  soft link in the steps.  If you want to use the `hpa` version of the application to experiment with Horizontal Pod Autoscaling, deploy the Orders application from the `orders-hpa` directory, or recreate the `orders` soft link, pointing to the `orders-hpa` directory.
+
+## Deploy a Kubernetes Cluster With Buoyant Enterprise for Linkerd, With HAZL Disabled
 
 First, we'll deploy a Kubernetes cluster using `k3d` and deploy Buoyant Enterprise for Linkerd (BEL).
 
@@ -145,9 +227,9 @@ ls -la
 
 With the assets in place, we can proceed to creating a cluster with `k3d`.
 
-### Task 2: Deploy two Kubernetes Clusters Using `k3d`
+### Task 2: Deploy a Kubernetes Cluster Using `k3d`
 
-Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need two Kubernetes clusters. Fortunately, we can use `k3d` for that. There are two cluster configuration files in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
+Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need a Kubernetes cluster. Fortunately, we can use `k3d` for that. There are a few cluster configuration files in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
 
 Create the `demo-cluster-orders-hazl` cluster, using the configuration file in `cluster/demo-cluster-orders-hazl.yaml`:
 
@@ -155,13 +237,7 @@ Create the `demo-cluster-orders-hazl` cluster, using the configuration file in `
 k3d cluster create -c cluster/demo-cluster-orders-hazl.yaml --wait
 ```
 
-Create the `demo-cluster-orders-topo` cluster, using the configuration file in `cluster/demo-cluster-orders-topo.yaml`:
-
-```bash
-k3d cluster create -c cluster/demo-cluster-orders-topo.yaml --wait
-```
-
-Check for our clusters:
+Check for our cluster:
 
 ```bash
 k3d cluster list
@@ -173,11 +249,10 @@ Checking our contexts:
 kubectx
 ```
 
-Let's shorten our context names, for ease of use:
+Let's shorten our context name, for ease of use:
 
 ```bash
 kubectx hazl=k3d-demo-cluster-orders-hazl
-kubectx topo=k3d-demo-cluster-orders-topo
 ```
 
 Finally, we'll switch to the `hazl` context:
@@ -192,7 +267,7 @@ Checking our contexts again:
 kubectx
 ```
 
-Now that we have our Kubernetes clusters and contexts up and configured, we can proceed with deploying **Buoyant Enterprise for Linkerd** on them.
+Now that we have our Kubernetes cluster and context up and configured, we can proceed with deploying **Buoyant Enterprise for Linkerd** on it.
 
 ### Task 3: Create mTLS Root Certificates
 
@@ -290,8 +365,7 @@ Add these to a file in the root of the `linkerd-demos/demo-orders` directory, na
 export API_CLIENT_ID=[CLIENT_ID]
 export API_CLIENT_SECRET=[CLIENT_SECRET]
 export BUOYANT_LICENSE=[LICENSE]
-export CLUSTER1_NAME=demo-cluster-orders-hazl
-export CLUSTER2_NAME=demo-cluster-orders-topo
+export CLUSTER_NAME=demo-cluster-orders-hazl
 ```
 
 Check the contents of the `settings.sh` file:
@@ -346,16 +420,8 @@ With the CLI installed and working, we can get on with running our pre-installat
 
 Use the `linkerd check --pre` command to validate that your clusters are ready for installation.
 
-Check the `hazl` cluster:
-
 ```bash
-linkerd check --pre --context=hazl
-```
-
-Check the `topo` cluster:
-
-```bash
-linkerd check --pre --context=topo
+linkerd check --pre
 ```
 
 We should see all green checks.  With everything good and green, we can proceed with installing the **BEL operator**.
@@ -382,7 +448,7 @@ helm install linkerd-buoyant \
   --create-namespace \
   --namespace linkerd-buoyant \
   --kube-context hazl \
-  --set metadata.agentName=$CLUSTER1_NAME \
+  --set metadata.agentName=$CLUSTER_NAME \
   --set api.clientID=$API_CLIENT_ID \
   --set api.clientSecret=$API_CLIENT_SECRET \
   --set metrics.debugMetrics=true \
@@ -391,36 +457,11 @@ helm install linkerd-buoyant \
 linkerd-buoyant/linkerd-buoyant
 ```
 
-Deploy the **BEL Operator** to the `topo` cluster:
+After the install, wait for the `buoyant-cloud-metrics` agents to be ready, then run the post-install operator health checks.
 
 ```bash
-helm install linkerd-buoyant \
-  --create-namespace \
-  --namespace linkerd-buoyant \
-  --kube-context topo \
-  --set metadata.agentName=$CLUSTER2_NAME \
-  --set api.clientID=$API_CLIENT_ID \
-  --set api.clientSecret=$API_CLIENT_SECRET \
-  --set metrics.debugMetrics=true \
-  --set agent.logLevel=debug \
-  --set metrics.logLevel=debug \
-linkerd-buoyant/linkerd-buoyant
-```
-
-After the installs, wait for the `buoyant-cloud-metrics` agents to be ready, then run the post-install operator health checks.
-
-On the `hazl` cluster:
-
-```bash
-kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context=hazl
-linkerd buoyant check --context hazl
-```
-
-On the `topo` cluster:
-
-```bash
-kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context=topo
-linkerd buoyant check --context topo
+kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant
+linkerd buoyant check
 ```
 
 We may see a few warnings (!!), but we're good to proceed _as long as the overall status check results are good_.
@@ -448,30 +489,14 @@ EOF
 
 Create the `linkerd-identity-issuer` secret from the `linkerd-identity-secret.yaml` manifest.
 
-On the `hazl` cluster:
-
 ```bash
-kubectl apply -f linkerd-identity-secret.yaml --context=hazl
-```
-
-On the `topo` cluster:
-
-```bash
-kubectl apply -f linkerd-identity-secret.yaml --context=topo
+kubectl apply -f linkerd-identity-secret.yaml
 ```
 
 Let's check the secrets on our cluster.
 
-On the `hazl` cluster:
-
 ```bash
-kubectl get secrets  -n linkerd --context=hazl
-```
-
-On the `topo` cluster:
-
-```bash
-kubectl get secrets  -n linkerd --context=topo
+kubectl get secrets  -n linkerd
 ```
 
 Now that we have our `linkerd-identity-issuer` secrets, we can proceed with creating the **ControlPlane CRD** configuration manifest.
@@ -480,7 +505,7 @@ Now that we have our `linkerd-identity-issuer` secrets, we can proceed with crea
 
 [Kubernetes Docs: Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
 
-We deploy the **BEL ControlPlanes** and **DataPlanes** using **Custom Resources**. We'll create a manifest for each that contains the object's configuration. We'll start with the **ControlPlanes** first.
+We deploy the **BEL ControlPlane** and **DataPlane** using **Custom Resources**. We'll create a manifest for each that contains the object's configuration. We'll start with the **ControlPlane** first.
 
 This **CRD configuration** also enables **High Availability Zonal Load Balancing (HAZL)**, using the `- -ext-endpoint-zone-weights` `experimentalArgs`. We're going to omit the `- -ext-endpoint-zone-weights` in the `experimentalArgs` for now, by commenting it out with a `#` in the manifest.
 
@@ -512,82 +537,33 @@ $(sed 's/^/          /' < certs/ca.crt )
 EOF
 ```
 
-Next, we'll create the ControlPlane manifest for the `topo` cluster:
+Apply the ControlPlane CRD configuration to have the Linkerd BEL operator create the **ControlPlane**.
 
 ```bash
-cat <<EOF > linkerd-control-plane-config-topo.yaml
-apiVersion: linkerd.buoyant.io/v1alpha1
-kind: ControlPlane
-metadata:
-  name: linkerd-control-plane
-spec:
-  components:
-    linkerd:
-      version: enterprise-2.15.1-1
-      license: $BUOYANT_LICENSE
-      controlPlaneConfig:
-        proxy:
-          image:
-            version: enterprise-2.15.1-1
-        identityTrustAnchorsPEM: |
-$(sed 's/^/          /' < certs/ca.crt )
-        identity:
-          issuer:
-            scheme: kubernetes.io/tls
-EOF
+kubectl apply -f linkerd-control-plane-config-hazl.yaml
 ```
 
-Apply the ControlPlane CRD configurations to have the Linkerd BEL operator create the **ControlPlanes**.
-
-On the `hazl` cluster:
-
-```bash
-kubectl apply -f linkerd-control-plane-config-hazl.yaml --context=hazl
-```
-
-On the `topo` cluster:
-
-```bash
-kubectl apply -f linkerd-control-plane-config-topo.yaml --context=topo
-```
-
-To make adjustments to your **BEL ControlPlane** deployment _simply edit and re-apply the `linkerd-control-plane-config-*.yaml` manifest_.
+To make adjustments to your **BEL ControlPlane** deployment _simply edit and re-apply the `linkerd-control-plane-config-hazl.yaml` manifest_.
 
 #### Step 7: Verify the ControlPlane Installation
 
 After the installation is complete, watch the deployment of the Control Plane using `kubectl`.
 
-On the `hazl` cluster:
-
 ```bash
 watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace --context=hazl
-```
-
-On the `topo` cluster:
-
-```bash
-watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace --context=topo
 ```
 
 **_Use `CTRL-C` to exit the watch command._**
 
 Let's can verify the health and configuration of Linkerd by running the `linkerd check` command.
 
-On the `hazl` cluster:
-
 ```bash
 linkerd check --context hazl
 ```
 
-On the `topo` cluster:
-
-```bash
-linkerd check --context topo
-```
-
 Again, we may see a few warnings (!!), but we're good to proceed _as long as the overall status is good_.
 
-#### Step 8: Create the DataPlane Objects for `linkerd-buoyant`
+#### Step 8: Create the DataPlane Object for `linkerd-buoyant`
 
 Now, we can deploy the **DataPlane** for the `linkerd-buoyant` namespace. Let's create the **DataPlane** manifest:
 
@@ -607,91 +583,53 @@ EOF
 
 Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the **DataPlane**.
 
-On the `hazl` cluster:
-
 ```bash
 kubectl apply -f linkerd-data-plane-config.yaml --context=hazl
-```
-
-On the `topo` cluster:
-
-```bash
-kubectl apply -f linkerd-data-plane-config.yaml --context=topo
 ```
 
 #### Step 9: Monitor Buoyant Cloud Metrics Rollout and Check Proxies
 
 Now that both our **BEL ControlPlane** and **DataPlane** have been deployed, we'll check the status of our `buoyant-cloud-metrics` daemonset rollout.
 
-On the `hazl` cluster:
-
 ```bash
 kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context=hazl
 ```
 
-On the `topo` cluster:
-
-```bash
-kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context=topo
-```
-
 Once the rollout is complete, we'll use `linkerd check --proxy` command to check the status of our **BEL** proxies.
-
-On the `hazl` cluster:
 
 ```bash
 linkerd check --proxy -n linkerd-buoyant --context hazl
-```
-
-On the `topo` cluster:
-
-```bash
-linkerd check --proxy -n linkerd-buoyant --context topo
 ```
 
 Again, we may see a few warnings (!!), _but we're good to proceed as long as the overall status is good_.
 
 We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use **BEL** to manage and secure our Kubernetes applications.
 
-## Demo 2: Observe the Effects of High Availability Zonal Load Balancing (HAZL)
+## Observe the Effects of High Availability Zonal Load Balancing (HAZL)
+
+High-level statement of what we're doing in this section.
 
 ### Deploy the Orders Application
 
 Now that **BEL** is fully deployed, we're going to need some traffic to observe.
 
-Deploy the **Orders** application, from the `orders` directory for the `hazl` cluster, and from the `orders-topo` directory for the `topo` cluster.  The `orders-topo` application is the same as the `orders` application, but is configured for Topology Aware Routing.
-
-On the `hazl` cluster, deploy from the `orders` directory:
+Deploy the **Orders** application from the `orders` directory for the `hazl` cluster.
 
 ```bash
-kubectl apply -k orders --context=hazl
-```
-
-On the `topo` cluster, deploy from the `orders-topo` directory:
-
-```bash
-kubectl apply -k orders-topo --context=topo
+kubectl apply -k orders
 ```
 
 We can check the status of the **Orders** application by watching the rollout.
 
-On the `hazl` cluster:
-
 ```bash
-watch -n 1 kubectl get pods -n orders -o wide --sort-by .spec.nodeName --context=hazl
-```
-
-On the `topo` cluster:
-
-```bash
-watch -n 1 kubectl get pods -n orders -o wide --sort-by .spec.nodeName --context=topo
+watch -n 1 kubectl get pods -n orders -o wide --sort-by .spec.nodeName
 ```
 
 **_Use `CTRL-C` to exit the watch command._**
 
 ### Create a DataPlane Object for the `orders` Namespace
 
-Let's create the **DataPlane** manifest for the `orders` namespace:
+Now that the Orders application has been deployed, let's create the **DataPlane** manifest for the `orders` namespace:
 
 ```bash
 cat <<EOF > linkerd-data-plane-orders-config.yaml
@@ -709,21 +647,13 @@ EOF
 
 Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the **DataPlane** object for the `orders` namespace.
 
-On the `hazl` cluster:
-
 ```bash
 kubectl apply -f linkerd-data-plane-orders-config.yaml --context=hazl
 ```
 
-On the `topo` cluster:
-
-```bash
-kubectl apply -f linkerd-data-plane-orders-config.yaml --context=topo
-```
-
 With the **Orders** application deployed, we now have some traffic to work with.
 
-### Monitor Traffic Without HAZL Enabled and Topology Aware Routing
+### Monitor Traffic Without HAZL Enabled
 
 Let's take a look at traffic flow _without **HAZL** enabled_ in **Buoyant Cloud**. This will give us a more visual representation of our baseline traffic. Head over to **Buoyant Cloud**, and take a look at the contents of the `orders` namespace in the Topology tab.
 
@@ -746,7 +676,7 @@ vi linkerd-control-plane-config-hazl.yaml
 Apply the ControlPlane CRD config to have the Linkerd BEL operator update the Linkerd control plane configuration, and enable HAZL _on the `hazl` cluster only_:
 
 ```bash
-kubectl apply -f linkerd-control-plane-config-hazl.yaml --context=hazl
+kubectl apply -f linkerd-control-plane-config-hazl.yaml
 ```
 
 Now, we can see the effect **HAZL** has on the traffic in our multi-az cluster.
@@ -759,58 +689,7 @@ Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoy
 
 We can see...
 
-### Increase Number of Requests From the `orders-central` Requestor
 
-Instructions on how to turn up requests
-
-```bash
-kubectl get cm -n orders --context=hazl
-```
-
-```bash
-kubectl edit -n orders cm orders-central-config --context=hazl
-```
-
-```bash
-kubectl edit -n orders cm orders-central-config --context=topo
-```
-
-We're going to change the value of `requestsPerSecond: 50` to `requestsPerSecond: 400`.
-
-Once we save our change with `:wq`, the number of requests will go from 50 to 400. Give things a minute to develop, then head over to **Buoyant Cloud**.
-
-### Monitor Traffic Using Buoyant Cloud
-
-Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
-
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
-
-We can see...
-
-<<Explain what we're seeing here>>
-
-### Scale the `warehouse-chicago` Deployment
-
-<<Instructions on how to turn down requests>>
-
-```bash
-kubectl scale -n orders deploy warehouse-chicago --replicas=20
-```
-Let's head over to **Buoyant Cloud**.
-
-### Monitor Traffic Using Buoyant Cloud
-
-Let's take a look at what traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
-
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
-
-We can see...
-
-<<Explain what we're seeing here>>
-
-### Summary: Observe the Effects of HAZL
-
-<<Summary for the Observe the Effects of HAZL section>>
 
 ## Summary: Deploying the Orders Application With High Availability Zonal Load Balancing (HAZL)
 
