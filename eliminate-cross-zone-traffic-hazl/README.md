@@ -682,7 +682,114 @@ Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoy
 
 We can see...
 
+### Increase Number of Requests
 
+<<Instructions on how to turn up requests>>
+
+```bash
+kubectl get cm -n orders
+```
+
+```bash
+kubectl edit -n orders cm orders-central-config
+```
+
+We're going to change the value of `requestsPerSecond: 50` to `requestsPerSecond: 400`.
+
+Once we save our change with `:wq`, the number of requests will go from 50 to 400. Give things a minute to develop, then head over to **Buoyant Cloud**.
+
+### Monitor Traffic Using Buoyant Cloud
+
+Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+
+![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+
+![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+
+We can see...
+
+<<Explain what we're seeing here>>
+
+### Scale the `warehouse-chicago` Deployment
+
+<<Instructions on how to turn down requests>>
+
+```bash
+kubectl scale -n orders deploy warehouse-chicago --replicas=20
+```
+Let's head over to **Buoyant Cloud**.
+
+### Monitor Traffic Using Buoyant Cloud
+
+Let's take a look at what traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+
+![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+
+![Grafana: Dashboard](images/orders-hazl-scaled-warehouse-grafana-1.png)
+
+We can see...
+
+![Grafana: Dashboard](images/orders-hazl-scaled-warehouse-grafana-2.png)
+
+We can see...
+
+<<Explain what we're seeing here>>
+
+### Summary: Observe the Effects of HAZL
+
+<<Summary for the Observe the Effects of HAZL section>>
+
+## Demo 4: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
+
+<<Talk about this, give some context>>
+
+### Creating Zero-Trust Security Policies
+
+<<Say something about creating Security Policies with BEL here>>
+
+Use the `linkerd policy generate` command to have BEL generate policies from observed traffic:
+
+```bash
+linkerd policy generate > linkerd-policy.yaml
+```
+
+We've put these policies into a manifest in the `linkerd-policy.yaml`. Let's take a look:
+
+```bash
+more linkerd-policy.yaml
+```
+
+We can see the policies that `linkerd policy generate` created.
+
+Now, let's apply the policies to our cluster:
+
+```bash
+kubectl apply -f linkerd-policy.yaml
+```
+
+We should see the policies being applied to our cluster.
+
+Let's take a look at our new Security Policies in Buoyant Cloud.
+
+### Examine Security Policies Using Buoyant Cloud
+
+Let's take a look at the Security Policies we just created in **Buoyant Cloud**.
+
+![Buoyant Cloud: Resources: Security Policies](images/orders-security-policies-1.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Resources: Security Policies](images/orders-security-policies-2.png)
+
+<<Explain what we're seeing here>>
+
+![Buoyant Cloud: Resources: Security Policies](images/orders-security-policies-3.png)
+
+<<Explain what we're seeing here>>
+
+### Summary: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
+
+<<Security policies summary>>
 
 ## Summary: Deploying the Orders Application With High Availability Zonal Load Balancing (HAZL)
 
