@@ -439,9 +439,7 @@ helm repo add linkerd-buoyant https://helm.buoyant.cloud
 helm repo update
 ```
 
-_**INTERNAL:** In order to access the Grafana dashboard in Buoyant Cloud, you'll need to deploy the **BEL operator** with **debug** enabled!_
-
-Deploy the **BEL Operator** to the `hazl` cluster:
+Deploy the **BEL Operator** to the `hazl` cluster using Helm:
 
 ```bash
 helm install linkerd-buoyant \
