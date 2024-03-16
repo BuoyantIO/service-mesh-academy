@@ -1,7 +1,5 @@
 ### Enable Outgoing Metrics to Buoyant Cloud (OPTIONAL)
 
-Overview of what we're doing here and why.
-
 Enable outbound latency in the `buoyant-cloud-metrics` agent:
 
 ```bash

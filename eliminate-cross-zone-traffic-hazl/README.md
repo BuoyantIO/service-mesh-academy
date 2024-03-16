@@ -93,12 +93,7 @@ In this _hands-on workshop_, we will deploy **Buoyant Enterprise for Linkerd** o
 - Enable **High Availability Zonal Load Balancing (HAZL)**
   - Monitor traffic from the **Orders** application, with **HAZL** enabled
   - Observe the effect on cross-az traffic
-- Increase the number of requests in the **Orders** application
-  - Monitor the increased traffic from the **Orders** application
-  - Observe the effect on cross-az traffic
-- Decrease the number of requests in the **Orders** application
-  - Monitor the decreased traffic from the **Orders** application
-  - Observe the effect on cross-az traffic
+
 
 Feel free to follow along with _your own instance_ if you'd like, using the resources and instructions provided in this repository.
 
