@@ -4,7 +4,7 @@
 
 ### Tom Dean | Buoyant
 
-### Last edit: 3/16/2024
+### Last edit: 3/17/2024
 
 ## Introduction
 
@@ -192,7 +192,7 @@ The repository contains two copies of the Orders application:
 
 An  `orders` soft link points to the `nohpa` version of the application (`orders -> orders-nohpa`).  We will reference the `orders`  soft link in the steps.  If you want to use the `hpa` version of the application to experiment with Horizontal Pod Autoscaling, deploy the Orders application from the `orders-hpa` directory, or recreate the `orders` soft link, pointing to the `orders-hpa` directory.
 
-## Deploy a Kubernetes Cluster With Buoyant Enterprise for Linkerd, With HAZL Disabled
+## Hands-On Exercise 1: Deploy a Kubernetes Cluster With Buoyant Enterprise for Linkerd, With HAZL Disabled
 
 First, we'll deploy a Kubernetes cluster using `k3d` and deploy Buoyant Enterprise for Linkerd (BEL).
 
@@ -585,31 +585,46 @@ kubectl apply -f linkerd-data-plane-config.yaml --context=hazl
 Now that both our **BEL ControlPlane** and **DataPlane** have been deployed, we'll check the status of our `buoyant-cloud-metrics` daemonset rollout.
 
 ```bash
-kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context=hazl
+kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant
 ```
 
 Once the rollout is complete, we'll use `linkerd check --proxy` command to check the status of our **BEL** proxies.
 
 ```bash
-linkerd check --proxy -n linkerd-buoyant --context hazl
+linkerd check --proxy -n linkerd-buoyant
 ```
 
 Again, we may see a few warnings (!!), _but we're good to proceed as long as the overall status is good_.
 
-We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use **BEL** to manage and secure our Kubernetes applications.
+We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use **BEL** to manage and secure our Kubernetes applications. Now that **BEL** is fully deployed, we're going to need some traffic to observe.
 
-## Observe the Effects of High Availability Zonal Load Balancing (HAZL)
+## Hands-On Exercise 2: Observe the Effects of High Availability Zonal Load Balancing (HAZL)
 
-High-level statement of what we're doing in this section.
+Summary sentence or two.
+
+### Scenario: Hacky Sack Company
+
+Lay out the scenario here:
+
+- Hacky Sack Online Business
+- We use an orders app to handle orders and send them to warehouse for shipment
+- We use three availability zones
+  - east
+  - central
+  - west
+- Generally, things run pretty balanced and steady-state
+- Deploying the Orders application to a fresh cluster
+  - Kubernetes
+  - Buoyant Enterprise Linkerd
+- We don't know it yet, but we're about to be featured on an episode of a popular sitcom today
+  - Orders are gonna spike
 
 ### Deploy the Orders Application
 
-Now that **BEL** is fully deployed, we're going to need some traffic to observe.
-
-Deploy the **Orders** application from the `orders` directory for the `hazl` cluster.
+Deploy the **Orders** application from the `orders-hpa` directory. This will deploy the application with Horizontal Pod Autoscaling. If you'd like to deploy the **Orders** application without Horizontal Pod Autoscaling, use the `orders-nohpa` directory.
 
 ```bash
-kubectl apply -k orders
+kubectl apply-hpa -k orders
 ```
 
 We can check the status of the **Orders** application by watching the rollout.
@@ -617,6 +632,16 @@ We can check the status of the **Orders** application by watching the rollout.
 ```bash
 watch -n 1 kubectl get pods -n orders -o wide --sort-by .spec.nodeName
 ```
+
+**_Use `CTRL-C` to exit the watch command._**
+
+Once the application is deployed, you can monitor the status of the Orders deployments and Horizontal Pod Autoscaling using:
+
+```bash
+watch -n 1 kubectl get deploy,hpa -n orders
+```
+
+You might want to open a terminal and leave this watch command running to keep an eye on the state of our deployments.
 
 **_Use `CTRL-C` to exit the watch command._**
 
@@ -642,6 +667,12 @@ Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** 
 
 ```bash
 kubectl apply -f linkerd-data-plane-orders-config.yaml --context=hazl
+```
+
+Checking our work:
+
+```bash
+kubectl get dataplane -A
 ```
 
 With the **Orders** application deployed, we now have some traffic to work with.
@@ -682,23 +713,23 @@ Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoy
 
 We can see...
 
-### Increase Number of Requests
+### Increase Orders Traffic in `zone-east`
 
-<<Instructions on how to turn up requests>>
+A popular sitcom 
 
-```bash
-kubectl get cm -n orders
-```
+We can increase traffic in `zone-east` by scaling the `orders-east` deployment.  Let's scale to 10 replicas.
 
 ```bash
-kubectl edit -n orders cm orders-central-config
+kubectl scale -n orders deploy orders-east --replicas=10
 ```
 
-We're going to change the value of `requestsPerSecond: 50` to `requestsPerSecond: 400`.
+Let's see the results of scaling `orders-east`:
 
-Once we save our change with `:wq`, the number of requests will go from 50 to 400. Give things a minute to develop, then head over to **Buoyant Cloud**.
+```bash
+watch -n 1 kubectl get deploy,hpa -n orders
+```
 
-### Monitor Traffic Using Buoyant Cloud
+**_Use `CTRL-C` to exit the watch command._**
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
@@ -710,26 +741,167 @@ We can see...
 
 <<Explain what we're seeing here>>
 
-### Scale the `warehouse-chicago` Deployment
+### Increase Orders Traffic in `zone-central`
 
-<<Instructions on how to turn down requests>>
+A popular sitcom 
+
+We can increase traffic in `zone-central` by scaling the `orders-central` deployment.  Let's scale to 25 replicas.
 
 ```bash
-kubectl scale -n orders deploy warehouse-chicago --replicas=20
+kubectl scale -n orders deploy orders-central --replicas=25
 ```
-Let's head over to **Buoyant Cloud**.
 
-### Monitor Traffic Using Buoyant Cloud
+Let's see the results of scaling `orders-central`:
 
-Let's take a look at what traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+```bash
+watch -n 1 kubectl get deploy,hpa -n orders
+```
+
+**_Use `CTRL-C` to exit the watch command._**
+
+Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
 ![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-scaled-warehouse-grafana-1.png)
+![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
 
 We can see...
 
-![Grafana: Dashboard](images/orders-hazl-scaled-warehouse-grafana-2.png)
+<<Explain what we're seeing here>>
+
+### Increase Orders Traffic in `zone-west`
+
+A popular sitcom 
+
+We can increase traffic in `zone-west` by scaling the `orders-west` deployment.  Let's scale to 30 replicas.
+
+```bash
+kubectl scale -n orders deploy orders-west --replicas=30
+```
+
+Let's see the results of scaling `orders-west`:
+
+```bash
+watch -n 1 kubectl get deploy,hpa -n orders
+```
+
+**_Use `CTRL-C` to exit the watch command._**
+
+Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+
+![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+
+![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+
+We can see...
+
+<<Explain what we're seeing here>>
+
+### Increase Latency in `zone-central`
+
+Unfortunately, we've had some network issues creep in...
+
+We can increase latency in `zone-central` by editing the `warehouse-config` configmap, which has a setting for latency.
+
+```bash
+kubectl scale -n orders deploy orders-east --replicas=10
+```
+
+Let's see the results of scaling `orders-east`:
+
+```bash
+watch -n 1 kubectl get deploy,hpa -n orders
+```
+
+**_Use `CTRL-C` to exit the watch command._**
+
+Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+
+![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+
+![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+
+We can see...
+
+<<Explain what we're seeing here>>
+
+### Take the `warehouse-chicago` Deployment Offline in `zone-central`
+
+More bad news! The latency we've been experiencing is about to turn into an outage!
+
+We can simulate this by scaling the `warehouse-chicago` deployment.  Let's scale to 0 replicas.
+
+```bash
+kubectl scale -n orders deploy warehouse-chicago --replicas=0
+```
+
+Let's see the results of scaling `warehouse-chicago` to 0:
+
+```bash
+watch -n 1 kubectl get deploy,hpa -n orders
+```
+
+**_Use `CTRL-C` to exit the watch command._**
+
+Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+
+![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+
+![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+
+We can see...
+
+<<Explain what we're seeing here>>
+
+### Bring the `warehouse-chicago` Deployment Back Online and Remove Latency
+
+A popular sitcom 
+
+We can increase traffic in `zone-east` by scaling the `orders-east` deployment.  Let's scale to 10 replicas.
+
+```bash
+kubectl scale -n orders deploy orders-east --replicas=10
+```
+
+Let's see the results of scaling `orders-east`:
+
+```bash
+watch -n 1 kubectl get deploy,hpa -n orders
+```
+
+**_Use `CTRL-C` to exit the watch command._**
+
+Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+
+![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+
+![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+
+We can see...
+
+<<Explain what we're seeing here>>
+
+### Reset the Orders Application
+
+Now that we're finished, let's reset the Orders application back to its initial state.
+
+```bash
+kubectl apply -k orders-hpa
+```
+
+Let's see the results of the reset:
+
+```bash
+watch -n 1 kubectl get deploy,hpa -n orders
+```
+
+**_Use `CTRL-C` to exit the watch command._**
+
+If we give things a minute to settle back down, we should see all traffic back in zone and request rates back to 50.
+
+![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+
+![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
 
 We can see...
 
@@ -738,58 +910,6 @@ We can see...
 ### Summary: Observe the Effects of HAZL
 
 <<Summary for the Observe the Effects of HAZL section>>
-
-## Demo 4: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
-
-<<Talk about this, give some context>>
-
-### Creating Zero-Trust Security Policies
-
-<<Say something about creating Security Policies with BEL here>>
-
-Use the `linkerd policy generate` command to have BEL generate policies from observed traffic:
-
-```bash
-linkerd policy generate > linkerd-policy.yaml
-```
-
-We've put these policies into a manifest in the `linkerd-policy.yaml`. Let's take a look:
-
-```bash
-more linkerd-policy.yaml
-```
-
-We can see the policies that `linkerd policy generate` created.
-
-Now, let's apply the policies to our cluster:
-
-```bash
-kubectl apply -f linkerd-policy.yaml
-```
-
-We should see the policies being applied to our cluster.
-
-Let's take a look at our new Security Policies in Buoyant Cloud.
-
-### Examine Security Policies Using Buoyant Cloud
-
-Let's take a look at the Security Policies we just created in **Buoyant Cloud**.
-
-![Buoyant Cloud: Resources: Security Policies](images/orders-security-policies-1.png)
-
-<<Explain what we're seeing here>>
-
-![Buoyant Cloud: Resources: Security Policies](images/orders-security-policies-2.png)
-
-<<Explain what we're seeing here>>
-
-![Buoyant Cloud: Resources: Security Policies](images/orders-security-policies-3.png)
-
-<<Explain what we're seeing here>>
-
-### Summary: Using Buoyant Enterprise for Linkerd (BEL) to Generate Security Policies
-
-<<Security policies summary>>
 
 ## Summary: Deploying the Orders Application With High Availability Zonal Load Balancing (HAZL)
 
