@@ -799,23 +799,44 @@ We can see...
 
 ### Increase Latency in `zone-central`
 
-Unfortunately, we've had some network issues creep in...
+Unfortunately, we've had some network issues creep in at our Chicago warehouse!
 
 We can increase latency in `zone-central` by editing the `warehouse-config` configmap, which has a setting for latency.
 
 ```bash
-kubectl scale -n orders deploy orders-east --replicas=10
+kubectl edit -n orders cm/warehouse-config
 ```
 
-Let's see the results of scaling `orders-east`:
+You'll see:
+
+```yml
+data:
+  blue.yml: |
+    color: "#0000ff"
+    averageResponseTime: 0.020
+  green.yml: |
+    color: "#00ff00"
+    averageResponseTime: 0.020
+  red.yml: |
+    color: "#ff0000"
+    averageResponseTime: 0.020
+```
+
+The colors map to the warehouses as follows:
+
+- Red: This is the Oakland warehouse (`warehouse-oakland`)
+- Blue: This is the Boston warehouse (`warehouse-boston`)
+- Green: This is the Chicago warehouse (`warehouse-chicago`)
+
+Change the value of `averageResponseTime` under `green.yml` from `0.020` to `0.120`. Save and exit.
+
+We need to restart the `warehouse-chicago` deployment to pick up the changes:
 
 ```bash
-watch -n 1 kubectl get deploy,hpa -n orders
+kubectl rollout restart -n orders deploy warehouse-chicago
 ```
 
-**_Use `CTRL-C` to exit the watch command._**
-
-Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+Let's take a look at what the increased latency looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic in response to increased latency.
 
 ![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
 
@@ -855,15 +876,27 @@ We can see...
 
 ### Bring the `warehouse-chicago` Deployment Back Online and Remove Latency
 
-A popular sitcom 
+Good news! The latency and outage is about to end!
 
-We can increase traffic in `zone-east` by scaling the `orders-east` deployment.  Let's scale to 10 replicas.
+We can simulate this by scaling the `warehouse-chicago` deployment.  Let's scale to 1 replica. The Horizontal Pod Autoscaler will take over from there.
 
 ```bash
-kubectl scale -n orders deploy orders-east --replicas=10
+kubectl scale -n orders deploy warehouse-chicago --replicas=1
 ```
 
-Let's see the results of scaling `orders-east`:
+We also need to edit the `warehouse-config` configmap, and set the latency to match the other `warehouse` deployments.
+
+```bash
+kubectl edit -n orders cm/warehouse-config
+```
+
+We need to restart the `warehouse-chicago` deployment to pick up the changes:
+
+```bash
+kubectl rollout restart -n orders deploy warehouse-chicago
+```
+
+Let's see the results of scaling `warehouse-chicago` and restarting the deployment:
 
 ```bash
 watch -n 1 kubectl get deploy,hpa -n orders
@@ -871,7 +904,7 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 **_Use `CTRL-C` to exit the watch command._**
 
-Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
+Let's take a look at what the service restoration looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
 ![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
 
@@ -906,10 +939,6 @@ If we give things a minute to settle back down, we should see all traffic back i
 We can see...
 
 <<Explain what we're seeing here>>
-
-### Summary: Observe the Effects of HAZL
-
-<<Summary for the Observe the Effects of HAZL section>>
 
 ## Summary: Deploying the Orders Application With High Availability Zonal Load Balancing (HAZL)
 
