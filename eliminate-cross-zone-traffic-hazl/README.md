@@ -995,4 +995,6 @@ We shouldn't see our `demo-cluster-orders-hazl` cluster.
 
 ## Summary: Deploying the Orders Application With High Availability Zonal Load Balancing (HAZL)
 
-Summarize the entire thing here. Bullet points?
+In this hands-on workshop, we deployed Buoyant Enterprise for Linkerd and demonstrated how to enable High Availability Zonal Load Balancing (HAZL). We also took a look at how HAZL works to keep network traffic in-zone where possible by exploring some different traffic, load and availability situations.
+
+Thank you for taking a journey with HAZL and Buoyant!
