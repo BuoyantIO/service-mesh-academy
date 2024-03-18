@@ -629,7 +629,7 @@ We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use
 
 Now that **BEL** is fully deployed, we're going to need some traffic to observe.
 
-### Scenario: Hacky Sack Company
+### Scenario: Hacky Sack Emporium
 
 In this scenario, we're delving into the operations of an online business specializing in Hacky Sack products. This business relies on a dedicated orders application to manage customer orders efficiently and to ensure that these orders are promptly dispatched to warehouses for shipment. To guarantee high availability and resilience, the system is distributed across three geographical availability zones: `zone-east`, `zone-central`, and `zone-west`. This strategic distribution ensures that the system operates smoothly, maintaining a balanced and steady state across different regions.
 
