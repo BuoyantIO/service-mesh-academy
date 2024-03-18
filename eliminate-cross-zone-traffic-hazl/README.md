@@ -92,8 +92,23 @@ In this _hands-on workshop_, we will deploy **Buoyant Enterprise for Linkerd** o
   - Monitor traffic from the **Orders** application, with **HAZL** disabled
 - Enable **High Availability Zonal Load Balancing (HAZL)**
   - Monitor traffic from the **Orders** application, with **HAZL** enabled
-  - Observe the effect on cross-az traffic
-
+- Scale traffic and applications in various zones
+  - Monitor traffic from the **Orders** application
+  - Observe effects of **HAZL**
+  - Observe interaction with Horizontal Pod Autoscaling
+- Add latency to one zone
+  - Monitor traffic from the **Orders** application
+  - Observe effects of **HAZL**
+  - Observe interaction with Horizontal Pod Autoscaling
+- Simulate an outage in one zone
+  - Monitor traffic from the **Orders** application
+  - Observe effects of **HAZL**
+  - Observe interaction with Horizontal Pod Autoscaling
+- Restore outage and remove latency
+  - Monitor traffic from the **Orders** application
+  - Observe effects of **HAZL**
+  - Observe interaction with Horizontal Pod Autoscaling
+- Restore **Orders** application to initial state
 
 Feel free to follow along with _your own instance_ if you'd like, using the resources and instructions provided in this repository.
 
@@ -115,35 +130,35 @@ All prerequisites must be _installed_ and _working properly_ before proceeding. 
 
 ### Workshop: Included Assets
 
-Describe the repository assets here.
+The top-level contents of the repository look like this:
 
 ```bash
 .
-├── README.md
-├── certs
-├── cluster
-├── cluster_destroy.sh
-├── cluster_setup.sh
-├── images
+├── README.md           <-- This README
+├── certs               <-- Directory where we'll put the TLS root certificates
+├── cluster             <-- The k3d cluster configuration files live here
+├── cluster_destroy.sh  <-- Script to destroy the cluster environment
+├── cluster_setup.sh    <-- Script to stand up the cluster, install Linkerd and Orders
+├── images              <-- Images for the README
 ├── orders -> orders-nohpa
-├── orders-hpa
-└── orders-nohpa
+├── orders-hpa          <-- The Orders application, with Horizontal Pod Autoscaling
+└── orders-nohpa        <-- The Orders application, without Horizontal Pod Autoscaling
 ```
 
-Describe the repository assets here.
-
-#### Automation
+#### Workshop: Automation
 
 The repository contains the following automation:
 
-- cluster_setup.sh
-- cluster_destroy.sh
+- `cluster_setup.sh`
+  - Script to stand up the cluster, install Linkerd and Orders
+- `cluster_destroy.sh`
+  - Script to destroy the cluster environment
 
-Describe the scripts here.
+If you choose to use the `cluster_setup.sh` script, make sure you've created the `settings.sh` file and run `source settings.sh` to set your environment variables.
 
 #### Cluster Configurations
 
-Describe the cluster configurations here.
+This repository contains three `k3d` cluster configuration files:
 
 ```bash
 .
@@ -154,7 +169,7 @@ Describe the cluster configurations here.
 │   └── demo-cluster-orders-hazl.yaml -> demo-cluster-orders-hazl-small.yaml
 ```
 
-Describe the cluster configurations here.
+By default, `demo-cluster-orders-hazl-small.yaml` is linked to `demo-cluster-orders-hazl.yaml`, so you can just use `demo-cluster-orders-hazl.yaml` if you want a small cluster. We will be using the small cluster in this workshop.
 
 #### The Orders Application
 
@@ -224,7 +239,7 @@ With the assets in place, we can proceed to creating a cluster with `k3d`.
 
 ### Task 2: Deploy a Kubernetes Cluster Using `k3d`
 
-Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need a Kubernetes cluster. Fortunately, we can use `k3d` for that. There are a few cluster configuration files in the `cluster` directory, that will create a cluster with one control plane and three worker nodes, in three different availability zones.
+Before we can deploy **Buoyant Enterprise for Linkerd**, we're going to need a Kubernetes cluster. Fortunately, we can use `k3d` for that. We're going to use the small configuration file in the `cluster` directory, which will create a cluster with one control plane and three worker nodes, in three different availability zones.
 
 Create the `demo-cluster-orders-hazl` cluster, using the configuration file in `cluster/demo-cluster-orders-hazl.yaml`:
 
@@ -276,7 +291,7 @@ Since we're using **Helm** to install **BEL**, it’s not possible to automatica
 
 You can generate certificates using a tool like `step`. All certificates must use the ECDSA P-256 algorithm which is the default for `step`. In this section, we’ll walk you through how to to use the `step` CLI to do this.
 
-##### Step 1: Trust Anchor Certificate
+##### Step 1: Generate Trust Anchor Certificate
 
 To generate your certificates using `step`, use the `certs` directory:
 
@@ -354,7 +369,7 @@ export API_CLIENT_SECRET=[CLIENT_SECRET]
 export BUOYANT_LICENSE=[LICENSE]
 ```
 
-Add these to a file in the root of the `linkerd-demos/demo-orders` directory, named `settings.sh`, plus add two new lines with the cluster names, `export CLUSTER_NAME=demo-cluster-orders-hazl` and`export CLUSTER_NAME=demo-cluster-orders-topo`, like this:
+Add these to a file in the root of the `linkerd-demos/demo-orders` directory, named `settings.sh`, plus add a new line with the cluster name, `export CLUSTER_NAME=demo-cluster-orders-hazl`, like this:
 
 ```bash
 export API_CLIENT_ID=[CLIENT_ID]
@@ -500,7 +515,7 @@ Now that we have our `linkerd-identity-issuer` secrets, we can proceed with crea
 
 We deploy the **BEL ControlPlane** and **DataPlane** using **Custom Resources**. We'll create a manifest for each that contains the object's configuration. We'll start with the **ControlPlane** first.
 
-This **CRD configuration** also enables **High Availability Zonal Load Balancing (HAZL)**, using the `- -ext-endpoint-zone-weights` `experimentalArgs`. We're going to omit the `- -ext-endpoint-zone-weights` in the `experimentalArgs` for now, by commenting it out with a `#` in the manifest.
+This **CRD configuration** also enables **High Availability Zonal Load Balancing (HAZL)**, using the `- -ext-endpoint-zone-weights` `additionalArgs`. We're going to omit the `- -ext-endpoint-zone-weights` in the `additionalArgs` for now, by commenting it out with a `#` in the manifest.
 
 Let's create the ControlPlane manifest for the `hazl` cluster:
 
@@ -543,20 +558,26 @@ To make adjustments to your **BEL ControlPlane** deployment _simply edit and re-
 After the installation is complete, watch the deployment of the Control Plane using `kubectl`.
 
 ```bash
-watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace --context=hazl
+watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace
 ```
 
 **_Use `CTRL-C` to exit the watch command._**
 
-Let's can verify the health and configuration of Linkerd by running the `linkerd check` command.
+Checking our work:
 
 ```bash
-linkerd check --context hazl
+kubectl get controlplane -A
+```
+
+Let's verify the health and configuration of Linkerd by running the `linkerd check` command.
+
+```bash
+linkerd check
 ```
 
 Again, we may see a few warnings (!!), but we're good to proceed _as long as the overall status is good_.
 
-#### Step 8: Create the DataPlane Object for `linkerd-buoyant`
+#### Step 8: Create the DataPlane Object for the `linkerd-buoyant` Namespace
 
 Now, we can deploy the **DataPlane** for the `linkerd-buoyant` namespace. Let's create the **DataPlane** manifest:
 
@@ -577,7 +598,13 @@ EOF
 Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the **DataPlane**.
 
 ```bash
-kubectl apply -f linkerd-data-plane-config.yaml --context=hazl
+kubectl apply -f linkerd-data-plane-config.yaml
+```
+
+Checking our work:
+
+```bash
+kubectl get dataplane -A
 ```
 
 #### Step 9: Monitor Buoyant Cloud Metrics Rollout and Check Proxies
@@ -596,35 +623,35 @@ linkerd check --proxy -n linkerd-buoyant
 
 Again, we may see a few warnings (!!), _but we're good to proceed as long as the overall status is good_.
 
-We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use **BEL** to manage and secure our Kubernetes applications. Now that **BEL** is fully deployed, we're going to need some traffic to observe.
+We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use **BEL** to manage and secure our Kubernetes applications.
 
 ## Hands-On Exercise 2: Observe the Effects of High Availability Zonal Load Balancing (HAZL)
 
-Summary sentence or two.
+Now that **BEL** is fully deployed, we're going to need some traffic to observe.
 
 ### Scenario: Hacky Sack Company
 
-Lay out the scenario here:
+Let's lay out the scenario here:
 
 - Hacky Sack Online Business
-- We use an orders app to handle orders and send them to warehouse for shipment
+- We use an orders application to handle orders and send orders to warehouses for shipment
 - We use three availability zones
-  - east
-  - central
-  - west
+  - `zone-east`
+  - `zone-central`
+  - `zone-west`
 - Generally, things run pretty balanced and steady-state
 - Deploying the Orders application to a fresh cluster
   - Kubernetes
   - Buoyant Enterprise Linkerd
-- We don't know it yet, but we're about to be featured on an episode of a popular sitcom today
-  - Orders are gonna spike
+
+We don't know it yet, but we're about to be featured on an episode of a popular sitcom tonight and orders are going to spike!
 
 ### Deploy the Orders Application
 
 Deploy the **Orders** application from the `orders-hpa` directory. This will deploy the application with Horizontal Pod Autoscaling. If you'd like to deploy the **Orders** application without Horizontal Pod Autoscaling, use the `orders-nohpa` directory.
 
 ```bash
-kubectl apply-hpa -k orders
+kubectl apply -k orders-hpa
 ```
 
 We can check the status of the **Orders** application by watching the rollout.
@@ -666,7 +693,7 @@ EOF
 Apply the **DataPlane CRD configuration** manifest to have the **BEL operator** create the **DataPlane** object for the `orders` namespace.
 
 ```bash
-kubectl apply -f linkerd-data-plane-orders-config.yaml --context=hazl
+kubectl apply -f linkerd-data-plane-orders-config.yaml
 ```
 
 Checking our work:
@@ -689,7 +716,7 @@ We can see...
 
 Let's take a look at how quick and easy we can enable **High Availability Zonal Load Balancing (HAZL)**.
 
-Remember, to make adjustments to your **BEL** deployment _simply edit and re-apply the previously-created `linkerd-control-plane-config-hazl.yaml` manifest_. We're going to **enable** the `- -ext-endpoint-zone-weights` in the `experimentalArgs` for now, by uncommenting it in the manifest:
+Remember, to make adjustments to your **BEL** deployment _simply edit and re-apply the previously-created `linkerd-control-plane-config-hazl.yaml` manifest_. We're going to **enable** the `- -ext-endpoint-zone-weights` in the `additionalArgs` for now, by uncommenting it in the manifest:
 
 Edit the `linkerd-control-plane-config-hazl.yaml` file:
 
@@ -710,8 +737,6 @@ Now, we can see the effect **HAZL** has on the traffic in our multi-az cluster.
 Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
 ![Buoyant Cloud: Topology](images/orders-hazl-bcloud.png)
-
-We can see...
 
 ### Increase Orders Traffic in `zone-east`
 
@@ -743,7 +768,7 @@ We can see...
 
 ### Increase Orders Traffic in `zone-central`
 
-A popular sitcom 
+The middle of the country _really_ liked our hacky sacks! Order volume is running more than double what we saw in `zone-east`.
 
 We can increase traffic in `zone-central` by scaling the `orders-central` deployment.  Let's scale to 25 replicas.
 
