@@ -712,7 +712,9 @@ Let's take a look at traffic flow _without **HAZL** enabled_ in **Buoyant Cloud*
 
 ![Deployments / HPA](images/orders-no-hazl-deployments-hpa.png)
 
-We can see...
+We can see that traffic from each `orders` deployment is flowing to all three `warehouse` deployments, and that about 2/3 of total traffic is out of zone. Latency is hovering around 80 ms per zone, and Requests By Warehouse has some variation over time. All deployments are currently scaled to one replica.
+
+**_Let's see what happens when we enable HAZL._**
 
 ### Enable High Availability Zonal Load Balancing (HAZL)
 
@@ -744,7 +746,7 @@ Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoy
 
 ![Deployments / HPA](images/orders-hazl-deployments-hpa.png)
 
-We can see...
+With HAZL enabled, we see traffic stay in zone, at 50 requests per second.  Cross-AZ traffic drops to zero, latency by zone drops to around 50 ms and Requests By Warehouse smooths out. Application load stays consistent and all deployments remain at one replica.
 
 ### Increase Orders Traffic in `zone-east`
 
@@ -772,9 +774,7 @@ Let's take a look at what the increased traffic looks like in **Buoyant Cloud**.
 
 ![Grafana: HAZL Dashboard](images/orders-hazl-increased-east-grafana.png)
 
-![Deployments / HPA](images/orders-hazl-increased-east-deployments-hpa.png)
-
-We can see...
+After scaling `orders-east` to 10 replicas, traffic remains in the same AZ and latency holds steady at around 50 ms. Order success remains at 100%.
 
 ### Increase Orders Traffic in `zone-central`
 
@@ -802,11 +802,11 @@ Let's take a look at what the increased traffic looks like in **Buoyant Cloud**.
 
 ![Deployments / HPA](images/orders-hazl-increased-central-deployments-hpa.png)
 
-We can see...
+Again, after scaling `orders-central` to 25 replicas, all traffic remains in the same AZ and latency holds steady at around 50 ms. Order success remains at 100%. Both `warehouse-boston` and `warehouse-chicago` have autoscaled to 3 replicas.
 
 ### Increase Orders Traffic in `zone-west`
 
-A popular sitcom 
+By now, word of the episode is all over social media, and when the episode airs in Pacific time, orders in `zone-west` spike.
 
 We can increase traffic in `zone-west` by scaling the `orders-west` deployment.  Let's scale to 30 replicas.
 
@@ -830,7 +830,9 @@ Let's take a look at what the increased traffic looks like in **Buoyant Cloud**.
 
 ![Deployments / HPA](images/orders-hazl-increased-west-deployments-hpa.png)
 
-We can see...
+Once more, after scaling `orders-west` to 30 replicas, all traffic remains in the same AZ and latency holds steady at around 50 ms. Order success remains at 100%. Both `warehouse-boston`, `warehouse-chicago` and `warehouse-oakland` have autoscaled to 3 replicas.
+
+**_So far, everything has gone right. What about when things go wrong?_**
 
 ### Increase Latency in `zone-central`
 
@@ -879,7 +881,7 @@ Let's take a look at what the increased latency looks like in **Buoyant Cloud**.
 
 ![Deployments / HPA](images/orders-hazl-increased-latency-deployments-hpa.png)
 
-We can see...
+HAZL steps in and does what it needs to do, redirecting a portion of the traffic from `orders-central` across AZs to `warehouse-oakland` to keep success rate at 100%. Latency increases in `orders-central`, but HAZL adjusts.
 
 ### Take the `warehouse-chicago` Deployment Offline in `zone-central`
 
@@ -907,7 +909,7 @@ Let's take a look at what the increased traffic looks like in **Buoyant Cloud**.
 
 ![Deployments / HPA](images/orders-hazl-chicago-offline-deployments-hpa.png)
 
-We can see...
+Once again, HAZL steps in and does what it needs to do, redirecting all of the traffic from `orders-central` across AZs to `warehouse-oakland` to keep success rate at 100%. Latency drops in `orders-central` as we are no longer sending traffic to `warehouse-chicago`, which added latency.
 
 ### Bring the `warehouse-chicago` Deployment Back Online and Remove Latency
 
@@ -947,7 +949,7 @@ Let's take a look at what the service restoration looks like in **Buoyant Cloud*
 
 ![Deployments / HPA](images/orders-hazl-chicago-restored-deployments-hpa.png)
 
-We can see...
+We can see things have returned to 100% in-zone traffic, with latency back to about 50 ms across the board and success rates at 100%.  HPA has 3 replicas of the `warehouse` deployments per zone.
 
 ### Reset the Orders Application
 
@@ -973,7 +975,7 @@ If we give things a minute to settle back down, we should see all traffic back i
 
 ![Deployments / HPA](images/orders-hazl-app-reset-deployments-hpa.png)
 
-We can see...
+Everything has returned to the initial state with HAZL enabled. All deployments are a single replica, all traffic remains in-zone, and success rates are 100%.  Looking good!
 
 ### Workshop: Cleanup
 
