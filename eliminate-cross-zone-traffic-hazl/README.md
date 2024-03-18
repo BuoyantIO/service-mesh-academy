@@ -135,7 +135,7 @@ The top-level contents of the repository look like this:
 ```bash
 .
 ├── README.md           <-- This README
-├── certs               <-- Directory where we'll put the TLS root certificates
+├── certs               <-- Directory for the TLS root certificates
 ├── cluster             <-- The k3d cluster configuration files live here
 ├── cluster_destroy.sh  <-- Script to destroy the cluster environment
 ├── cluster_setup.sh    <-- Script to stand up the cluster, install Linkerd and Orders
