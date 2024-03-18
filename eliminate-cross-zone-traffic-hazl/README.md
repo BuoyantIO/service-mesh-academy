@@ -140,7 +140,7 @@ The top-level contents of the repository look like this:
 ├── cluster_destroy.sh  <-- Script to destroy the cluster environment
 ├── cluster_setup.sh    <-- Script to stand up the cluster, install Linkerd and Orders
 ├── images              <-- Images for the README
-├── orders -> orders-nohpa
+├── orders -> orders-hpa
 ├── orders-hpa          <-- The Orders application, with Horizontal Pod Autoscaling
 └── orders-nohpa        <-- The Orders application, without Horizontal Pod Autoscaling
 ```
@@ -205,7 +205,7 @@ The repository contains two copies of the Orders application:
 - `orders-hpa`: HAZL version of the orders app with Horizontal Pod Autoscaling
 - `orders-nohpa`: HAZL version of the orders app without Horizontal Pod Autoscaling
 
-An  `orders` soft link points to the `nohpa` version of the application (`orders -> orders-nohpa`).  We will reference the `orders`  soft link in the steps.  If you want to use the `hpa` version of the application to experiment with Horizontal Pod Autoscaling, deploy the Orders application from the `orders-hpa` directory, or recreate the `orders` soft link, pointing to the `orders-hpa` directory.
+An  `orders` soft link points to the `hpa` version of the application (`orders -> orders-hpa`), with Horizontal Pod Autoscaling.  We will reference the `orders`  soft link in the steps.  If you want to use the `nohpa` version of the application, without Horizontal Pod Autoscaling, deploy the Orders application from the `orders-nohpa` directory, or recreate the `orders` soft link, pointing to the `orders-nohpa` directory.
 
 ## Hands-On Exercise 1: Deploy a Kubernetes Cluster With Buoyant Enterprise for Linkerd, With HAZL Disabled
 
@@ -631,27 +631,25 @@ Now that **BEL** is fully deployed, we're going to need some traffic to observe.
 
 ### Scenario: Hacky Sack Company
 
-Let's lay out the scenario here:
+In this scenario, we're delving into the operations of an online business specializing in Hacky Sack products. This business relies on a dedicated orders application to manage customer orders efficiently and to ensure that these orders are promptly dispatched to warehouses for shipment. To guarantee high availability and resilience, the system is distributed across three geographical availability zones: `zone-east`, `zone-central`, and `zone-west`. This strategic distribution ensures that the system operates smoothly, maintaining a balanced and steady state across different regions.
 
-- Hacky Sack Online Business
-- We use an orders application to handle orders and send orders to warehouses for shipment
-- We use three availability zones
-  - `zone-east`
-  - `zone-central`
-  - `zone-west`
-- Generally, things run pretty balanced and steady-state
-- Deploying the Orders application to a fresh cluster
-  - Kubernetes
-  - Buoyant Enterprise Linkerd
+For the deployment of the Orders application, the business utilizes a modern infrastructure approach by employing Kubernetes. To further enhance the system's reliability and observability, Buoyant's Enterprise Linkerd service mesh is deployed on our cluster. Remember, Linkerd provides critical features such as dynamic request routing, service discovery, and comprehensive monitoring, which are instrumental for maintaining the health and performance of the Orders application across the clusters. Deploying the Orders application to a fresh Kubernetes cluster, augmented with Buoyant Enterprise Linkerd, signifies a significant step towards achieving robust, scalable, and highly available online business operations, ensuring that customers receive their Hacky Sack products without delays.
 
 **_We don't know it yet, but our business, and the magic of hacky sack, are about to be featured on an episode of a popular sitcom tonight and orders are going to spike!_**
 
 ### Deploy the Orders Application
 
-Deploy the **Orders** application from the `orders-hpa` directory. This will deploy the application with Horizontal Pod Autoscaling. If you'd like to deploy the **Orders** application without Horizontal Pod Autoscaling, use the `orders-nohpa` directory.
+The repository contains two copies of the Orders application:
+
+- `orders-hpa`: HAZL version of the orders app with Horizontal Pod Autoscaling
+- `orders-nohpa`: HAZL version of the orders app without Horizontal Pod Autoscaling
+
+An  `orders` soft link points to the `hpa` version of the application (`orders -> orders-hpa`), with Horizontal Pod Autoscaling.  We will reference the `orders`  soft link in the steps.  If you want to use the `nohpa` version of the application, without Horizontal Pod Autoscaling, deploy the Orders application from the `orders-nohpa` directory, or recreate the `orders` soft link, pointing to the `orders-nohpa` directory.
+
+Deploy the **Orders** application from the `orders` directory. This will deploy the application with Horizontal Pod Autoscaling.
 
 ```bash
-kubectl apply -k orders-hpa
+kubectl apply -k orders
 ```
 
 We can check the status of the **Orders** application by watching the rollout.
