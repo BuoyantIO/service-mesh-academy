@@ -952,7 +952,7 @@ We can see...
 Now that we're finished, let's reset the Orders application back to its initial state.
 
 ```bash
-kubectl apply -k orders-hpa
+kubectl apply -k orders
 ```
 
 Let's see the results of the reset:
@@ -972,6 +972,22 @@ If we give things a minute to settle back down, we should see all traffic back i
 ![Deployments / HPA](images/orders-hazl-app-reset-deployments-hpa.png)
 
 We can see...
+
+### Workshop: Cleanup
+
+You can clean up the workshop environment by running the included script:
+
+```bash
+./cluster_destroy.sh
+```
+
+Checking our work:
+
+```bash
+k3d cluster list
+```
+
+We shouldn't see our `demo-cluster-orders-hazl` cluster.
 
 ## Summary: Deploying the Orders Application With High Availability Zonal Load Balancing (HAZL)
 
