@@ -4,7 +4,7 @@
 
 ### Tom Dean | Buoyant
 
-### Last edit: 3/17/2024
+### Last edit: 3/18/2024
 
 ## Introduction
 
@@ -135,12 +135,12 @@ The top-level contents of the repository look like this:
 ```bash
 .
 ├── README.md           <-- This README
-├── certs               <-- Directory where we'll put the TLS root certificates
+├── certs               <-- Directory for the TLS root certificates
 ├── cluster             <-- The k3d cluster configuration files live here
 ├── cluster_destroy.sh  <-- Script to destroy the cluster environment
 ├── cluster_setup.sh    <-- Script to stand up the cluster, install Linkerd and Orders
 ├── images              <-- Images for the README
-├── orders -> orders-nohpa
+├── orders -> orders-hpa
 ├── orders-hpa          <-- The Orders application, with Horizontal Pod Autoscaling
 └── orders-nohpa        <-- The Orders application, without Horizontal Pod Autoscaling
 ```
@@ -154,7 +154,7 @@ The repository contains the following automation:
 - `cluster_destroy.sh`
   - Script to destroy the cluster environment
 
-If you choose to use the `cluster_setup.sh` script, make sure you've created the `settings.sh` file and run `source settings.sh` to set your environment variables.
+If you choose to use the `cluster_setup.sh` script, make sure you've created the `settings.sh` file and run `source settings.sh` to set your environment variables. For more information, see the **Obtain Buoyant Enterprise for Linkerd (BEL) Trial Credentials and Log In to Buoyant Cloud** instructions.
 
 #### Cluster Configurations
 
@@ -205,7 +205,7 @@ The repository contains two copies of the Orders application:
 - `orders-hpa`: HAZL version of the orders app with Horizontal Pod Autoscaling
 - `orders-nohpa`: HAZL version of the orders app without Horizontal Pod Autoscaling
 
-An  `orders` soft link points to the `nohpa` version of the application (`orders -> orders-nohpa`).  We will reference the `orders`  soft link in the steps.  If you want to use the `hpa` version of the application to experiment with Horizontal Pod Autoscaling, deploy the Orders application from the `orders-hpa` directory, or recreate the `orders` soft link, pointing to the `orders-hpa` directory.
+An  `orders` soft link points to the `hpa` version of the application (`orders -> orders-hpa`), with Horizontal Pod Autoscaling.  We will reference the `orders`  soft link in the steps.  If you want to use the `nohpa` version of the application, without Horizontal Pod Autoscaling, deploy the Orders application from the `orders-nohpa` directory, or recreate the `orders` soft link, pointing to the `orders-nohpa` directory.
 
 ## Hands-On Exercise 1: Deploy a Kubernetes Cluster With Buoyant Enterprise for Linkerd, With HAZL Disabled
 
@@ -629,29 +629,27 @@ We've successfully installed **Buoyant Enterprise for Linkerd**, and can now use
 
 Now that **BEL** is fully deployed, we're going to need some traffic to observe.
 
-### Scenario: Hacky Sack Company
+### Scenario: Hacky Sack Emporium
 
-Let's lay out the scenario here:
+In this scenario, we're delving into the operations of an online business specializing in Hacky Sack products. This business relies on a dedicated orders application to manage customer orders efficiently and to ensure that these orders are promptly dispatched to warehouses for shipment. To guarantee high availability and resilience, the system is distributed across three geographical availability zones: `zone-east`, `zone-central`, and `zone-west`. This strategic distribution ensures that the system operates smoothly, maintaining a balanced and steady state across different regions.
 
-- Hacky Sack Online Business
-- We use an orders application to handle orders and send orders to warehouses for shipment
-- We use three availability zones
-  - `zone-east`
-  - `zone-central`
-  - `zone-west`
-- Generally, things run pretty balanced and steady-state
-- Deploying the Orders application to a fresh cluster
-  - Kubernetes
-  - Buoyant Enterprise Linkerd
+For the deployment of the Orders application, the business utilizes a modern infrastructure approach by employing Kubernetes. To further enhance the system's reliability and observability, Buoyant's Enterprise Linkerd service mesh is deployed on our cluster. Remember, Linkerd provides critical features such as dynamic request routing, service discovery, and comprehensive monitoring, which are instrumental for maintaining the health and performance of the Orders application across the clusters. Deploying the Orders application to a fresh Kubernetes cluster, augmented with Buoyant Enterprise Linkerd, signifies a significant step towards achieving robust, scalable, and highly available online business operations, ensuring that customers receive their Hacky Sack products without delays.
 
-We don't know it yet, but we're about to be featured on an episode of a popular sitcom tonight and orders are going to spike!
+**_We don't know it yet, but our business, and the magic of hacky sack, are about to be featured on an episode of a popular sitcom tonight and orders are going to spike!_**
 
 ### Deploy the Orders Application
 
-Deploy the **Orders** application from the `orders-hpa` directory. This will deploy the application with Horizontal Pod Autoscaling. If you'd like to deploy the **Orders** application without Horizontal Pod Autoscaling, use the `orders-nohpa` directory.
+The repository contains two copies of the Orders application:
+
+- `orders-hpa`: HAZL version of the orders app with Horizontal Pod Autoscaling
+- `orders-nohpa`: HAZL version of the orders app without Horizontal Pod Autoscaling
+
+An  `orders` soft link points to the `hpa` version of the application (`orders -> orders-hpa`), with Horizontal Pod Autoscaling.  We will reference the `orders`  soft link in the steps.  If you want to use the `nohpa` version of the application, without Horizontal Pod Autoscaling, deploy the Orders application from the `orders-nohpa` directory, or recreate the `orders` soft link, pointing to the `orders-nohpa` directory.
+
+Deploy the **Orders** application from the `orders` directory. This will deploy the application with Horizontal Pod Autoscaling.
 
 ```bash
-kubectl apply -k orders-hpa
+kubectl apply -k orders
 ```
 
 We can check the status of the **Orders** application by watching the rollout.
@@ -710,6 +708,10 @@ Let's take a look at traffic flow _without **HAZL** enabled_ in **Buoyant Cloud*
 
 ![Buoyant Cloud: Topology](images/orders-no-hazl-bcloud.png)
 
+![Grafana: HAZL Dashboard](images/orders-no-hazl-grafana.png)
+
+![Deployments / HPA](images/orders-no-hazl-deployments-hpa.png)
+
 We can see...
 
 ### Enable High Availability Zonal Load Balancing (HAZL)
@@ -738,9 +740,17 @@ Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoy
 
 ![Buoyant Cloud: Topology](images/orders-hazl-bcloud.png)
 
+![Grafana: HAZL Dashboard](images/orders-hazl-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-deployments-hpa.png)
+
+We can see...
+
 ### Increase Orders Traffic in `zone-east`
 
-A popular sitcom 
+A popular sitcom aired an episode in which the characters, a bunch of middle-aged Generation X folks, flash back to their teenage years, and remember the joy they experienced playing hacky sack together. Our characters decide they're going to relive those wonderful hacky sack memories, and go online to order supplies, featuring _our_ website and products. **_Jackpot!_**
+
+Let's simulate what that looks like. The first thing we see is an uptick of orders in `zone-east`, as they're the first to watch the episode.
 
 We can increase traffic in `zone-east` by scaling the `orders-east` deployment.  Let's scale to 10 replicas.
 
@@ -758,13 +768,13 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-increased-east-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-increased-east-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-increased-east-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Increase Orders Traffic in `zone-central`
 
@@ -786,13 +796,13 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-increased-central-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-increased-central-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-increased-central-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Increase Orders Traffic in `zone-west`
 
@@ -814,13 +824,13 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-increased-west-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-increased-west-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-increased-west-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Increase Latency in `zone-central`
 
@@ -863,13 +873,13 @@ kubectl rollout restart -n orders deploy warehouse-chicago
 
 Let's take a look at what the increased latency looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic in response to increased latency.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-increased-latency-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-increased-latency-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-increased-latency-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Take the `warehouse-chicago` Deployment Offline in `zone-central`
 
@@ -891,13 +901,13 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-chicago-offline-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-chicago-offline-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-chicago-offline-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Bring the `warehouse-chicago` Deployment Back Online and Remove Latency
 
@@ -931,20 +941,20 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 Let's take a look at what the service restoration looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-chicago-restored-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-chicago-restored-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-chicago-restored-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Reset the Orders Application
 
 Now that we're finished, let's reset the Orders application back to its initial state.
 
 ```bash
-kubectl apply -k orders-hpa
+kubectl apply -k orders
 ```
 
 Let's see the results of the reset:
@@ -957,14 +967,30 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 If we give things a minute to settle back down, we should see all traffic back in zone and request rates back to 50.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-app-reset-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-app-reset-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-app-reset-deployments-hpa.png)
 
 We can see...
 
-<<Explain what we're seeing here>>
+### Workshop: Cleanup
+
+You can clean up the workshop environment by running the included script:
+
+```bash
+./cluster_destroy.sh
+```
+
+Checking our work:
+
+```bash
+k3d cluster list
+```
+
+We shouldn't see our `demo-cluster-orders-hazl` cluster.
 
 ## Summary: Deploying the Orders Application With High Availability Zonal Load Balancing (HAZL)
 
-<<Summarize the entire thing here. Bullet points?>>
+Summarize the entire thing here. Bullet points?
