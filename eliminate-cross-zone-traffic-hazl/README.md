@@ -4,7 +4,7 @@
 
 ### Tom Dean | Buoyant
 
-### Last edit: 3/17/2024
+### Last edit: 3/18/2024
 
 ## Introduction
 
@@ -154,7 +154,7 @@ The repository contains the following automation:
 - `cluster_destroy.sh`
   - Script to destroy the cluster environment
 
-If you choose to use the `cluster_setup.sh` script, make sure you've created the `settings.sh` file and run `source settings.sh` to set your environment variables.
+If you choose to use the `cluster_setup.sh` script, make sure you've created the `settings.sh` file and run `source settings.sh` to set your environment variables. For more information, see the **Obtain Buoyant Enterprise for Linkerd (BEL) Trial Credentials and Log In to Buoyant Cloud** instructions.
 
 #### Cluster Configurations
 
@@ -644,7 +644,7 @@ Let's lay out the scenario here:
   - Kubernetes
   - Buoyant Enterprise Linkerd
 
-We don't know it yet, but we're about to be featured on an episode of a popular sitcom tonight and orders are going to spike!
+**_We don't know it yet, but our business, and the magic of hacky sack, are about to be featured on an episode of a popular sitcom tonight and orders are going to spike!_**
 
 ### Deploy the Orders Application
 
