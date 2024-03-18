@@ -708,6 +708,10 @@ Let's take a look at traffic flow _without **HAZL** enabled_ in **Buoyant Cloud*
 
 ![Buoyant Cloud: Topology](images/orders-no-hazl-bcloud.png)
 
+![Grafana: HAZL Dashboard](images/orders-no-hazl-grafana.png)
+
+![Deployments / HPA](images/orders-no-hazl-deployments-hpa.png)
+
 We can see...
 
 ### Enable High Availability Zonal Load Balancing (HAZL)
@@ -736,6 +740,12 @@ Let's take a look at what traffic looks like with **HAZL** enabled, using **Buoy
 
 ![Buoyant Cloud: Topology](images/orders-hazl-bcloud.png)
 
+![Grafana: HAZL Dashboard](images/orders-hazl-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-deployments-hpa.png)
+
+We can see...
+
 ### Increase Orders Traffic in `zone-east`
 
 A popular sitcom 
@@ -756,13 +766,13 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-increased-east-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-increased-east-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-increased-east-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Increase Orders Traffic in `zone-central`
 
@@ -784,13 +794,13 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-increased-central-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-increased-central-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-increased-central-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Increase Orders Traffic in `zone-west`
 
@@ -812,13 +822,13 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-increased-west-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-increased-west-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-increased-west-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Increase Latency in `zone-central`
 
@@ -861,13 +871,13 @@ kubectl rollout restart -n orders deploy warehouse-chicago
 
 Let's take a look at what the increased latency looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic in response to increased latency.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-increased-latency-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-increased-latency-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-increased-latency-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Take the `warehouse-chicago` Deployment Offline in `zone-central`
 
@@ -889,13 +899,13 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 Let's take a look at what the increased traffic looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-chicago-offline-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-chicago-offline-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-chicago-offline-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Bring the `warehouse-chicago` Deployment Back Online and Remove Latency
 
@@ -929,13 +939,13 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 Let's take a look at what the service restoration looks like in **Buoyant Cloud**. This will give us a more visual representation of the effect of **HAZL** on our traffic.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-chicago-restored-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-chicago-restored-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-chicago-restored-deployments-hpa.png)
 
 We can see...
-
-<<Explain what we're seeing here>>
 
 ### Reset the Orders Application
 
@@ -955,14 +965,14 @@ watch -n 1 kubectl get deploy,hpa -n orders
 
 If we give things a minute to settle back down, we should see all traffic back in zone and request rates back to 50.
 
-![Buoyant Cloud: Topology](images/orders-hazl-increased-load-bcloud.png)
+![Buoyant Cloud: Topology](images/orders-hazl-app-reset-bcloud.png)
 
-![Grafana: Dashboard](images/orders-hazl-increased-load-grafana.png)
+![Grafana: HAZL Dashboard](images/orders-hazl-app-reset-grafana.png)
+
+![Deployments / HPA](images/orders-hazl-app-reset-deployments-hpa.png)
 
 We can see...
 
-<<Explain what we're seeing here>>
-
 ## Summary: Deploying the Orders Application With High Availability Zonal Load Balancing (HAZL)
 
-<<Summarize the entire thing here. Bullet points?>>
+Summarize the entire thing here. Bullet points?
