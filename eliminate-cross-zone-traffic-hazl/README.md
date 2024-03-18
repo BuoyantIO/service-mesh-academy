@@ -750,7 +750,7 @@ We can see...
 
 A popular sitcom aired an episode in which the characters, a bunch of middle-aged Generation X folks, flash back to their teenage years, and remember the joy they experienced playing hacky sack together. Our characters decide they're going to relive those wonderful hacky sack memories, and go online to order supplies, featuring _our_ website and products. **_Jackpot!_**
 
-Let's simulate what that looks like.
+Let's simulate what that looks like. The first thing we see is an uptick of orders in `zone-east`, as they're the first to watch the episode.
 
 We can increase traffic in `zone-east` by scaling the `orders-east` deployment.  Let's scale to 10 replicas.
 
