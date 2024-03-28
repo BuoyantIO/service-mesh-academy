@@ -1,0 +1,13 @@
+apiVersion: workload.linkerd.io/v1beta1
+kind: ExternalWorkload
+metadata:
+  name: test-external
+  namespace: default
+spec:
+  workloadIPs:
+  - ip: 192.0.2.0
+  meshTLS:
+    identity: test-external.default.svc.cluster.local
+    serverName: test-external.default.svc.cluster.local
+  ports:
+  - port: 80
