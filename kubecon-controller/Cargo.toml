@@ -1,0 +1,48 @@
+[package]
+name = "kubecon-controller"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+
+[[bin]]
+name = "simple-client"
+path = "src/bin/simple_client.rs"
+
+[[bin]]
+name = "status-controller"
+path = "src/bin/status_controller.rs"
+
+[[bin]]
+name = "stateful-controller"
+path = "src/bin/stateful_controller.rs"
+
+[dependencies]
+anyhow = "1.0.81"
+clap = { version = "4.5.3", features = ["env", "derive", "std"] }
+futures-util = "0.3.30"
+hyper = { version = "1.2.0", features = ["http1", "server"] }
+k8s-openapi = { version = "0.20", features = ["v1_22", "schemars"] }
+kube = { version = "0.87.1", features = ["runtime", "kube-derive", "derive"] }
+parking_lot = { version = "0.12.1", features = ["arc_lock"] }
+schemars = { version = "0.8.16", features = ["derive"] }
+serde = "1.0.197"
+serde_json = "1.0.114"
+thiserror = "1.0.58"
+tokio = { version = "1.36.0", features = ["full"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+
+[dependencies.kubert]
+version = "0.21.1"
+default-features = false
+features = [
+    "clap",
+    "index",
+    "lease",
+    "prometheus-client",
+    "runtime",
+    "server",
+    "rustls-tls",
+]
