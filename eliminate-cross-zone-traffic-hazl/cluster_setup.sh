@@ -4,7 +4,7 @@
 # https://github.com/BuoyantIO/service-mesh-academy/tree/main/eliminate-cross-zone-traffic-hazl
 # Automates cluster creation, Linkerd installation and installs the Orders application
 # Tom Dean | Buoyant
-# Last edit: 3/16/2024
+# Last edit: 4/11/2024
 
 # Create the k3d cluster
 
@@ -97,12 +97,12 @@ metadata:
 spec:
   components:
     linkerd:
-      version: enterprise-2.15.1-1
+      version: enterprise-2.15.2
       license: $BUOYANT_LICENSE
       controlPlaneConfig:
         proxy:
           image:
-            version: enterprise-2.15.1-1-hazl
+            version: enterprise-2.15.2
         identityTrustAnchorsPEM: |
 $(sed 's/^/          /' < certs/ca.crt )
         identity:

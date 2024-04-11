@@ -4,7 +4,7 @@
 
 ### Tom Dean | Buoyant
 
-### Last edit: 3/18/2024
+### Last edit: 4/11/2024
 
 ## Introduction
 
@@ -142,7 +142,8 @@ The top-level contents of the repository look like this:
 ├── images              <-- Images for the README
 ├── orders -> orders-hpa
 ├── orders-hpa          <-- The Orders application, with Horizontal Pod Autoscaling
-└── orders-nohpa        <-- The Orders application, without Horizontal Pod Autoscaling
+├── orders-nohpa        <-- The Orders application, without Horizontal Pod Autoscaling
+└── traffic_check.sh    <-- Script to monitor application traffic
 ```
 
 #### Workshop: Automation
@@ -153,6 +154,8 @@ The repository contains the following automation:
   - Script to stand up the cluster, install Linkerd and Orders
 - `cluster_destroy.sh`
   - Script to destroy the cluster environment
+- `traffic_check.sh`
+  - Script to monitor application traffic
 
 If you choose to use the `cluster_setup.sh` script, make sure you've created the `settings.sh` file and run `source settings.sh` to set your environment variables. For more information, see the **Obtain Buoyant Enterprise for Linkerd (BEL) Trial Credentials and Log In to Buoyant Cloud** instructions.
 
@@ -528,12 +531,12 @@ metadata:
 spec:
   components:
     linkerd:
-      version: enterprise-2.15.1-1
+      version: enterprise-2.15.2
       license: $BUOYANT_LICENSE
       controlPlaneConfig:
         proxy:
           image:
-            version: enterprise-2.15.1-1-hazl
+            version: enterprise-2.15.2
         identityTrustAnchorsPEM: |
 $(sed 's/^/          /' < certs/ca.crt )
         identity:
