@@ -868,7 +868,7 @@ The colors map to the warehouses as follows:
 - Blue: This is the Boston warehouse (`warehouse-boston`)
 - Green: This is the Chicago warehouse (`warehouse-chicago`)
 
-Change the value of `averageResponseTime` under `green.yml` from `0.020` to `0.120`. Save and exit.
+Change the value of `averageResponseTime` under `green.yml` from `0.020` to `0.920`. Save and exit.
 
 We need to restart the `warehouse-chicago` deployment to pick up the changes:
 
