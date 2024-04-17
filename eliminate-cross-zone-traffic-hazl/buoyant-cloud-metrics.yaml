@@ -1,0 +1,362 @@
+apiVersion: v1
+data:
+  agent.yml: |
+    server:
+      log_level: debug
+    metrics:
+      wal_directory: /tmp/wal
+      global:
+        scrape_interval: 10s
+        external_labels:
+          cluster_id: ${AGENT_ID}
+          cluster_name: ${AGENT_NAME}
+      configs:
+      - host_filter: true
+        name: buoyant-cloud-metrics
+        wal_truncate_frequency: "1m"
+        remote_write:
+        - url: https://api.buoyant.cloud:443/remote-write
+          oauth2:
+            client_id: ${BUOYANT_CLOUD_CLIENT_ID}
+            client_secret: ${BUOYANT_CLOUD_CLIENT_SECRET}
+            token_url: https://api.buoyant.cloud:443/agent-token?agent_id=${AGENT_ID}
+          queue_config:
+            capacity: 1500
+            max_shards: 20
+            max_backoff: 10s
+
+        scrape_configs:
+
+        - job_name: 'buoyant-cloud-agent'
+          kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+              - 'linkerd-buoyant'
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            regex:         ^buoyant-admin$
+            action:        keep
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            regex:         ^buoyant-cloud-agent|buoyant-cloud-metrics|linkerd-control-plane-operator|linkerd-data-plane-operator$
+            action:        keep
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+
+        # scrape_configs copied from `linkerd install`
+
+        - job_name: 'kubernetes-nodes-cadvisor'
+          scheme: https
+          tls_config:
+            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            insecure_skip_verify: true
+          bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          kubernetes_sd_configs:
+          - role: node
+          relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+          metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: ^container_cpu_usage_seconds_total|container_memory_working_set_bytes|machine_cpu_cores|machine_memory_bytes$
+            action: keep
+          - source_labels: [pod]
+            target_label: workload_kind
+            regex: ^(.*)-[bcdfghjklmnpqrstvwxz2456789]{5,15}$
+            action: replace
+            replacement: Deployment
+          - source_labels: [pod]
+            target_label: workload_kind
+            regex: ^(.*)-[0-9]+$
+            action: replace
+            replacement: StatefulSet
+          - source_labels: [pod]
+            target_label: workload_kind
+            regex: ^(.*)-[bcdfghjklmnpqrstvwxz2456789]{5}$
+            action: replace
+            replacement: DaemonSet
+          - source_labels: [pod]
+            target_label: workload_kind
+            regex: ^(.*)-[456789bcdf]{1,10}-[bcdfghjklmnpqrstvwxz2456789]{5}$
+            action: replace
+            replacement: Deployment
+          - source_labels: [pod]
+            target_label: workload_name
+            regex: ^(.*)-[bcdfghjklmnpqrstvwxz2456789]{5,15}$
+            action: replace
+            replacement: $1
+          - source_labels: [pod]
+            target_label: workload_name
+            regex: ^(.*)-[0-9]+$
+            action: replace
+            replacement: $1
+          - source_labels: [pod]
+            target_label: workload_name
+            regex: ^(.*)-[bcdfghjklmnpqrstvwxz2456789]{5}$
+            action: replace
+            replacement: $1
+          - source_labels: [pod]
+            target_label: workload_name
+            regex: ^(.*)-[456789bcdf]{1,10}-[bcdfghjklmnpqrstvwxz2456789]{5}$
+            action: replace
+            replacement: $1
+
+        - job_name: 'linkerd-controller'
+          kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+              - 'linkerd'
+          relabel_configs:
+          - source_labels:
+            - __meta_kubernetes_pod_container_port_name
+            action: keep
+            regex: admin-http
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            action: replace
+            target_label: component
+
+        - job_name: 'linkerd-proxy'
+          kubernetes_sd_configs:
+          - role: pod
+          relabel_configs:
+          - source_labels:
+            - __meta_kubernetes_pod_container_name
+            - __meta_kubernetes_pod_container_port_name
+            action: keep
+            regex: ^linkerd-proxy;linkerd-admin$
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod
+          # special case k8s' "job" label, to not interfere with prometheus' "job"
+          # label
+          # __meta_kubernetes_pod_label_linkerd_io_proxy_job=foo =>
+          # k8s_job=foo
+          - source_labels: [__meta_kubernetes_pod_label_linkerd_io_proxy_job]
+            action: replace
+            target_label: k8s_job
+          # drop __meta_kubernetes_pod_label_linkerd_io_proxy_job
+          - action: labeldrop
+            regex: __meta_kubernetes_pod_label_linkerd_io_proxy_job
+          # __meta_kubernetes_pod_label_linkerd_io_proxy_deployment=foo =>
+          # deployment=foo
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_linkerd_io_proxy_(.+)
+          # drop all labels that we just made copies of in the previous labelmap
+          - action: labeldrop
+            regex: __meta_kubernetes_pod_label_linkerd_io_proxy_(.+)
+          # __meta_kubernetes_pod_label_linkerd_io_foo=bar =>
+          # foo=bar
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_linkerd_io_(.+)
+
+          # __meta_kubernetes_pod_controller_kind=DaemonSet => workload_kind=DaemonSet
+          # __meta_kubernetes_pod_controller_name=foo       => workload_name=foo
+          - source_labels: [__meta_kubernetes_pod_controller_kind]
+            action: replace
+            target_label: workload_kind
+          - source_labels: [__meta_kubernetes_pod_controller_name]
+            action: replace
+            target_label: workload_name
+
+          # __meta_kubernetes_pod_controller_kind=ReplicaSet  => workload_kind=Deployment
+          # __meta_kubernetes_pod_controller_name=foo-bar-123 => workload_name=foo-bar
+          - source_labels: [__meta_kubernetes_pod_controller_kind]
+            action: replace
+            regex: ^ReplicaSet$
+            target_label: workload_kind
+            replacement: Deployment
+          - source_labels:
+            - __meta_kubernetes_pod_controller_kind
+            - __meta_kubernetes_pod_controller_name
+            action: replace
+            regex: ^ReplicaSet;(.*)-[^-]+$
+            target_label: workload_name
+
+          # __meta_kubernetes_pod_controller_kind=ReplicaSet  => workload_kind=Rollout
+          # __meta_kubernetes_pod_controller_name=foo-bar-123 => workload_name=foo-bar
+          - source_labels:
+            - __meta_kubernetes_pod_controller_kind
+            - __meta_kubernetes_pod_labelpresent_rollouts_pod_template_hash
+            action: replace
+            regex: ^ReplicaSet;true$
+            target_label: workload_kind
+            replacement: Rollout
+          - source_labels:
+            - __meta_kubernetes_pod_controller_kind
+            - __meta_kubernetes_pod_controller_name
+            - __meta_kubernetes_pod_labelpresent_rollouts_pod_template_hash
+            action: replace
+            regex: ^ReplicaSet;(.*)-[^-]+;true$
+            target_label: workload_name
+
+          metric_relabel_configs:
+
+          # keep linkerd metrics relevant to buoyant cloud
+          - source_labels: [__name__]
+            regex: ^route_actual_response_total|response_total|response_latency_ms_bucket|route_response_total|route_response_latency_ms_bucket|tcp_open_connections|tcp_open_total|tcp_read_bytes_total|tcp_write_bytes_total|inbound_http_authz_allow_total|inbound_http_authz_deny_total|inbound_tcp_authz_allow_total|inbound_tcp_authz_deny_total|inbound_http_errors_total|inbound_tcp_errors_total|outbound_http_errors_total|outbound_tcp_errors_total$
+            action: keep
+
+          # drop some latency buckets
+          - source_labels:
+            - le
+            regex: ^2.*|3.*|4.*$
+            action: drop
+
+          # drop high-cardinality outbound tcp open connections
+          - source_labels:
+            - __name__
+            - direction
+            regex: 'tcp_open_connections;outbound'
+            action: drop
+
+          # drop high-cardinality outbound tcp open total
+          - source_labels:
+            - __name__
+            - direction
+            regex: 'tcp_open_total;outbound'
+            action: drop
+
+          # drop linkerd workload labels (superseded by workload_kind, workload_name)
+          - action: labeldrop
+            regex: 'deployment'
+          - action: labeldrop
+            regex: 'daemonset'
+          - action: labeldrop
+            regex: 'statefulset'
+          - action: labeldrop
+            regex: 'replicaset'
+
+          # foo{direction="outbound"} => outbound_foo{}
+          - source_labels:
+            - __name__
+            - direction
+            regex: ^(.+);(inbound|outbound)$
+            action: replace
+            target_label: __name__
+            replacement: $${2}_$${1}
+          - action: labeldrop
+            regex: direction
+
+          # dst_replicaset=foo-123 => dst_workload_name=foo
+          # dst_replicaset=foo-123 => dst_workload_kind=Rollout
+          - source_labels: [dst_replicaset]
+            regex: ^(.*)-[^-]+$
+            action: replace
+            target_label: dst_workload_name
+          - source_labels: [dst_replicaset]
+            regex: (.+)
+            action: replace
+            target_label: dst_workload_kind
+            replacement: Rollout
+          - action: labeldrop
+            regex: 'dst_replicaset'
+
+          # dst_daemonset=foo => dst_workload_name=foo
+          # dst_daemonset=foo => dst_workload_kind=DaemonSet
+          - source_labels: [dst_daemonset]
+            regex: (.+)
+            action: replace
+            target_label: dst_workload_name
+          - source_labels: [dst_daemonset]
+            regex: (.+)
+            action: replace
+            target_label: dst_workload_kind
+            replacement: DaemonSet
+          - action: labeldrop
+            regex: 'dst_daemonset'
+
+          # dst_deployment=foo => dst_workload_name=foo
+          # dst_deployment=foo => dst_workload_kind=Deployment
+          - source_labels: [dst_deployment]
+            regex: (.+)
+            action: replace
+            target_label: dst_workload_name
+          - source_labels: [dst_deployment]
+            regex: (.+)
+            action: replace
+            target_label: dst_workload_kind
+            replacement: Deployment
+          - action: labeldrop
+            regex: 'dst_deployment'
+
+          # dst_statefulset=foo => dst_workload_name=foo
+          # dst_statefulset=foo => dst_workload_kind=StatefulSet
+          - source_labels: [dst_statefulset]
+            regex: (.+)
+            action: replace
+            target_label: dst_workload_name
+          - source_labels: [dst_statefulset]
+            regex: (.+)
+            action: replace
+            target_label: dst_workload_kind
+            replacement: StatefulSet
+          - action: labeldrop
+            regex: 'dst_statefulset'
+
+          # drop remaining high-cardinality linkerd metrics and labels
+          - action: labeldrop
+            regex: 'pod_template_hash'
+          - action: labeldrop
+            regex: 'dst_pod_template_hash'
+          - action: labeldrop
+            regex: 'dst_serviceaccount'
+          - action: labeldrop
+            regex: 'server_id'
+          - action: labeldrop
+            regex: 'control_plane_ns'
+          - action: labeldrop
+            regex: 'dst_control_plane_ns'
+          - action: labeldrop
+            regex: 'workload_ns'
+
+        - job_name: 'multicluster-link'
+          kubernetes_sd_configs:
+          - role: pod
+          relabel_configs:
+          - source_labels:
+            - __meta_kubernetes_pod_container_name
+            - __meta_kubernetes_pod_container_port_name
+            action: keep
+            regex: ^service-mirror;admin-http$
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+
+          metric_relabel_configs:
+
+          # keep link metrics relevant to buoyant cloud
+          - source_labels: [__name__]
+            regex: ^gateway_alive|gateway_probe_latency_ms_bucket$
+            action: keep
+
+          # drop some latency buckets
+          - source_labels:
+            - le
+            regex: ^2.*|3.*|4.*$
+            action: drop
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: linkerd-buoyant
+    meta.helm.sh/release-namespace: linkerd-buoyant
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: linkerd-buoyant
+  name: buoyant-cloud-metrics
+  namespace: linkerd-buoyant
