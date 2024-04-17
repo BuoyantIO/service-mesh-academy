@@ -319,7 +319,7 @@ so that the proxies can verify each others mTLS certificates.
 Begin by [Installing trust using Helm](https://cert-manager.io/docs/projects/trust/#installation) as follows:
 
 ```
-helm upgrade -i -n cert-manager cert-manager-trust jetstack/cert-manager-trust --wait
+helm upgrade -i -n cert-manager trust-manager jetstack/trust-manager --wait
 ```
 
 Trust installs a CRD called Bundle which is used to configure the source Secret and the destination ConfigMap and file.

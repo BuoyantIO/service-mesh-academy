@@ -158,7 +158,7 @@ $ kubectl create secret generic \
 $  helm upgrade -i -n cert-manager cert-manager jetstack/cert-manager --set installCRDs=true --wait --create-namespace
 
 # Second, trust
-$  helm upgrade -i -n cert-manager cert-manager-trust jetstack/cert-manager-trust --wait -n cert-manager
+$  helm upgrade -i -n cert-manager trust-manager jetstack/trust-manager --wait -n cert-manager
 
 # Quick healthcheck
 $ kubectl get pods -n cert-manager
@@ -167,7 +167,7 @@ NAME                                       READY   STATUS    RESTARTS   AGE
 cert-manager-cainjector-5c55bb7cb4-ths8s   1/1     Running   0          2m34s
 cert-manager-76578c9687-v8zm6              1/1     Running   0          2m34s
 cert-manager-webhook-556f979d7f-k24bj      1/1     Running   0          2m34s
-cert-manager-trust-5c4b6f8ff6-d5k2k        1/1     Running   0          36s
+trust-manager-5c4b6f8ff6-d5k2k        1/1     Running   0          36s
 
 ```
 
@@ -238,5 +238,5 @@ We're ready to deploy Linkerd
 ```
 $ linkerd install --identity-external-issuer \
    --set "identity.externalCA=true" \
-  |kubectl apply -f - 
+  |kubectl apply -f -
 ```
