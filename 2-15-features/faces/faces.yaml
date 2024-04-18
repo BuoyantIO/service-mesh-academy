@@ -67,7 +67,7 @@ spec:
                 values: [zone-east]
       containers:
       - name: face
-        image: ghcr.io/buoyantio/faces-workload:1.2.0
+        image: ghcr.io/buoyantio/faces-workload:1.2.1
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -150,7 +150,7 @@ spec:
                 values: [zone-east]
       containers:
       - name: smiley
-        image: ghcr.io/buoyantio/faces-workload:1.2.0
+        image: ghcr.io/buoyantio/faces-workload:1.2.1
         imagePullPolicy: IfNotPresent
         ports:
         - name: http

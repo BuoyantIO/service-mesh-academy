@@ -40,7 +40,7 @@ spec:
                 values: [zone-east]
       containers:
       - name: color
-        image: ghcr.io/buoyantio/faces-workload:1.2.0
+        image: ghcr.io/buoyantio/faces-workload:1.2.1
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -90,7 +90,7 @@ spec:
                 values: [zone-west]
       containers:
       - name: color
-        image: ghcr.io/buoyantio/faces-workload:1.2.0
+        image: ghcr.io/buoyantio/faces-workload:1.2.1
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -140,7 +140,7 @@ spec:
                 values: [zone-central]
       containers:
       - name: color
-        image: ghcr.io/buoyantio/faces-workload:1.2.0
+        image: ghcr.io/buoyantio/faces-workload:1.2.1
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
