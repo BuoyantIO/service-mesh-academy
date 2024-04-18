@@ -21,7 +21,7 @@ already have a cluster named "features".
 <!-- @import demosh/check-requirements.sh -->
 <!-- @start_livecast -->
 ---
-<!-- @SHOW -->
+<!-- @SKIP -->
 
 ## Creating the Cluster
 
@@ -94,7 +94,7 @@ identity issuer in the `certs` directory:
 
 ```bash
 #@immed
-rm -f certs
+rm -rf certs
 mkdir certs
 
 # The `root-ca` profile is correct for a Linkerd trust anchor. We
@@ -267,7 +267,8 @@ kubectl apply -f faces/bootstrap
 kubectl rollout status -n faces deploy
 ```
 
-If we look at
+Once again, let's doublecheck to make sure that our Pods are really running in
+the correct zones.
 
 ```bash
 kubectl get pods -n faces -o wide
@@ -354,20 +355,25 @@ kubectl delete job -n faces curl
 
 <!-- @wait_clear -->
 
-## Testing the Application
+## Main Quest: Testing the Application
 
 If we go to the browser, we'll see a mix of background colors:
 - blue for east
 - green for west
 - yellow for central
 
-In fact, we see mostly not blue, because `color-east` is actually a little slower (by design) than the other two.
+<!-- @browser_then_terminal -->
+
+In fact, we see mostly not blue, because `color-east` is actually a little
+slower (by design) than the other two.
 
 We can also see this in stats:
 
 ```bash
 linkerd dg proxy-metrics -n faces deploy/face | python crunch-metrics.py
 ```
+
+<!-- @wait_clear -->
 
 ## HAZL
 
@@ -403,9 +409,13 @@ If we head back to the browser, we should see all blue now!
 
 ## Side Quest: Uh... what's going on?
 
-So that didn't work. We could look at a ton of stuff here, but the actual
-cause is pretty simple: way back at the beginning, I installed
-enterprise-2.15.1, rather than enterprise-2.15.2. Sigh.
+So that didn't work.
+
+<!-- @wait -->
+
+We could look at a ton of stuff here, but the actual cause is pretty simple:
+way back at the beginning, I installed enterprise-2.15.1, rather than
+enterprise-2.15.2. Sigh.
 
 Fortunately, this is really easy to fix with the ControlPlane.
 
@@ -419,6 +429,7 @@ watch "kubectl get controlplane; kubectl get dataplane -A; kubectl get pods -n f
 ...and NOW if we go back to the browser, we'll see all blue!
 
 <!-- @browser_then_terminal -->
+<!-- @SHOW -->
 
 ## HAZL
 
@@ -426,30 +437,34 @@ This, of course, we could probably get with Kubernetes own topology-aware
 routing. What topology-aware routing doesn't give us is resilience. Suppose
 our `color-east` workload crashes?
 
+<!-- @show_composite -->
+
 ```bash
 kubectl scale -n faces deploy/color-east --replicas=0
 ```
 
-If we look at the browser, we'll see that we've just seamlessly switched to a
-different zone.
+Over in the browser, we'll see that we've just seamlessly switched
+to a different zone.
 
-<!-- @browser_then_terminal -->
+<!-- @wait_clear -->
 
 ## HAZL
 
-If `color-east` comes back up, we'll see it start taking traffic again.
+If `color-east` comes back up, we'll see it start taking traffic
+again.
 
 ```bash
 kubectl scale -n faces deploy/color-east --replicas=1
 ```
 
-<!-- @browser_then_terminal -->
+<!-- @wait_clear -->
+<!-- @show_terminal -->
 
 ## HAZL and Load
 
-HAZL is also smart enough to know that if we overwhelm `color-east` is slow,
-it should bring in workloads from the other zones to help out. Let's fire up a
-traffic generator to see this in action.
+HAZL is also smart enough to know that if we overwhelm `color-east`, it should
+bring in workloads from the other zones to help out. Let's fire up a traffic
+generator to see this in action.
 
 ```bash
 bat faces/load.yaml
