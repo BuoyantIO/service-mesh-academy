@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: curl
+  namespace: faces
+spec:
+  template:
+    metadata:
+      name: curl
+    spec:
+      containers:
+      - name: curl
+        image: curlimages/curl:latest
+        command:
+         - "curl"
+         - "-v"
+         - "http://face.faces/"
+      restartPolicy: Never

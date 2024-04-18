@@ -1,0 +1,163 @@
+---
+# Source: faces-chart/templates/color.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: color
+  namespace: faces
+spec:
+  type: ClusterIP
+  selector:
+    service: color
+  ports:
+  - port: 80
+    targetPort: http
+---
+# Source: faces-chart/templates/color.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: color-east
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faces-service: color-east
+  template:
+    metadata:
+      labels:
+        faces-service: color-east
+        service: color
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-east]
+      containers:
+      - name: color
+        image: ghcr.io/buoyantio/faces-workload:1.2.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "color"
+        - name: COLOR
+          value: "blue"
+        - name: ERROR_FRACTION
+          value: "0"
+        - name: DELAY_BUCKETS
+          value: "50,100,200,500"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+---
+# Source: faces-chart/templates/color.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: color-west
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faces-service: color-west
+  template:
+    metadata:
+      labels:
+        faces-service: color-west
+        service: color
+    spec:
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-west]
+      containers:
+      - name: color
+        image: ghcr.io/buoyantio/faces-workload:1.2.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "color"
+        - name: COLOR
+          value: green
+        - name: ERROR_FRACTION
+          value: "0"
+        - name: DELAY_BUCKETS
+          value: "10,20,50,100"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+---
+# Source: faces-chart/templates/color.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: color-central
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faces-service: color-central
+  template:
+    metadata:
+      labels:
+        faces-service: color-central
+        service: color
+    spec:
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-central]
+      containers:
+      - name: color
+        image: ghcr.io/buoyantio/faces-workload:1.2.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "color"
+        - name: COLOR
+          value: "yellow"
+        - name: ERROR_FRACTION
+          value: "0"
+        - name: DELAY_BUCKETS
+          value: "10,20,50,100"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi

@@ -1,0 +1,11 @@
+nameOverride: emissary
+fullnameOverride: emissary
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - podAffinityTerm:
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: emissary
+        topologyKey: kubernetes.io/hostname
+      weight: 100
