@@ -21,7 +21,7 @@ already have a cluster named "features".
 <!-- @import demosh/check-requirements.sh -->
 <!-- @start_livecast -->
 ---
-<!-- @SKIP -->
+<!-- @SHOW -->
 
 ## Creating the Cluster
 
@@ -429,7 +429,6 @@ watch "kubectl get controlplane; kubectl get dataplane -A; kubectl get pods -n f
 ...and NOW if we go back to the browser, we'll see all blue!
 
 <!-- @browser_then_terminal -->
-<!-- @SHOW -->
 
 ## HAZL
 
