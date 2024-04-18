@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: load
+  template:
+    metadata:
+      labels:
+        service: load
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-east]
+      containers:
+      - name: load
+        image: ghcr.io/buoyantio/faces-workload:latest-arm64
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "load"
+        - name: LOAD_TARGET
+          value: "face"
+        - name: LOAD_RPS
+          value: "10"
+        resources:
+          requests:
+            cpu: 300m     # The face service doesn't need much memory, but it does need more
+            memory: 64Mi  # CPU than the other backend services since it has to call the
+          limits:         # face and smiley services, then composite the results.
+            cpu: 500m
+            memory: 128Mi

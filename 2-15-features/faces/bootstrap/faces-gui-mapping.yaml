@@ -1,0 +1,12 @@
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: gui-mapping
+  namespace: faces
+spec:
+  hostname: "*"
+  prefix: /faces/
+  service: faces-gui.faces
+  rewrite: /
+  timeout_ms: 0

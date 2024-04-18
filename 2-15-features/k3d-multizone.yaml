@@ -1,0 +1,27 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: features
+servers: 1
+agents: 3
+network: features
+ports:
+  - port: 80:80
+    nodeFilters: [loadbalancer]
+  - port: 443:443
+    nodeFilters: [loadbalancer]
+image: rancher/k3s:v1.29.2-k3s1
+options:
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters: [server:*]
+      - arg: --debug
+        nodeFilters: [server:*]
+    nodeLabels:
+      - label: topology.kubernetes.io/zone=zone-central
+        nodeFilters: [agent:0]
+      - label: topology.kubernetes.io/zone=zone-west
+        nodeFilters: [agent:1]
+      - label: topology.kubernetes.io/zone=zone-east
+        nodeFilters: [agent:2]
