@@ -4,7 +4,7 @@
 # https://github.com/BuoyantIO/service-mesh-academy/tree/main/eliminate-cross-zone-traffic-hazl
 # Automates cluster creation, Linkerd installation and installs the Orders application
 # Tom Dean | Buoyant
-# Last edit: 4/11/2024
+# Last edit: 4/22/2024
 
 # Create the k3d cluster
 
@@ -43,7 +43,7 @@ linkerd version
 
 # Perform pre-installation checks
 
-linkerd check --pre --context=hazl
+linkerd check --pre --context hazl
 
 # Install Buoyant Enterprise Linkerd Operator and Buoyant Cloud Agents using Helm
 # Debug metrics are enabled to use the Buoyant Cloud Grafana instance
@@ -63,7 +63,7 @@ helm install linkerd-buoyant \
   --set metrics.logLevel=debug \
 linkerd-buoyant/linkerd-buoyant
 
-kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context=hazl
+kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context hazl
 linkerd buoyant check --context hazl
 
 # Create linkerd-identity-issuer secret using root certificates
@@ -81,9 +81,9 @@ metadata:
 type: kubernetes.io/tls
 EOF
 
-kubectl apply -f linkerd-identity-secret.yaml --context=hazl
+kubectl apply -f linkerd-identity-secret.yaml --context hazl
 
-kubectl get secrets  -n linkerd --context=hazl
+kubectl get secrets  -n linkerd --context hazl
 
 # Create and apply Control Plane CRDs to trigger BEL Operator
 # This will create the Control Plane on the cluster
@@ -113,9 +113,9 @@ $(sed 's/^/          /' < certs/ca.crt )
            # - -ext-endpoint-zone-weights
 EOF
 
-kubectl apply -f linkerd-control-plane-config-hazl.yaml --context=hazl
+kubectl apply -f linkerd-control-plane-config-hazl.yaml --context hazl
 
-watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace --context=hazl
+watch -n 1 kubectl get pods -A -o wide --sort-by .metadata.namespace --context hazl
 
 # Run a Linkerd check after creating Control Planes
 
@@ -135,23 +135,36 @@ spec:
     matchLabels: {}
 EOF
 
-kubectl apply -f linkerd-data-plane-config.yaml --context=hazl
+kubectl apply -f linkerd-data-plane-config.yaml --context hazl
 
 # Monitor the status of the rollout of the Buoyant Cloud Metrics Daemonset
 
-kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context=hazl
+kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant --context hazl
 
 # Run a proxy check
 
 sleep 30
 linkerd check --proxy -n linkerd-buoyant --context hazl
 
+# Install Linkerd Viz to Enable Success Rate Metrics
+
+linkerd viz install --set linkerdVersion=stable-2.14.10 --context hazl | kubectl apply -f - --context hazl
+
+# Enable Inbound Latency Metrics
+# These are disabled by default in the Buoyant Cloud Agent
+# Patch with the buoyant-cloud-metrics.yaml manifest
+# Restart the buoyant-cloud-metrics daemonset
+
+kubectl apply -f buoyant-cloud-metrics.yaml --context hazl
+
+kubectl -n linkerd-buoyant rollout restart ds buoyant-cloud-metrics --context hazl
+
 # Deploy the Orders application to both clusters
 # Press CTRL-C to exit each watch command
 
-kubectl apply -k orders --context=hazl
+kubectl apply -k orders --context hazl
 
-watch -n 1 kubectl get pods -n orders -o wide --sort-by .spec.nodeName --context=hazl
+watch -n 1 kubectl get pods -n orders -o wide --sort-by .spec.nodeName --context hazl
 
 # Deploy the Data Plane for the orders namespace
 
@@ -167,6 +180,6 @@ spec:
     matchLabels: {}
 EOF
 
-kubectl apply -f linkerd-data-plane-orders-config.yaml --context=hazl
+kubectl apply -f linkerd-data-plane-orders-config.yaml --context hazl
 
 exit 0
