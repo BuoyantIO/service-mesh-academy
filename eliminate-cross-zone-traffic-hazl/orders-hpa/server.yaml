@@ -31,3 +31,15 @@ data:
   blue.yml: |
     color: "#0000ff"
     averageResponseTime: 0.020
+---
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: fulfillment.orders.svc.cluster.local
+  namespace: orders
+spec:
+  routes:
+  - condition:
+      method: GET
+      pathRegex: /
+    name: GET /
