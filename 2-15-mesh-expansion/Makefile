@@ -32,9 +32,21 @@
 LOCAL_REGISTRY ?= localhost:5000
 VERSION ?= 0.3.0
 PROXY_VERSION ?= edge-24.2.5
+BEL_VERSION ?= preview-24.5.3
 ACTION ?= push
 
 all: single
+
+PACKAGES=\
+	linkerd-proxy-harness-$(BEL_VERSION)-amd64.deb \
+	linkerd-proxy-harness-$(BEL_VERSION)-amd64.rpm \
+	linkerd-proxy-harness-$(BEL_VERSION)-arm64.deb \
+	linkerd-proxy-harness-$(BEL_VERSION)-arm64.rpm
+
+clean:
+	rm -f $(PACKAGES)
+
+packages: $(PACKAGES)
 
 registry-check:
 	@if [ -z "$(REGISTRY)" ]; then \
@@ -43,10 +55,16 @@ registry-check:
 	fi
 .PHONY: registry-check
 
+%.deb:
+	curl -L -O https://github.com/BuoyantIO/linkerd-buoyant/releases/download/$(BEL_VERSION)/$@
+
+%.rpm:
+	curl -L -O https://github.com/BuoyantIO/linkerd-buoyant/releases/download/$(BEL_VERSION)/$@
+
 # `make single` builds the image for the local architecture and pushes it to
 # $REGISTRY/demo-external-base:$(VERSION)-$$(uname -m). This is the default
 # target, but is arguably less useful than `make multi`.
-single: registry-check
+single: registry-check packages
 	set -x ;\
 	for img in demo-external-base demo-bel-external-base; do \
 		echo "==== building $$img ====" ;\
@@ -65,7 +83,7 @@ single: registry-check
 # $LOCAL_REGISTRY/demo-external-base:$(VERSION)-{platform}, and then uses
 # `docker manifest` to combine them into a multiplatform manifest pushed to
 # $LOCAL_REGISTRY/demo-external-base:$(VERSION).
-multi:
+multi: packages
 	for img in demo-external-base demo-bel-external-base; do \
 		echo "==== building $$img-arm64 ====" ;\
 		docker buildx build \
