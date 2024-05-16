@@ -89,12 +89,15 @@ multi:
 # `make push-multi` retags the images built by `make multi` to use $REGISTRY
 # instead of $LOCAL_REGISTRY, then pushes all three of them.
 push-multi:
-	docker tag $(LOCAL_REGISTRY)/demo-external-base:$(VERSION)-arm64 $(REGISTRY)/demo-external-base:$(VERSION)-arm64
-	docker push $(REGISTRY)/demo-external-base:$(VERSION)-arm64
-	docker tag $(LOCAL_REGISTRY)/demo-external-base:$(VERSION)-amd64 $(REGISTRY)/demo-external-base:$(VERSION)-amd64
-	docker push $(REGISTRY)/demo-external-base:$(VERSION)-amd64
-	docker manifest create --amend $(REGISTRY)/demo-external-base:$(VERSION) \
-		$(REGISTRY)/demo-external-base:$(VERSION)-amd64 \
-		$(REGISTRY)/demo-external-base:$(VERSION)-arm64
-	docker manifest inspect $(REGISTRY)/demo-external-base:$(VERSION)
-	docker manifest push $(REGISTRY)/demo-external-base:$(VERSION)
+	for img in demo-external-base demo-bel-external-base; do \
+		echo "==== pushing $$img ====" ;\
+		docker tag $(LOCAL_REGISTRY)/$$img:$(VERSION)-arm64 $(REGISTRY)/$$img:$(VERSION)-arm64 ;\
+		docker push $(REGISTRY)/$$img:$(VERSION)-arm64 ;\
+		docker tag $(LOCAL_REGISTRY)/$$img:$(VERSION)-amd64 $(REGISTRY)/$$img:$(VERSION)-amd64 ;\
+		docker push $(REGISTRY)/$$img:$(VERSION)-amd64 ;\
+		docker manifest create --amend $(REGISTRY)/$$img:$(VERSION) \
+			$(REGISTRY)/$$img:$(VERSION)-amd64 \
+			$(REGISTRY)/$$img:$(VERSION)-arm64 ;\
+		docker manifest inspect $(REGISTRY)/$$img:$(VERSION) ;\
+		docker manifest push $(REGISTRY)/$$img:$(VERSION) ;\
+	done

@@ -22,6 +22,17 @@ if [ -z "$SPIFFE_ID" ]; then
   exit 1
 fi
 
+# We also need to have a mounted /opt/spire/certs with ca.crt and ca.key in it.
+if [ ! -f /opt/spire/certs/ca.crt ]; then
+  echo "/opt/spire/certs/ca.crt is missing" >&2
+  exit 1
+fi
+
+if [ ! -f /opt/spire/certs/ca.key ]; then
+  echo "/opt/spire/certs/ca.key is missing" >&2
+  exit 1
+fi
+
 echo "==== starting SPIRE server"
 spire-server run -config ./server.cfg &
 

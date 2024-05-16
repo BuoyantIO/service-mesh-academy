@@ -48,17 +48,6 @@ if [ -z "$WORKLOAD_NAMESPACE" ]; then
   exit 1
 fi
 
-# We also need to have a mounted /opt/spire/certs with ca.crt and ca.key in it.
-if [ ! -f /opt/spire/certs/ca.crt ]; then
-  echo "/opt/spire/certs/ca.crt is missing" >&2
-  exit 1
-fi
-
-if [ ! -f /opt/spire/certs/ca.key ]; then
-  echo "/opt/spire/certs/ca.key is missing" >&2
-  exit 1
-fi
-
 export SPIFFE_ID="spiffe://root.linkerd.cluster.local/$WORKLOAD_NAME"
 
 # Start SPIRE running. This is synchronous: it waits till we're ready to go.

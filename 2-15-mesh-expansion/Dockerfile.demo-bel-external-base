@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: 2024 Buoyant Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2024 Buoyant Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+#       http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+ARG VERSION=no-version-set
+ARG RUNTIME_IMAGE=docker.io/opensuse/leap:15.6
+
+######## base -- just update zypper and install some basic tools
+# This is here because zypper refresh is slow; better to cache it if we can.
+FROM $RUNTIME_IMAGE as base
+
+RUN zypper refresh
+RUN zypper install -y iptables wget iproute2 jq curl bind-utils telnet dnsmasq tar gzip gettext sudo
+
+######## build-fake-systemd -- build the fake systemd
+# This is here not because it's slow, but because there's no real point in
+# having gcc installed in the final image.
+#
+# We're using code from https://github.com/ahmet2mir/fake-systemd here, solely
+# because but I recompile start-stop-daemon to make sure of the right
+# architecture. We end up with /opt/fake-system/systemctl and
+# /opt/fake-system/start-stop-daemon.
+
+FROM base as build-fake-systemd
+
+RUN zypper install -y gcc
+
+WORKDIR /opt/fake-systemd
+
+RUN wget https://raw.githubusercontent.com/ahmet2mir/fake-systemd/master/systemctl
+RUN chmod +x systemctl
+
+RUN wget https://raw.githubusercontent.com/daleobrien/start-stop-daemon/master/start-stop-daemon.c
+RUN gcc -o start-stop-daemon start-stop-daemon.c
+
+####### base-runtime -- the real image
+FROM base as base-runtime
+
+# It's so very stupid that we have to duplicate these ARGs now that we've switched
+# the FROM line. But we do.
+ARG TARGETARCH
+ARG VERSION
+
+# This is associated with the service-mesh-academy repo.
+LABEL org.opencontainers.image.source=https://github.com/BuoyantIO/service-mesh-academy
+
+WORKDIR /opt/linkerd
+COPY linkerd-proxy-harness-preview-24.5.3-$TARGETARCH.rpm linkerd-proxy-harness.rpm
+COPY linkerd-proxy-harness-preview-24.5.3-$TARGETARCH.deb linkerd-proxy-harness.deb
+
+COPY --from=build-fake-systemd /opt/fake-systemd/systemctl /usr/bin/systemctl-fake
+COPY --from=build-fake-systemd /opt/fake-systemd/start-stop-daemon /usr/bin/start-stop-daemon
+
+RUN mv /usr/bin/systemctl /usr/bin/systemctl.real
+RUN ln -s /usr/bin/systemctl-fake /usr/bin/systemctl
+
+WORKDIR /opt/spire
+
+# Install SPIRE. Make sure that we're getting the correct architecture.
+RUN wget --no-check-certificate https://github.com/spiffe/spire/releases/download/v1.8.2/spire-1.8.2-linux-$TARGETARCH-musl.tar.gz && \
+    tar zvxf spire-1.8.2-linux-$TARGETARCH-musl.tar.gz && \
+    cp -r spire-1.8.2/. /opt/spire/ && \
+    ln -s /opt/spire/bin/spire-server /usr/bin/spire-server && \
+    ln -s /opt/spire/bin/spire-agent /usr/bin/spire-agent
+
+COPY spire-config/server.cfg spire-config/agent.cfg ./
+
+COPY --chmod=0755 bin/bootstrap-spire bin/bootstrap-spire
+COPY --chmod=0755 bin/bootstrap-bel bin/bootstrap
+RUN sed -i \
+        -e s/%%VERSION%%/$VERSION/g \
+        -e s/%%PROXY_VERSION%%/$PROXY_VERSION/g \
+        bin/bootstrap
+COPY --chmod=0755 bin/no-workload /workload/start
+
+ENTRYPOINT ["/opt/spire/bin/bootstrap"]
