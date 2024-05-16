@@ -6,22 +6,28 @@
 # need to run a build in emulation.
 #
 # Therefore `make` is set up to build and push the local architecture by
-# default, as $REGISTRY/demo-external-base:$(VERSION)-$$(uname -m). You MUST
-# set $REGISTRY to use this Makefile, and note that only amd64 and arm64 have
-# been tested.
+# default, as $REGISTRY/demo-external-base:$(VERSION)-$$(uname -m) and
+# $REGISTRY/demo-bel-external-base:$(VERSION)-$$(uname -m). You MUST set
+# $REGISTRY to use this Makefile, and note that only amd64 and arm64 have been
+# tested.
 #
 # `make multi` will build arm64 and amd64 images, push them both as
-# $LOCAL_REGISTRY/demo-external-base:$(VERSION)-{platform}, and then use
+# $LOCAL_REGISTRY/demo-[bel-]external-base:$(VERSION)-{platform}, and then use
 # `docker manifest` to combine them into a multiplatform manifest pushed to
-# $LOCAL_REGISTRY/demo-external-base:$(VERSION).
+# $LOCAL_REGISTRY/demo-[bel-]external-base:$(VERSION).
+#
+### You _must_ have a local registry running on $LOCAL_REGISTRY for `make
+### multi` to work, because `docker manifest` is stupid and requires a
+### registry; it can't work without one. The easy way to have a local
+### is to run
+###
+### docker run --rm --name registry -p 5000:5000 registry:3.0.0-alpha.1
+###
+### That'll set up a registry on localhost:5000, which is the default for
+### $LOCAL_REGISTRY.
 #
 # `make push-multi` will retag the images built by `make multi` to use
 # $REGISTRY instead of $LOCAL_REGISTRY, then push all three of them.
-#
-# The easy way to have a local registry on localhost:5000, as used for
-# $LOCAL_REGISTRY by default, is:
-#
-# docker run --rm --name registry -p 5000:5000 registry:3.0.0-alpha.1
 
 LOCAL_REGISTRY ?= localhost:5000
 VERSION ?= 0.3.0
