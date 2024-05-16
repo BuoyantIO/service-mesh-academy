@@ -24,6 +24,7 @@ you.
 
 ```bash
 BAT_STYLE="grid,numbers"
+WORKLOAD_IMAGE_TAG=1.3.0
 ```
 
 ---
@@ -285,18 +286,27 @@ the cluster, so that it can know how to create ExternalWorkload resources!
 
 <!-- @wait_clear -->
 
-### `ghcr.io/buoyantio/demo-bel-workload:1.2.4`
+### The `demo-bel-external-base` and `faces-bel-external-workload` Images
 
-We'll use the prebuilt `ghcr.io/buoyantio/demo-bel-workload:1.2.4` image,
-which contains the harness, the SPIRE agent, the SPIRE server, our workload,
-and the magic bootstrap script which, honestly, is really simple:
+`ghcr.io/buoyantio/demo-bel-external-base` is a Docker image built in this
+directory, to serve as a base for external workloads that use the BEL
+autoregistration harness. It contains the harness package, the SPIRE agent,
+the SPIRE server, and the BEL bootstrap script, which is honestly really
+simple:
 
 ```bash
 bat -l bash bin/bootstrap-bel
 ```
 
-It installs the harness, bootstraps SPIRE as we saw before, then starts the
-workload itself.
+It just installs the harness, bootstraps SPIRE as we saw before, then starts
+the workload itself.
+
+Of course, that assumes that there's a workload present! For this demo, we've
+taken the `demo-bel-external-workload` image and built an image on top of it
+that includes the Faces workload. This is the `faces-bel-external-workload`
+image, `ghcr.io/buoyantio/faces-bel-external-workload:${WORKLOAD_IMAGE_TAG}`.
+It is _literally_ the `demo-bel-external-workload` image with the Faces
+workload copied into `/workload/start`.
 
 <!-- @wait_clear -->
 
@@ -345,7 +355,7 @@ docker run --rm --detach \
        -e SMILEY_SERVICE=smiley.faces.svc.cluster.local \
        -e COLOR_SERVICE=color.faces.svc.cluster.local \
        -e DELAY_BUCKETS=0,50,100,200,500,1000 \
-       ghcr.io/buoyantio/demo-bel-workload:1.2.4
+       ghcr.io/buoyantio/faces-bel-external-workload:${WORKLOAD_IMAGE_TAG}
 ```
 
 <!-- @wait_clear -->
@@ -399,7 +409,7 @@ docker run --rm --detach \
        -e NODE_IP=${NODE_IP} \
        -e FACES_SERVICE=smiley \
        -e DELAY_BUCKETS=0,50,100,200,500,1000 \
-       ghcr.io/buoyantio/demo-bel-workload:1.2.4
+       ghcr.io/buoyantio/faces-bel-external-workload:${WORKLOAD_IMAGE_TAG}
 ```
 
 <!-- @wait_clear -->
@@ -466,7 +476,7 @@ docker run --rm --detach \
        -e SMILEY_SERVICE=smiley.faces.svc.cluster.local \
        -e COLOR_SERVICE=color.faces.svc.cluster.local \
        -e DELAY_BUCKETS=0,50,100,200,500,1000 \
-       ghcr.io/buoyantio/demo-bel-workload:1.2.4
+       ghcr.io/buoyantio/faces-bel-external-workload:${WORKLOAD_IMAGE_TAG}
 
 watch 'sh -c "kubectl get externalworkloads -n faces; linkerd dg endpoints face.faces.svc.cluster.local"'
 ```
@@ -529,7 +539,7 @@ docker run --rm --detach \
        -e FACES_SERVICE=color \
        -e COLOR=green \
        -e DELAY_BUCKETS=0,50,100,200,500,1000 \
-       ghcr.io/buoyantio/demo-bel-workload:1.2.4
+       ghcr.io/buoyantio/faces-bel-external-workload:${WORKLOAD_IMAGE_TAG}
 ```
 
 Doing that, we'll immediately see the existing `color` endpoint -- but then
@@ -585,7 +595,7 @@ docker run --rm --detach \
        -e FACES_SERVICE=smiley \
        -e SMILEY=HeartEyes \
        -e DELAY_BUCKETS=0,50,100,200,500,1000 \
-       ghcr.io/buoyantio/demo-bel-workload:1.2.4
+       ghcr.io/buoyantio/faces-bel-external-workload:${WORKLOAD_IMAGE_TAG}
 
 watch 'sh -c "kubectl get externalworkloads -n faces; linkerd dg endpoints smiley2.faces.svc.cluster.local"'
 ```
