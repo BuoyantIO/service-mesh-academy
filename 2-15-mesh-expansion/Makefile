@@ -24,8 +24,9 @@
 # docker run --rm --name registry -p 5000:5000 registry:3.0.0-alpha.1
 
 LOCAL_REGISTRY ?= localhost:5000
-VERSION ?= 0.2.0
+VERSION ?= 0.3.0
 PROXY_VERSION ?= edge-24.2.5
+ACTION ?= push
 
 all: single
 
@@ -40,36 +41,50 @@ registry-check:
 # $REGISTRY/demo-external-base:$(VERSION)-$$(uname -m). This is the default
 # target, but is arguably less useful than `make multi`.
 single: registry-check
-	docker buildx build \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg PROXY_VERSION=$(PROXY_VERSION) \
-		--push \
-		-f Dockerfile.demo-external-base -t $(REGISTRY)/demo-external-base:$(VERSION)-$$(uname -m) \
-		.
+	set -x ;\
+	for img in demo-external-base demo-bel-external-base; do \
+		echo "==== building $$img ====" ;\
+		docker buildx build \
+			--build-arg VERSION=$(VERSION) \
+			--build-arg PROXY_VERSION=$(PROXY_VERSION) \
+			--load \
+			-f Dockerfile.$$img -t $(REGISTRY)/$$img:$(VERSION)-$$(uname -m) \
+			. ;\
+		if [ $(ACTION) = "push" ]; then \
+			docker push $(REGISTRY)/$$img:$(VERSION)-$$(uname -m) ;\
+		fi ;\
+	done
 
 # `make multi` builds the image for both arm64 and amd64, pushes them to
 # $LOCAL_REGISTRY/demo-external-base:$(VERSION)-{platform}, and then uses
 # `docker manifest` to combine them into a multiplatform manifest pushed to
 # $LOCAL_REGISTRY/demo-external-base:$(VERSION).
 multi:
-	docker buildx build \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg PROXY_VERSION=$(PROXY_VERSION) \
-		--push --platform=linux/arm64 \
-		-f Dockerfile.demo-external-base -t $(LOCAL_REGISTRY)/demo-external-base:$(VERSION)-arm64 \
-		.
-	docker buildx build \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg PROXY_VERSION=$(PROXY_VERSION) \
-		--push --platform=linux/amd64 \
-		-f Dockerfile.demo-external-base -t $(LOCAL_REGISTRY)/demo-external-base:$(VERSION)-amd64 \
-		.
-	-docker manifest rm $(LOCAL_REGISTRY)/demo-external-base:$(VERSION)
-	docker manifest create --insecure --amend $(LOCAL_REGISTRY)/demo-external-base:$(VERSION) \
-		$(LOCAL_REGISTRY)/demo-external-base:$(VERSION)-amd64 \
-		$(LOCAL_REGISTRY)/demo-external-base:$(VERSION)-arm64
-	docker manifest inspect $(LOCAL_REGISTRY)/demo-external-base:$(VERSION)
-	docker manifest push --insecure $(LOCAL_REGISTRY)/demo-external-base:$(VERSION)
+	for img in demo-external-base demo-bel-external-base; do \
+		echo "==== building $$img-arm64 ====" ;\
+		docker buildx build \
+			--build-arg VERSION=$(VERSION) \
+			--build-arg PROXY_VERSION=$(PROXY_VERSION) \
+			--load --platform=linux/arm64 \
+			-f Dockerfile.$$img -t $(LOCAL_REGISTRY)/$$img:$(VERSION)-arm64 \
+			. ;\
+		docker push $(LOCAL_REGISTRY)/$$img:$(VERSION)-arm64 ;\
+		echo "==== building $$img-amd64 ====" ;\
+		docker buildx build \
+			--build-arg VERSION=$(VERSION) \
+			--build-arg PROXY_VERSION=$(PROXY_VERSION) \
+			--load --platform=linux/amd64 \
+			-f Dockerfile.$$img -t $(LOCAL_REGISTRY)/$$img:$(VERSION)-amd64 \
+			. ;\
+		docker push $(LOCAL_REGISTRY)/$$img:$(VERSION)-amd64 ;\
+		echo "==== building $$img multiarch manifest ====" ;\
+		docker manifest rm $(LOCAL_REGISTRY)/$$img:$(VERSION) || true;\
+		docker manifest create --insecure --amend $(LOCAL_REGISTRY)/$$img:$(VERSION) \
+			$(LOCAL_REGISTRY)/$$img:$(VERSION)-amd64 \
+			$(LOCAL_REGISTRY)/$$img:$(VERSION)-arm64 ;\
+		docker manifest inspect $(LOCAL_REGISTRY)/$$img:$(VERSION) ;\
+		docker manifest push --insecure $(LOCAL_REGISTRY)/$$img:$(VERSION) ;\
+	done
 
 # `make push-multi` retags the images built by `make multi` to use $REGISTRY
 # instead of $LOCAL_REGISTRY, then pushes all three of them.

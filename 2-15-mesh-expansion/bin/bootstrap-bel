@@ -34,7 +34,10 @@ echo 'SMA demo-bel-external-base %%VERSION%% / proxy %%PROXY_VERSION%%'
 
 rpm -ivh /opt/linkerd/linkerd-proxy-harness.rpm --nodeps
 
-# We need to have WORKLOAD_NAME, WORKLOAD_NAMESPACE, and NODE_NAME set.
+# We require WORKLOAD_NAME and WORKLOAD_NAMESPACE to be set, always.
+# If NODE_IP and at least one of POD_CIDR and SVC_CIDR are set, we'll
+# also set up IP routing for the workload to talk to the control plane.
+
 if [ -z "$WORKLOAD_NAME" ]; then
   echo "WORKLOAD_NAME must be set" >&2
   exit 1
@@ -42,21 +45,6 @@ fi
 
 if [ -z "$WORKLOAD_NAMESPACE" ]; then
   echo "WORKLOAD_NAMESPACE must be set" >&2
-  exit 1
-fi
-
-if [ -z "$POD_CIDR" ]; then
-  echo "POD_CIDR must be set" >&2
-  exit 1
-fi
-
-if [ -z "$SVC_CIDR" ]; then
-  echo "SVC_CIDR must be set" >&2
-  exit 1
-fi
-
-if [ -z "$NODE_IP" ]; then
-  echo "NODE_IP must be set" >&2
   exit 1
 fi
 
@@ -78,8 +66,20 @@ export SPIFFE_ID="spiffe://root.linkerd.cluster.local/$WORKLOAD_NAME"
 
 # Manage IP routing...
 
-ip route add $POD_CIDR via $NODE_IP
-ip route add $SVC_CIDR via $NODE_IP
+set +u
+
+if [ -n "$NODE_IP" ]; then
+    if [ -n "$POD_CIDR" ]; then
+        echo "Routing $POD_CIDR via $NODE_IP"
+        ip route add $POD_CIDR via $NODE_IP
+    fi
+    if [ -n "$SVC_CIDR" ]; then
+        echo "Routing $SVC_CIDR via $NODE_IP"
+        ip route add $SVC_CIDR via $NODE_IP
+    fi
+fi
+
+set -u
 
 # ...get the harness configured...
 harnessctl set-config \
