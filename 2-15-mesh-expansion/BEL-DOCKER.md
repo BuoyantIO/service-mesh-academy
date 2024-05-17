@@ -53,8 +53,8 @@ k3d cluster create mesh-exp \
     --k3s-arg '--disable=traefik,metrics-server@server:0'
 ```
 
-Once that's done, let's get Linkerd up and running. You'll need BEL
-`preview-24.5.3` or later for this -- and, yes, you'll need a free Buoyant
+Once that's done, let's get Linkerd up and running. At the moment, **only BEL
+`preview-24.5.3` will work for this** -- and, yes, you'll need a free Buoyant
 account for this, since we're showing off the external workload
 autoregistration feature. If you don't already have an account, hit up
 https://enterprise.buoyant.io to get one.
@@ -63,7 +63,8 @@ Once that's done and you've set the environment variables it'll tell you
 about, it's time to make sure we have the right version of Linkerd installed!
 
 ```bash
-# curl --proto '=https' --tlsv1.2 -sSfL https://enterprise.buoyant.io/install-preview | sh
+curl --proto '=https' --tlsv1.2 -sSfL https://enterprise.buoyant.io/install-preview | \
+    LINKERD2_VERSION=preview-24.5.3 sh
 linkerd version --proxy --client --short
 ```
 
