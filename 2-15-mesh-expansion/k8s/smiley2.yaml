@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smiley2
+  namespace: faces
+spec:
+  type: ClusterIP
+  selector:
+    service: smiley2
+  ports:
+  - port: 80
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smiley2
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: smiley2
+  template:
+    metadata:
+      labels:
+        service: smiley2
+    spec:
+      containers:
+      - name: smiley
+        image: ghcr.io/buoyantio/faces-workload:1.0.0-alpha.1
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "smiley"
+        - name: SMILEY
+          value: "HeartEyes"
+        - name: ERROR_FRACTION
+          value: "0"
+        # - name: DELAY_BUCKETS
+        #   value: "0,5,10,15,20,50,200,500,1500"
+        resources:
+          requests:
+            cpu: 300m     # The face service doesn't need much memory, but it does need more
+            memory: 64Mi  # CPU than the other backend services since it has to call the
+          limits:         # face and smiley services, then composite the results.
+            cpu: 500m
+            memory: 128Mi

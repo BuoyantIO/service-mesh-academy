@@ -1,0 +1,27 @@
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: external-authn
+  namespace: mixed-env
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: MeshTLSAuthentication
+    name: external-workload-mtls
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: external-workloads
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: external-workload-mtls
+  namespace: mixed-env
+spec:
+  identities:
+    - "spiffe://root.linkerd.cluster.local/external-workload-1"
+    - "spiffe://root.linkerd.cluster.local/external-workload-2"
+    - "spiffe://root.linkerd.cluster.local/external-workload-3"
+

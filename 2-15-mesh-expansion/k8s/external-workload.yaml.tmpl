@@ -1,0 +1,39 @@
+apiVersion: workload.linkerd.io/v1beta1
+kind: ExternalWorkload
+metadata:
+  name: %%NAME%%
+  namespace: faces
+  labels:
+    app: %%NAME%%
+    location: vm
+    workload_name: %%NAME%%
+spec:
+  meshTLS:
+    identity: "spiffe://root.linkerd.cluster.local/%%NAME%%"
+    serverName: "%%NAME%%.cluster.local"
+  workloadIPs:
+  - ip: %%IP%%
+  ports:
+  - port: 8000
+    name: http
+status:
+  conditions:
+    - type: Ready
+      status: "True"
+      lastTransitionTime: "2024-01-24T11:53:43Z"
+      reason: "Alive"
+      message: "This workload is alive"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: %%NAME%%
+  namespace: faces
+spec:
+  type: ClusterIP
+  selector:
+    workload_name: %%NAME%%
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: http

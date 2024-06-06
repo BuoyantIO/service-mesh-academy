@@ -1,0 +1,28 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+    name: color-route
+    namespace: faces
+spec:
+  parentRefs:
+    - name: color
+      kind: Service
+      group: ""
+      port: 80
+  rules:
+    - matches:
+      - path:
+          value: "/"
+          type: "PathPrefix"
+        method: GET
+      backendRefs:
+      - name: color
+        kind: Service
+        group: ""
+        port: 80
+        weight: 50
+      - name: color2
+        kind: Service
+        group: ""
+        weight: 50
+        port: 80

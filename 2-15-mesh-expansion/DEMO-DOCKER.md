@@ -241,8 +241,8 @@ proxy, the SPIRE agent, the SPIRE server (remember, this is a hack!), and of
 course our actual workload. We also need a bootstrap script that sets up the
 world for us.
 
-`ghcr.io/buoyantio/faces-external-workload:1.0.0-alpha.1` is such an image.
-Actually building it isn't that complex: the magic is in the bootstrap.
+`ghcr.io/buoyantio/faces-external-workload:1.0.0` is such an image. Actually
+building it isn't that complex: the magic is in the bootstrap.
 
 <!-- @wait_clear -->
 
@@ -302,7 +302,7 @@ docker run --rm --detach \
        -e NODE_NAME='$(hostname)' \
        -e FACES_SERVICE=smiley \
        -e DELAY_BUCKETS=0,50,100,200,500,1000 \
-       ghcr.io/buoyantio/faces-external-workload:1.0.0-alpha.1 \
+       ghcr.io/buoyantio/faces-external-workload:1.0.0 \
   && docker exec smiley ip route add ${POD_CIDR} via ${NODE_IP}
 ```
 
@@ -324,7 +324,7 @@ docker run --rm --detach \
        -e NODE_NAME='$(hostname)' \
        -e FACES_SERVICE=color \
        -e DELAY_BUCKETS=0,50,100,200,500,1000 \
-       ghcr.io/buoyantio/faces-external-workload:1.0.0-alpha.1 \
+       ghcr.io/buoyantio/faces-external-workload:1.0.0 \
   && docker exec color ip route add ${POD_CIDR} via ${NODE_IP}
 ```
 

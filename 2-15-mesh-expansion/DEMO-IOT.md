@@ -103,7 +103,7 @@ debugging the Faces demo!
 
 ```bash
 helm install faces -n faces \
-     oci://ghcr.io/buoyantio/faces-chart --version 1.0.0-alpha.1 \
+     oci://ghcr.io/buoyantio/faces-chart --version 1.0.0 \
      --set gui.serviceType=LoadBalancer \
      --set face.errorFraction=0 \
      --set backend.errorFraction=0
@@ -215,7 +215,7 @@ proxy, the SPIRE agent, the SPIRE server (remember, this is a hack!), and of
 course our actual workload. We also need a bootstrap script that sets up the
 world for us.
 
-`ghcr.io/buoyantio/faces-external-workload:1.0.0-alpha.1` is such an image.
+`ghcr.io/buoyantio/faces-external-workload:1.0.0` is such an image.
 Actually building it isn't that complex: the magic is in the bootstrap.
 
 <!-- @wait_clear -->
@@ -282,7 +282,7 @@ black knob and two lights connected to it, `cluster-2` is in the middle with
 the gold knob and lights, and `cluster-3` is on top, with an external SSD
 attached to it (running a Kubernetes cluster off an SD card is horribly slow).
 
-I also have `ghcr.io/buoyantio/faces-pi-workload:1.0.0-alpha.1`, which is just
+I also have `ghcr.io/buoyantio/faces-pi-workload:1.0.0`, which is just
 like `faces-external-workload` except that it knows how to talk to the extra
 hardware on `cluster-1` and `cluster-2`. We'll use that instead.
 
@@ -320,7 +320,7 @@ ssh cluster-1 \
              -e DELAY_BUCKETS=0,50,100,200,500,1000 \
              --device /dev/gpiochip0 \
              -p 8000:8000 \
-             ghcr.io/buoyantio/faces-pi-workload:1.0.0-alpha.1
+             ghcr.io/buoyantio/faces-pi-workload:1.0.0
 ```
 
 We'll repeat all that - including the horrible bits like copying certs around
@@ -342,7 +342,7 @@ ssh cluster-2 \
              -e DELAY_BUCKETS=0,50,100,200,500,1000 \
              --device /dev/gpiochip0 \
              -p 8000:8000 \
-             ghcr.io/buoyantio/faces-pi-workload:1.0.0-alpha.1
+             ghcr.io/buoyantio/faces-pi-workload:1.0.0
 ```
 
 So far so good. Let's make sure that the containers are running.

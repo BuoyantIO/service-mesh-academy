@@ -1,0 +1,14 @@
+---
+apiVersion: policy.linkerd.io/v1beta2
+kind: Server
+metadata:
+  name: external-workloads
+  namespace: faces
+  annotations:
+    config.linkerd.io/default-inbound-policy: deny
+spec:
+  externalWorkloadSelector:
+    matchLabels:
+      location: vm
+  port: http
+  proxyProtocol: HTTP/1
