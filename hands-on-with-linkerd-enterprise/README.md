@@ -1,6 +1,13 @@
-# Hands on with Linkerd Enterprise
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
 
-Welcome to hands on with Linkerd Enterprise. Follow along with the presenters by configuring your own cluster and deploying emojivoto across multiple azs. You can follow the trial guide here: https://docs.buoyant.io/buoyant-enterprise-linkerd/installation/trial/
+SMA-Description: Exploring new features in Buoyant Enterprise for Linkerd
+-->
+
+# Hands on with BEL
+
+Welcome to hands on with **Buoyant Enterprise for Linkerd**. Follow along with the presenters by configuring your own cluster and deploying emojivoto across multiple availability zones. You can follow the trial guide here: https://docs.buoyant.io/buoyant-enterprise-linkerd/installation/trial/
 
 ## Getting Started
 

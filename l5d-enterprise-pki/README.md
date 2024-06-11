@@ -1,3 +1,11 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Index: skip
+SMA-Description: Using demos of PKI for certificate management with Linkerd (OUT OF DATE)
+-->
+
 # Enterprise PKI in the cloud-native world with Linkerd and cert-manager
 
 Migrating an existing enterprise PKI to Kubernetes can be daunting — there are

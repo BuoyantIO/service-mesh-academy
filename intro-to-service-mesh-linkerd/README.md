@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Introducing service mesh concepts using Linkerd
+-->
+
 # Introduction to Service Mesh and Linkerd
 
 ## intro-to-service-mesh-linkerd

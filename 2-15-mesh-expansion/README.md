@@ -1,6 +1,8 @@
 <!--
 SPDX-FileCopyrightText: 2024 Buoyant Inc.
 SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Using Linkerd 2.15 to expand a service mesh to workloads outside of Kubernetes
 -->
 
 # Mesh Expansion with Linkerd

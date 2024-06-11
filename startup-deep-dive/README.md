@@ -1,6 +1,15 @@
-# What really happens at startup: a deep dive into Linkerd, init containers, CNI plugins, and more
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
 
-This is the README and executable code(!) for the Service Mesh Academy on 17 November 2022. Things in Markdown comments, like the `@import` below, are safe to ignore when reading this later.
+SMA-Description: Taking a deep dive into Linkerd, init containers, CNI plugins, and more
+-->
+
+# What Really Happens at Startup
+
+This is the README and executable code(!) for the Service Mesh Academy on 17
+November 2022. Things in Markdown comments, like the `@import` below, are safe
+to ignore when reading this later.
 
 <!-- @import demo-tools.sh -->
 

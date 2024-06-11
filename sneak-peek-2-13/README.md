@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: New features coming in Linkerd 2.13
+-->
+
 # Sneak Peek: Linkerd 2.13
 
 This is the documentation - and executable code! - for the Service Mesh
@@ -49,36 +56,49 @@ linkerd check
 
 <!-- @wait_clear -->
 
-Next, we'll install the Faces demo (https://github.com/BuoyantIO/faces-demo),
-using Emissary as the ingress controller.
-
-This bit honestly isn't very interesting (it's literally just grabbing some
-YAML, running it through `linkerd inject`, and then running that through
-`kubectl apply`) so we're going to run through it pretty quickly. It's in
-`setup-demo.sh`.
-
-<!-- @wait -->
+We're already running the Faces demo (https://github.com/BuoyantIO/faces-demo)
+with Emissary-ingress for an ingress controller. Let's get them into the mesh.
+In both cases, we'll annotate the namespace for autoinjection:
 
 ```bash
-#@immed
-$SHELL setup-demo.sh
+kubectl annotate ns emissary linkerd.io/inject=enabled
+kubectl annotate ns faces linkerd.io/inject=enabled
+```
+
+Then we'll do a rollout restart so that Linkerd can inject its proxy sidecar
+into all the Pods.
+
+```bash
+kubectl rollout restart -n emissary deployment
+kubectl rollout restart -n faces deployment
+```
+
+Finally, we'll wait for the new Pods to all be ready:
+
+```bash
+kubectl rollout status -n emissary deployment
+kubectl rollout status -n faces deployment
 ```
 
 <!-- @wait_clear -->
 
-OK! At this point, we'll point a couple of web browsers to the Faces
-demo, at `http://localhost/faces/`.
+OK! At this point, everything should be happily meshed, so let's point a
+couple of web browsers to `http://localhost/faces/`, to make sure that the
+Faces demo is running.
 
-One browser should be completely normal; the other should use an
-extension like `ModHeader` to add the header `X-Faces-User: testuser`
-to its requests. Both should show the same thing right now: a bunch of
-smiley faces on green backgrounds. The one using `ModHeader` should
-also say "User: testuser" at the top.
+One browser should be completely normal; the other should use an extension
+like `ModHeader` to add the header `X-Faces-User: testuser` to its requests.
+Both should show the same thing right now: a bunch of smiley faces on green
+backgrounds. The one using `ModHeader` should also say "User: testuser" at the
+top.
 
 <!-- @wait -->
+<!-- @show_3 -->
+<!-- @wait -->
+<!-- @show_4 -->
+<!-- @wait -->
+<!-- @clear -->
 <!-- @show_composite -->
-
-<!-- @wait_clear -->
 
 ## Canary routing
 

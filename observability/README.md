@@ -1,3 +1,12 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Observability tools and capabilities in Linkerd
+-->
+
+# Observability with Linkerd
+
 This is the source directory for "Seeing the Invisble: Observability with Linkerd"
 presented on 18 August 2022. In here you will find:
 

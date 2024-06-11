@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Multicluster failover with Linkerd and the linkerd-failover extension
+-->
+
 # Multicluster Failover With Linkerd
 
 This is the documentation - and executable code! - for the Service Mesh

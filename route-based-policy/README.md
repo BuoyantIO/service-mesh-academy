@@ -1,3 +1,12 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Exploring Linkerd route-based policy in detail
+-->
+
+# Route-Based Policy
+
 This is the source directory for "A Deep Dive into Route-Based Policy",
 presented on 15 September 2022. In here you will find:
 

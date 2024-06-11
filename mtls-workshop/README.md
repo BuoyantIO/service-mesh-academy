@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Exploring mTLS in Linkerd
+-->
+
 # mTLS workshop
 
 This is the documentation - and executable code! - for the Service Mesh

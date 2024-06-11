@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: See https://github.com/BuoyantIO/gitops-linkerd
+-->
+
 # Real World GitOps
 
 Looking for the repo for the "Real World GitOps" Service Mesh Academy?? You'll

@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: New features coming in Linkerd 2.14
+-->
+
 # Sneak Peek: Linkerd 2.14
 
 This is the documentation - and executable code! - for the Service Mesh

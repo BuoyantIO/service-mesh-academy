@@ -1,4 +1,11 @@
-# Linkerd in Production workshop
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Installing and using Linkerd in a production environment
+-->
+
+# Linkerd in Production
 
 This is the documentation - and executable code! - for the Service Mesh
 Academy "Linkerd in Production" workshop. The easiest way to use this file is

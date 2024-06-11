@@ -1,4 +1,11 @@
-# Deploying Buoyant Enterprise for Linkerd (BEL) With High Availability Zonal Load Balancing (HAZL)
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Using Linkerd's High Availability Zonal Load balancing (HAZL)
+-->
+
+# Deploying BEL with HAZL
 
 ## deploying-bel-with-hazl
 

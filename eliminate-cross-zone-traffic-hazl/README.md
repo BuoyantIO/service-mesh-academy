@@ -1,4 +1,11 @@
-# Eliminating Cross-Zone Kubernetes Traffic With High Availability Zonal Load Balancing (HAZL)
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Using HAZL to eliminate cross-zone traffic in a multizone Kubernetes cluster
+-->
+
+# Eliminating Cross-Zone Traffic with HAZL
 
 ## eliminate-cross-zone-traffic-hazl
 

@@ -1,4 +1,11 @@
-# Linkerd 2.13 Dynamic Request Routing and Circuit Breaking
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: A demo of dynamic request routing and circuit breaking in Linkerd 2.13
+-->
+
+# Dynamic Request Routing & Circuit Breaking
 
 This is the documentation - and executable code! - for the Service Mesh
 Academy workshop about what's coming in Linkerd 2.13. The easiest way to use

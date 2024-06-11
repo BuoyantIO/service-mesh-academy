@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Using Vault and cert-manager to manage Linkerd's control plane certificates
+-->
+
 # Certificate Management with Vault
 
 This is the documentation - and executable code! - for the Service Mesh

@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Managing Linkerd certificates both by hand and using cert-manager
+-->
+
 # Linkerd Certificate Management
 
 This is the documentation - and executable code! - for the Service Mesh

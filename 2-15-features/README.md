@@ -1,6 +1,8 @@
 <!--
 SPDX-FileCopyrightText: 2024 Buoyant Inc.
 SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Exploring new features in Linkerd 2.15
 -->
 
 # Linkerd 2.15 Features
