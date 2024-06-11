@@ -150,7 +150,6 @@ pe "helm install linkerd-buoyant \\
   --create-namespace \\
   --namespace linkerd-buoyant \\
   --set metadata.agentName=\"\${CLUSTER_NAME}\" \\
-  --set metrics.debugMetrics=true \\
   --set api.clientID=\"\${API_CLIENT_ID}\" \\
   --set api.clientSecret=\"\${API_CLIENT_SECRET}\" \\
 linkerd-buoyant/linkerd-buoyant"

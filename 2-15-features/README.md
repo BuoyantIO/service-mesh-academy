@@ -75,9 +75,6 @@ helm install linkerd-buoyant \
   --set metadata.agentName=$CLUSTER_NAME \
   --set api.clientID=$API_CLIENT_ID \
   --set api.clientSecret=$API_CLIENT_SECRET \
-  --set metrics.debugMetrics=true \
-  --set agent.logLevel=debug \
-  --set metrics.logLevel=debug \
 linkerd-buoyant/linkerd-buoyant
 
 kubectl rollout status daemonset/buoyant-cloud-metrics -n linkerd-buoyant
