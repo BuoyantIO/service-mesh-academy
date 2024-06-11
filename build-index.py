@@ -24,7 +24,10 @@ output = [
     "",
     "This repo is the home to all the scripts and configuration files that are used",
     "in the various [Service Mesh Academy](https://buoyant.io/service-mesh-academy)",
-    "workshops hosted by Buoyant",
+    "workshops hosted by Buoyant.",
+    "",
+    "Each workshop has a README.md that contains the instructions for the workshop.",
+    "(To rebuild this master index, just run `make` in the root of this repo.)",
     "",
     "## Workshops",
 ]
