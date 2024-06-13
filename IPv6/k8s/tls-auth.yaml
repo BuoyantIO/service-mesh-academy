@@ -1,0 +1,36 @@
+---
+apiVersion: policy.linkerd.io/v1beta2
+kind: Server
+metadata:
+  name: faces-server
+  namespace: faces
+spec:
+  podSelector:
+    matchLabels:
+      linkerd.io/workload-ns: faces
+  port: 8000
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: faces-mesh-tls
+  namespace: faces
+spec:
+  identities:
+    - "face-sma-dual.faces.serviceaccount.identity.linkerd.cluster.local"
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: sma-dual-allow
+  namespace: faces
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: MeshTLSAuthentication
+    name: faces-mesh-tls
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: faces-server
+

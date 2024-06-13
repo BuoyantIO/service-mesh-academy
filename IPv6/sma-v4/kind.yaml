@@ -1,0 +1,7 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: sma-v4
+networking:
+  ipFamily: ipv4
+  podSubnet: "10.4.1.0/24"
+  serviceSubnet: "10.4.2.0/24"

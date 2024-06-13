@@ -1,0 +1,37 @@
+---
+apiVersion: policy.linkerd.io/v1beta2
+kind: Server
+metadata:
+  name: faces-server
+  namespace: faces
+spec:
+  podSelector:
+    matchLabels:
+      linkerd.io/workload-ns: faces
+  port: 8000
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: NetworkAuthentication
+metadata:
+  name: sma-dual-net
+  namespace: faces
+spec:
+  networks:
+  - cidr: fd00:10:1::/64
+  - cidr: 10.10.1.0/24
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: sma-dual-allow
+  namespace: faces
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: NetworkAuthentication
+    name: sma-dual-net
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: faces-server
+
