@@ -36,11 +36,12 @@ network. They'll differ in their network stack configurations.
 
 ```bash
 #@immed
-kind delete cluster --name sma-v4
+kind delete cluster --name sma-v4 >/dev/null 2>&1
 #@immed
-kind delete cluster --name sma-v6
+kind delete cluster --name sma-v6 >/dev/null 2>&1
 #@immed
-kind delete cluster --name sma-dual
+kind delete cluster --name sma-dual >/dev/null 2>&1
+kind get clusters
 bat sma-v4/kind.yaml
 kind create cluster --config sma-v4/kind.yaml
 
@@ -52,7 +53,8 @@ kind create cluster --config sma-dual/kind.yaml
 ```
 
 OK! At this point all three clusters are up and running, attached to the same
-Docker network, which is called `kind`. Next up we're going to rename our Kubernetes contexts to match the cluster names.
+Docker network, which is called `kind`. Next up we're going to rename our
+Kubernetes contexts to match the cluster names.
 
 ```bash
 #@immed
@@ -99,7 +101,7 @@ we'll use a Python script to manage it instead.
 
 ```bash
 bat choose-ipam.py
-docker network inspect kind | python choose-ipam.py
+docker network inspect kind | python3 choose-ipam.py
 bat sma-v4/metallb.yaml
 bat sma-v6/metallb.yaml
 bat sma-dual/metallb.yaml
@@ -371,28 +373,27 @@ We'll start by getting the current `smiley` Service into a file and editing it
 to switch it to IPv4.
 
 ```bash
-kubectl --context sma-dual get svc -n faces smiley
 kubectl --context sma-dual get svc -n faces -o yaml smiley > smiley.yaml
 ${EDITOR} smiley.yaml
 ```
 
 Next up, we'll delete the `smiley` Service. This will break everything!
 
+<!-- @show_5 -->
+
 ```bash
 kubectl --context sma-dual delete svc -n faces smiley
 ```
 
-<!-- @browser_then_terminal -->
-
-When we recreate the `smiley` Service, it'll have an IPv4 address, but
-everything should start working again.
+When we recreate the `smiley` Service, it'll have an IPv4
+address, but everything should start working again.
 
 ```bash
 kubectl --context sma-dual apply -f smiley.yaml
 kubectl --context sma-dual get svc -n faces smiley
 ```
 
-<!-- @browser_then_terminal -->
+<!-- @wait_clear -->
 
 ## Network Authentication
 
@@ -400,15 +401,17 @@ Next, let's do a minimal lockdown of the `faces` namespace in the `sma-dual`
 cluster. We'll start by switching it to have a default policy of deny, which
 will - again - break everything as soon as we restart the `faces` pods.
 
+<!-- @show_5 -->
+
 ```bash
-kubectl --context sma-dual annotate ns/faces config.linkerd.io/default-inbound-policy=deny
+kubectl --context sma-dual annotate ns/faces \
+        config.linkerd.io/default-inbound-policy=deny
 kubectl --context sma-dual rollout restart -n faces deploy
 kubectl --context sma-dual rollout status -n faces deploy
 ```
 
-<!-- browser_then_terminal -->
-
-Yup, definitely broken. Let's add a NetworkAuthentication to permit access
+Now that we've so definitively broken everything, let's
+fix it by adding a NetworkAuthentication to permit access
 from within the `sma-dual` cluster.
 
 ```bash
@@ -416,24 +419,26 @@ bat k8s/network-auth-1.yaml
 kubectl --context sma-dual apply -f k8s/network-auth-1.yaml
 ```
 
-<!-- browser_then_terminal -->
-
-Talking to `color` is working, but note that we still can't talk to `smiley`!
-Looking back at the `smiley` Service will show what's going on.
+Talking to `color` is working now! but note that we still
+can't talk to `smiley`! Looking back at the `smiley` Service
+will show what's going on:
 
 ```bash
 kubectl --context sma-dual get svc -n faces
 ```
 
-The `smiley` Service has an IPv4 address, remember? We need to explicitly
-authorize the IPv4 CIDR for `sma-dual` as well.
+The `smiley` Service has an IPv4 address, remember? We need
+to explicitly authorize the IPv4 CIDR for `sma-dual` as well.
 
 ```bash
-diff -u99 --color k8s/network-auth-1.yaml k8s/network-auth-2.yaml
+diff -u19 --color k8s/network-auth-1.yaml k8s/network-auth-2.yaml
 kubectl --context sma-dual apply -f k8s/network-auth-2.yaml
 ```
 
-<!-- browser_then_terminal -->
+That lets everything start working again!
+
+<!-- @wait_clear -->
+<!-- @show_terminal -->
 
 ## Multicluster setup
 
@@ -475,31 +480,31 @@ So, again, we'll use a Python script to sort things out.
 ```bash
 bat get_info.py
 
-V4_POD_CIDR=$(python get_info.py --cidr --v4 sma-v4)
+V4_POD_CIDR=$(python3 get_info.py --cidr --v4 sma-v4)
 #@immed
 echo "V4_POD_CIDR is ${V4_POD_CIDR}"
-V4_NODE_IP=$(python get_info.py --nodeip --v4 sma-v4)
+V4_NODE_IP=$(python3 get_info.py --nodeip --v4 sma-v4)
 #@immed
 echo "V4_NODE_IP is ${V4_NODE_IP}"
 
-V6_POD_CIDR=$(python get_info.py --cidr --v6 sma-v6)
+V6_POD_CIDR=$(python3 get_info.py --cidr --v6 sma-v6)
 #@immed
 echo "V6_POD_CIDR is ${V6_POD_CIDR}"
-V6_NODE_IP=$(python get_info.py --nodeip --v6 sma-v6)
+V6_NODE_IP=$(python3 get_info.py --nodeip --v6 sma-v6)
 #@immed
 echo "V6_NODE_IP is ${V6_NODE_IP}"
 
-DUAL_POD_CIDR_V4=$(python get_info.py --cidr --v4 sma-dual)
+DUAL_POD_CIDR_V4=$(python3 get_info.py --cidr --v4 sma-dual)
 #@immed
 echo "DUAL_POD_CIDR_V4 is ${DUAL_POD_CIDR_V4}"
-DUAL_NODE_IP_V4=$(python get_info.py --nodeip --v4 sma-dual)
+DUAL_NODE_IP_V4=$(python3 get_info.py --nodeip --v4 sma-dual)
 #@immed
 echo "DUAL_NODE_IP_V4 is ${DUAL_NODE_IP_V4}"
 
-DUAL_POD_CIDR_V6=$(python get_info.py --cidr --v6 sma-dual)
+DUAL_POD_CIDR_V6=$(python3 get_info.py --cidr --v6 sma-dual)
 #@immed
 echo "DUAL_POD_CIDR_V6 is ${DUAL_POD_CIDR_V6}"
-DUAL_NODE_IP_V6=$(python get_info.py --nodeip --v6 sma-dual)
+DUAL_NODE_IP_V6=$(python3 get_info.py --nodeip --v6 sma-dual)
 #@immed
 echo "DUAL_NODE_IP_V6 is ${DUAL_NODE_IP_V6}"
 ```
@@ -581,6 +586,20 @@ At this point, we should see the mirrored services in `sma-dual`.
 ```bash
 kubectl --context sma-dual -n faces get svc
 ```
+
+Note that the mirrored `smiley-sma-v4` actually has an IPv6 address! But check
+this out:
+
+```bash
+linkerd --context sma-dual dg endpoints smiley-sma-v4.faces.svc.cluster.local
+```
+
+What's going on here is that the Linkerd proxy can notice the application
+workload trying to talk to `smiley-sma-v4` using IPv6, and seamlessly
+translate that into an IPv4 connection across to the `smiley` service in
+`sma-v4`. This is a great example of how Linkerd's IPv6 support is pretty much
+invisible in practice.
+
 <!-- @wait_clear -->
 
 ## Testing Multicluster
@@ -588,21 +607,24 @@ kubectl --context sma-dual -n faces get svc
 Now that all THAT is done, suppose we just delete the `smiley` workload in
 `sma-dual` and watch what happens!
 
+<!-- @show_5 -->
+
 ```bash
 kubectl --context sma-dual delete deploy -n faces smiley
 ```
 
-<!-- browser_then_terminal -->
-
-Nothing good! So let's use an HTTPRoute to send all the traffic from the Faces
-application in `sma-dual` over to the `smiley` deployment in `sma-v4`.
+As expected, with no `smiley` service, things break! So let's
+use an HTTPRoute to send all the traffic from the Faces app in
+`sma-dual` over to the `smiley` deployment in `sma-v4`.
 
 ```bash
 bat k8s/smiley-route.yaml
 kubectl --context sma-dual apply -f k8s/smiley-route.yaml
 ```
 
-<!-- browser_then_terminal -->
+<!-- @wait_clear -->
+
+## Multicluster Canarying
 
 Of course, we don't have to shift traffic all at once. We can also do a canary
 across clusters, whether or not they're the same address family. Let's show
@@ -613,8 +635,6 @@ bat k8s/color-route.yaml
 kubectl --context sma-dual apply -f k8s/color-route.yaml
 ```
 
-<!-- browser_then_terminal -->
-
 And, of course, we can edit the weights as usual.
 
 ```bash
@@ -623,7 +643,7 @@ kubectl --context sma-dual edit httproute -n faces color-route
 kubectl --context sma-dual edit httproute -n faces color-route
 ```
 
-<!-- browser_then_terminal -->
+<!-- @wait_clear -->
 
 ## Multicluster Authentication
 
@@ -632,25 +652,26 @@ cluster, like we did for `sma-dual`. Once again, we'll start by switching it
 to have a default policy of deny.
 
 ```bash
-kubectl --context sma-v6 annotate ns/faces config.linkerd.io/default-inbound-policy=deny
+kubectl --context sma-v6 annotate ns/faces \
+        config.linkerd.io/default-inbound-policy=deny
 kubectl --context sma-v6 rollout restart -n faces deploy
 kubectl --context sma-v6 rollout status -n faces deploy
 ```
 
-Once again, everything will be broken now.
-
-<!-- browser_then_terminal -->
-
-This time, we'll use a MeshTLSAuthentication to permit access from the `face`
-workload in `sma-dual`. If you remember, we created a special ServiceAccount
-just for `face` -- this is why.
+Now that we've broken everything again, let's fix it. This time,
+we'll use a MeshTLSAuthentication to permit access from the `face`
+workload in `sma-dual`. If you remember, we created a special
+ServiceAccount just for `face` -- this is why.
 
 ```bash
 bat k8s/tls-auth.yaml
 kubectl --context sma-v6 apply -f k8s/tls-auth.yaml
 ```
 
-<!-- browser_then_terminal -->
+And now everything works again!
+
+<!-- @wait_clear -->
+<!-- @show_terminal -->
 
 ## Wrapping Up
 
