@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2024 Buoyant Inc.
 SPDX-License-Identifier: Apache-2.0
 
-SMA-Description: COMING SOON: Using Linkerd in IPv6 and dualstack Kubernetes clusters
+SMA-Description: Using Linkerd in IPv6 and dualstack Kubernetes clusters
 -->
 
 # Linkerd and IPv6
@@ -66,8 +66,6 @@ kubectl config delete-context sma-dual >/dev/null 2>&1
 kubectl config rename-context kind-sma-dual sma-dual
 ```
 
-Now we need to sort out our load balancers.
-
 <!-- @wait_clear -->
 
 ## Kind and MetalLB
@@ -107,6 +105,10 @@ bat sma-v6/metallb.yaml
 bat sma-dual/metallb.yaml
 ```
 
+<!-- @wait_clear -->
+
+## Installing MetalLB
+
 ```bash
 helm repo add --force-update metallb https://metallb.github.io/metallb
 
@@ -126,9 +128,9 @@ helm install --kube-context sma-dual \
 Once that's done, we can wait for the MetalLB pods to be ready...
 
 ```bash
-kubectl rollout status --context sma-v4 -n metallb deploy
-kubectl rollout status --context sma-v6 -n metallb deploy
-kubectl rollout status --context sma-dual -n metallb deploy
+kubectl --context sma-v4 rollout status -n metallb deploy
+kubectl --context sma-v6 rollout status -n metallb deploy
+kubectl --context sma-dual rollout status -n metallb deploy
 ```
 
 ...and then we can configure MetalLB in all clusters.
@@ -142,14 +144,19 @@ kubectl --context sma-dual apply -f sma-dual/metallb.yaml
 Now we should have working load balancers everywhere... so let's get Faces
 installed!
 
-In all cases, we're going to tell Faces to use a LoadBalancer service for its
-GUI, and we're going to disable errors in the backend and face services. We're
-also using a different background color for each cluster: red for sma-v4, green
-for sma-v6, and the default blue for sma-dual.
+<!-- @wait_clear -->
+
+## Installing Faces
+
+We're going to install Faces in all three clusters. We'll tell Faces to use a
+LoadBalancer service for its GUI so that Faces can act like its own ingress
+controller, and we're going to disable errors in the backend and face
+services. We're also using a different background color for each cluster: red
+for sma-v4, green for sma-v6, and the default blue for sma-dual.
 
 **Note**: in practice, you really should use an ingress controller for this
-kind of thing. We're cheating because the demo setup is complex enough as it
-is!
+kind of thing. We're cheating and using Faces to handle its own ingress
+because the demo setup is complex enough as it is!
 
 ```bash
 helm install --kube-context sma-v4 faces \
@@ -182,16 +189,22 @@ authentication later!). Sadly, we can't yet do this with the Faces Helm chart.
 
 ```bash
 kubectl --context sma-dual create serviceaccount -n faces face-sma-dual
-kubectl patch deploy -n faces face --type=merge --patch 'spec: { template: { spec: { serviceAccountName: face-sma-dual } } }'
+kubectl --context sma-dual patch deploy -n faces face \
+        --type=merge \
+        --patch 'spec: { template: { spec: { serviceAccountName: face-sma-dual } } }'
 ```
 
 OK! Now we wait for all the Faces pods to be ready.
 
 ```bash
-kubectl rollout status --context sma-v4 -n faces deploy
-kubectl rollout status --context sma-v6 -n faces deploy
-kubectl rollout status --context sma-dual -n faces deploy
+kubectl --context sma-v4 rollout status -n faces deploy
+kubectl --context sma-v6 rollout status -n faces deploy
+kubectl --context sma-dual rollout status -n faces deploy
 ```
+
+<!-- @wait_clear -->
+
+## Testing Faces
 
 Let's grab the external IP addresses of our `faces-gui` Services for
 testing...
@@ -199,31 +212,25 @@ testing...
 ```bash
 V4_LB=$(kubectl --context sma-v4 get svc -n faces faces-gui -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 #@immed
-echo "sma-v4 Faces IP: ${V4_LB}"
+echo "sma-v4 Faces IP: http://${V4_LB}/"
 V6_LB=$(kubectl --context sma-v6 get svc -n faces faces-gui -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 #@immed
-echo "sma-v6 Faces IP: ${V6_LB}"
+echo "sma-v6 Faces IP: http://[${V6_LB}]"
 DUAL_LB=$(kubectl --context sma-dual get svc -n faces faces-gui -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 #@immed
-echo "sma-dual Faces IP: ${DUAL_LB}"
+echo "sma-dual Faces IP: http://[${DUAL_LB}]"
 ```
 
 We can check those in the browser.
 
-```bash
-open "http://${V4_LB}"
-open "http://[${V6_LB}]"
-open "http://[${DUAL_LB}]"
-```
+<!-- @browser_then_terminal -->
 
-<!-- @wait_clear -->
-
-## Linkerd
+## Installing Linkerd
 
 Let's install Linkerd in all three clusters... and let's do it in a way that
 lets us do multicluster stuff later! This means we need to start by creating
-some certificates. We're going to use step for this, but we're not going to go
-into all the details -- check out the multicluster SMA for more here.
+some certificates. We're going to use `step` for this, but we're not going to
+go into all the details -- check out the Multicluster SMA for more here.
 
 ```bash
 #@immed
@@ -267,6 +274,8 @@ step certificate create \
 
 <!-- @wait_clear -->
 
+## Installing Linkerd
+
 OK, we have certs! Time to install Linkerd.
 
 ```bash
@@ -279,7 +288,12 @@ linkerd install --context sma-v4 \
     --identity-issuer-certificate-file certs/v4-issuer.crt \
     --identity-issuer-key-file certs/v4-issuer.key \
   | kubectl --context sma-v4 apply -f -
+```
 
+When we install Linkerd into our IPv6-capable clusters, we need to set
+`disableIPv6` to `false` so that Linkerd's IPv6 support is enabled.
+
+```bash
 linkerd install --context sma-v6 --crds | kubectl --context sma-v6 apply -f -
 linkerd install --context sma-v6 \
     --set disableIPv6=false  \
@@ -295,43 +309,96 @@ linkerd install --context sma-dual \
     --identity-issuer-certificate-file certs/dual-issuer.crt \
     --identity-issuer-key-file certs/dual-issuer.key \
   | kubectl --context sma-dual apply -f -
+```
 
+Once that's done, we can check that Linkerd is up and running in all three
+clusters.
+
+```bash
 linkerd check --context sma-v4
 linkerd check --context sma-v6
 linkerd check --context sma-dual
 ```
 
-Next up! Mesh Faces.
+<!-- @wait_clear -->
+
+## Meshing Faces
+
+Now that Linkerd is installed, let's get Faces meshed in all three clusters.
+This won't produce any visible change from the GUI -- we'll have to check the
+pods in the `faces` namespace to see that the proxies are injected at this
+point.
 
 ```bash
-kubectl annotate --context sma-v4 namespace faces linkerd.io/inject=enabled
-kubectl rollout restart --context sma-v4 -n faces deploy
+kubectl --context sma-v4 annotate namespace faces linkerd.io/inject=enabled
+kubectl --context sma-v4 rollout restart -n faces deploy
 
-kubectl annotate --context sma-v6 namespace faces linkerd.io/inject=enabled
-kubectl rollout restart --context sma-v6 -n faces deploy
+kubectl --context sma-v6 annotate namespace faces linkerd.io/inject=enabled
+kubectl --context sma-v6 rollout restart -n faces deploy
 
-kubectl annotate --context sma-dual namespace faces linkerd.io/inject=enabled
-kubectl rollout restart --context sma-dual -n faces deploy
+kubectl --context sma-dual annotate namespace faces linkerd.io/inject=enabled
+kubectl --context sma-dual rollout restart -n faces deploy
 
-kubectl rollout status --context sma-v4 -n faces deploy
-kubectl rollout status --context sma-v6 -n faces deploy
-kubectl rollout status --context sma-dual -n faces deploy
+kubectl --context sma-v4 rollout status -n faces deploy
+kubectl --context sma-v6 rollout status -n faces deploy
+kubectl --context sma-dual rollout status -n faces deploy
+
+kubectl --context sma-v4 get pods -n faces
+kubectl --context sma-v6 get pods -n faces
+kubectl --context sma-dual get pods -n faces
 ```
 
-Next: mess with the dualstack smiley service
+We'll flip back over to the browser just to make sure everything still looks
+good.
+
+<!-- @browser_then_terminal -->
+
+## Switching to v4 `smiley`
+
+If we look in the `sma-dual` cluster, we'll see that all its Services have
+IPv6 addresses.
+
+```bash
+kubectl --context sma-dual get svc -n faces
+```
+
+Let's switch `smiley` to use an IPv4 address instead. You can't just `kubectl
+edit` the Service for this, because it already has the IPv6 address
+information in it. Instead, we'll delete the Service and recreate it with the
+correct address family.
+
+We'll start by getting the current `smiley` Service into a file and editing it
+to switch it to IPv4.
 
 ```bash
 kubectl --context sma-dual get svc -n faces smiley
 kubectl --context sma-dual get svc -n faces -o yaml smiley > smiley.yaml
-${EDITOR} smiley.yaml # change this to an IPv4 Service
+${EDITOR} smiley.yaml
+```
+
+Next up, we'll delete the `smiley` Service. This will break everything!
+
+```bash
 kubectl --context sma-dual delete svc -n faces smiley
+```
+
+<!-- @browser_then_terminal -->
+
+When we recreate the `smiley` Service, it'll have an IPv4 address, but
+everything should start working again.
+
+```bash
 kubectl --context sma-dual apply -f smiley.yaml
 kubectl --context sma-dual get svc -n faces smiley
 ```
 
-Back to the Dual browser.
+<!-- @browser_then_terminal -->
 
-Mess with auth. We're going to switch the faces namespace to default-deny.
+## Network Authentication
+
+Next, let's do a minimal lockdown of the `faces` namespace in the `sma-dual`
+cluster. We'll start by switching it to have a default policy of deny, which
+will - again - break everything as soon as we restart the `faces` pods.
 
 ```bash
 kubectl --context sma-dual annotate ns/faces config.linkerd.io/default-inbound-policy=deny
@@ -339,36 +406,42 @@ kubectl --context sma-dual rollout restart -n faces deploy
 kubectl --context sma-dual rollout status -n faces deploy
 ```
 
-Kaboom. Let's add a NetworkAuthentication to permit access from within the
-sma-dual cluster.
+<!-- browser_then_terminal -->
+
+Yup, definitely broken. Let's add a NetworkAuthentication to permit access
+from within the `sma-dual` cluster.
 
 ```bash
 bat k8s/network-auth-1.yaml
 kubectl --context sma-dual apply -f k8s/network-auth-1.yaml
 ```
 
-Note that we still can't talk to smiley! Take a look at the Services, though:
+<!-- browser_then_terminal -->
+
+Talking to `color` is working, but note that we still can't talk to `smiley`!
+Looking back at the `smiley` Service will show what's going on.
 
 ```bash
 kubectl --context sma-dual get svc -n faces
 ```
 
-The smiley workload is a v4 Service, remember? We need to explicitly authorize
-the IPv4 CIDR for sma-dual as well.
+The `smiley` Service has an IPv4 address, remember? We need to explicitly
+authorize the IPv4 CIDR for `sma-dual` as well.
 
 ```bash
 diff -u99 --color k8s/network-auth-1.yaml k8s/network-auth-2.yaml
 kubectl --context sma-dual apply -f k8s/network-auth-2.yaml
 ```
 
-Next, multicluster!
+<!-- browser_then_terminal -->
 
-<!-- @SHOW -->
+## Multicluster setup
 
-First things first: when Kind creates a cluster, it sets up a port forward for
-its API server and gives you a kubeconfig that uses that port forward. This is
-great for a single cluster, but it's not so great for multicluster -- so we're
-going to update all our configurations to use the node IP addresses directly.
+Next up, let's try dualstack multicluster. First things first: when Kind
+creates a cluster, it sets up a port forward for its API server and gives you
+a Kubernetes config that uses that port forward. This is great for a single
+cluster, but it's not so great for multicluster -- so we're going to update
+all our configurations to use the node IP addresses directly.
 
 (When doing this, we have to use the full names like `kind-sma-v4` because
 when we changed the _context_ name, we didn't change the _cluster_ name.)
@@ -390,12 +463,14 @@ echo "DUAL_NODE is ${DUAL_NODE}"
 kubectl config set clusters.kind-sma-dual.server "https://[${DUAL_NODE}]:6443"
 ```
 
-We also need to set up routing between clusters. This is weird because we're
-dealing with dualstack stuff -- this is easy when routing from sma-dual to
-sma-v4 or from sma-dual to sma-v6, but routing back _to_ sma-dual requires
-being more careful.
+We also need to set up routing between clusters. This is easy when routing
+from `sma-dual` to `sma-v4` or from `sma-dual` to `sma-v6` - we just route to
+the single CIDR that `sma-v4` or `sma-v6` have - but routing back _to_
+`sma-dual` requires being more careful: in `sma-v4` we need to route to
+`sma-dual`'s IPv4 CIDR, and in `sma-v6` we need to route to `sma-dual`'s IPv6
+CIDR.
 
-So we'll use a Python script for this.
+So, again, we'll use a Python script to sort things out.
 
 ```bash
 bat get_info.py
@@ -442,9 +517,16 @@ docker exec sma-dual-control-plane \
   ip route add ${V6_POD_CIDR} via ${V6_NODE_IP}
 ```
 
-Start by linking clusters. We're going to use sma-dual as our "main" cluster:
-it'll have the Faces GUI and the Face service. We'll run color in sma-v4 and
-smiley in sma-v6.
+<!-- @wait_clear -->
+
+## Linking the Clusters
+
+We're going to use `sma-dual` as our "main" cluster: it'll have the Faces GUI
+and the `face` workload. We'll run `color` in `sma-v4` and `smiley` in
+`sma-v6`. This will, of course, require Linkerd to pick the correct protocol
+for whatever cluster it's talking to.
+
+We'll start by installing multicluster Linkerd in all three clusters.
 
 ```bash
 linkerd --context=sma-v4 multicluster install --gateway=false \
@@ -459,9 +541,8 @@ linkerd --context=sma-v6 multicluster check
 linkerd --context=sma-dual multicluster check
 ```
 
-Now we can link the clusters. We'll link our dual cluster to the other two, so
-that we can mirror smiley from our v4-only cluster and color from our v6-only
-cluster.
+Now we can link the clusters. We only need to link from `sma-dual` to the
+other two, since we only need to mirror into `sma-dual`.
 
 ```bash
 linkerd multicluster --context=sma-v4 link \
@@ -481,8 +562,12 @@ Let's make sure that the links are up.
 linkerd --context=sma-dual multicluster check
 ```
 
-Now we can mirror the `smiley` service from sma-v4 to sma-dual, and the
-`color` service from sma-v6 to sma-dual.
+<!-- @wait_clear -->
+
+## Mirroring Services
+
+Once our links are up, we can mirror the `smiley` service from `sma-v4` into
+`sma-dual`, and the `color` service from `sma-v6` into `sma-dual`.
 
 ```bash
 kubectl --context sma-v4 -n faces label svc/smiley \
@@ -491,30 +576,35 @@ kubectl --context sma-v6 -n faces label svc/color \
         mirror.linkerd.io/exported=remote-discovery
 ```
 
-At this point, we should see the mirrored services in sma-dual.
+At this point, we should see the mirrored services in `sma-dual`.
 
 ```bash
 kubectl --context sma-dual -n faces get svc
 ```
+<!-- @wait_clear -->
 
-Now that all THAT is done, suppose we just delete the smiley workload in
-sma-dual and watch what happens.
+## Testing Multicluster
+
+Now that all THAT is done, suppose we just delete the `smiley` workload in
+`sma-dual` and watch what happens!
 
 ```bash
 kubectl --context sma-dual delete deploy -n faces smiley
 ```
 
+<!-- browser_then_terminal -->
+
 Nothing good! So let's use an HTTPRoute to send all the traffic from the Faces
-application over to the smiley deployment in sma-v4.
+application in `sma-dual` over to the `smiley` deployment in `sma-v4`.
 
 ```bash
 bat k8s/smiley-route.yaml
 kubectl --context sma-dual apply -f k8s/smiley-route.yaml
 ```
 
-Tada!
+<!-- browser_then_terminal -->
 
-We don't have to do everything all at once, of course. We can also do a canary
+Of course, we don't have to shift traffic all at once. We can also do a canary
 across clusters, whether or not they're the same address family. Let's show
 that with the `color` workload.
 
@@ -522,6 +612,8 @@ that with the `color` workload.
 bat k8s/color-route.yaml
 kubectl --context sma-dual apply -f k8s/color-route.yaml
 ```
+
+<!-- browser_then_terminal -->
 
 And, of course, we can edit the weights as usual.
 
@@ -531,7 +623,13 @@ kubectl --context sma-dual edit httproute -n faces color-route
 kubectl --context sma-dual edit httproute -n faces color-route
 ```
 
-Mess with auth. We're going to switch the faces namespace to default-deny.
+<!-- browser_then_terminal -->
+
+## Multicluster Authentication
+
+Next, let's do a minimal lockdown of the `faces` namespace in the `sma-v6`
+cluster, like we did for `sma-dual`. Once again, we'll start by switching it
+to have a default policy of deny.
 
 ```bash
 kubectl --context sma-v6 annotate ns/faces config.linkerd.io/default-inbound-policy=deny
@@ -539,12 +637,33 @@ kubectl --context sma-v6 rollout restart -n faces deploy
 kubectl --context sma-v6 rollout status -n faces deploy
 ```
 
-Kaboom. Let's use MeshTLSAuthentication to permit access from the sma-dual
-face workload.
+Once again, everything will be broken now.
+
+<!-- browser_then_terminal -->
+
+This time, we'll use a MeshTLSAuthentication to permit access from the `face`
+workload in `sma-dual`. If you remember, we created a special ServiceAccount
+just for `face` -- this is why.
 
 ```bash
 bat k8s/tls-auth.yaml
 kubectl --context sma-v6 apply -f k8s/tls-auth.yaml
 ```
 
-And now it works again!
+<!-- browser_then_terminal -->
+
+## Wrapping Up
+
+So that's Linkerd running in IPv4-only, IPv6-only, and dualstack clusters,
+with some basic multicluster, authentication policy, and Gateway API
+functionality thrown in for good measure. As you've seen, Linkerd makes IPv6
+pretty much invisible in practice, so you can use it in your clusters without
+worrying too much about it.
+
+<!-- @wait -->
+
+Finally, feedback is always welcome! You can reach me at flynn@buoyant.io or
+as @flynn on the Linkerd Slack (https://slack.linkerd.io).
+
+<!-- @wait -->
+<!-- @show_slides -->
