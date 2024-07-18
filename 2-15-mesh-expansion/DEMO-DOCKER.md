@@ -376,6 +376,18 @@ bat /tmp/color.yaml
 kubectl apply -f /tmp/color.yaml
 ```
 
+We also need to set the `status` on the ExternalWorkload so that Linkerd will
+consider them ready to use:
+
+```bash
+kubectl patch externalworkloads -n faces smiley \
+        --type=merge --subresource status \
+        --patch 'status: { conditions: [ { type: Ready, status: "True" } ] }'
+kubectl patch externalworkloads -n faces color \
+        --type=merge --subresource status \
+        --patch 'status: { conditions: [ { type: Ready, status: "True" } ] }'
+```
+
 <!-- @wait_clear -->
 
 ## Testing the External Workloads
