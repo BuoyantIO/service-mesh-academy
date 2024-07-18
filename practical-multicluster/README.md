@@ -2,10 +2,10 @@
 SPDX-FileCopyrightText: 2024 Buoyant Inc.
 SPDX-License-Identifier: Apache-2.0
 
-SMA-Description: Using Linkerd in IPv6 and dualstack Kubernetes clusters
+SMA-Description: Practical Multicluster with Linkerd
 -->
 
-# Linkerd and IPv6
+# Practical Multicluster with Linkerd
 
 This is the documentation - and executable code! - for the Service Mesh
 Academy workshop about Linkerd and IPv6. The easiest way to use this file is
