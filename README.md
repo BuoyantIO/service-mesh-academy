@@ -16,13 +16,13 @@ Each workshop has a README.md that contains the instructions for the workshop.
 * [**Introduction to Service Mesh and Linkerd**](intro-to-service-mesh-linkerd/README.md) - Introducing service mesh concepts using Linkerd
 * [**Linkerd 2.15 Features**](2-15-features/README.md) - Exploring new features in Linkerd 2.15
 * [**Linkerd Certificate Management**](l5d-certificate-management/README.md) - Managing Linkerd certificates both by hand and using cert-manager
-* [**Linkerd and IPv6**](IPv6/README.md) - COMING SOON: Using Linkerd in IPv6 and dualstack Kubernetes clusters
+* [**Linkerd and IPv6**](IPv6/README.md) - Using Linkerd in IPv6 and dualstack Kubernetes clusters
 * [**Linkerd and Ingress**](linkerd-and-ingress/README.md) - Using Linkerd with various ingress controllers
 * [**Linkerd in Production**](linkerd-in-production/README.md) - Installing and using Linkerd in a production environment
 * [**Mesh Expansion with Linkerd**](2-15-mesh-expansion/README.md) - Using Linkerd 2.15 to expand a service mesh to workloads outside of Kubernetes
 * [**Multicluster Failover With Linkerd**](multicluster-failover/README.md) - Multicluster failover with Linkerd and the linkerd-failover extension
 * [**Observability with Linkerd**](observability/README.md) - Observability tools and capabilities in Linkerd
-* [**Practical Multicluster**](practical-multicluster/README.md) - COMING SOON: Practical applications of Linkerd multicluster
+* [**Practical Multicluster with Linkerd**](practical-multicluster/README.md) - Practical Multicluster with Linkerd
 * [**Real World GitOps**](real-world-gitops/README.md) - See https://github.com/BuoyantIO/gitops-linkerd
 * [**Route-Based Policy**](route-based-policy/README.md) - Exploring Linkerd route-based policy in detail
 * [**Sneak Peek: Linkerd 2.13**](sneak-peek-2-13/README.md) - New features coming in Linkerd 2.13
