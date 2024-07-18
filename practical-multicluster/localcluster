@@ -25,7 +25,7 @@ class Shell:
     end_red: ClassVar[str] = "\033[0m"
 
     @classmethod
-    def run(cls, cmd: List[str], shell=False, always_exec=False, silent=False) -> str:
+    def run(cls, cmd: List[str], shell: bool=False, always_exec: bool=False, silent: bool=False) -> str:
         if (cls.verbose and not silent) or cls.dryrun:
             sys.stdout.write(cls.start_red)
             sys.stdout.write(subprocess.list2cmdline(cmd))
@@ -38,7 +38,7 @@ class Shell:
         return ""
 
     @classmethod
-    def run_shell(cls, cmd: str, always_exec=False, silent=False) -> str:
+    def run_shell(cls, cmd: str, always_exec: bool=False, silent: bool=False) -> str:
         if (cls.verbose and not silent) or cls.dryrun:
             sys.stdout.write(cls.start_red)
             sys.stdout.write(cmd)
@@ -58,7 +58,7 @@ class IPAM:
         self.containers: Dict[str, Dict[str, str]] = {}
 
         # Read IPAM.Config from "docker inspect kind"
-        ipam_config: List[Dict[str, str]] = {}
+        ipam_config: List[Dict[str, str]] = []
         container_config: Dict[str, Dict[str, str]] = {}
 
         try:
@@ -208,7 +208,7 @@ class Cluster:
         return root_crt_path
 
     @classmethod
-    def trust_anchor(cls, trust_anchor_dir: str, force=False) -> Tuple[str, bool]:
+    def trust_anchor(cls, trust_anchor_dir: str, force: bool=False) -> Tuple[str, bool]:
         trust_anchor_dir = os.path.dirname(cls.root_cert_path(trust_anchor_dir))
 
         # Make sure the trust anchor directory exists.
@@ -421,7 +421,7 @@ class Cluster:
                 Shell.run(["docker", "exec", self_container_name,
                            "ip", "route", "add", cluster_v6_pod_cidr, "via", container_v6_addr])
 
-    def certs(self, trust_anchor_dir: Optional[str]=None, force=False) -> None:
+    def certs(self, trust_anchor_dir: Optional[str]=None, force: bool=False) -> None:
         print(f"== Setting up certs for {self.name} ==")
 
         if not trust_anchor_dir:
@@ -480,7 +480,7 @@ class Cluster:
 
         Shell.run_shell(cmd)
 
-    def link(self, other_cluster: "Cluster", gateway=False) -> None:
+    def link(self, other_cluster: "Cluster", gateway: bool=False) -> None:
         # Link this cluster to another cluster. This means we run linkerd
         # multicluster link in the _other_ cluster, and then apply the result
         # in _this_ cluster.
@@ -514,7 +514,7 @@ class Cluster:
             # Do this link without gateways.
             self.link(cluster)
 
-    def info(self, ipam: IPAM):
+    def info(self, ipam: IPAM) -> None:
         if not self.name in ipam.containers:
             print(f"{self.name}: not found in IPAM containers")
             return
@@ -672,7 +672,7 @@ class K3dCluster (Cluster):
         self.kubectx = f"{self.provider}-{self.name}"
 
     def _definition(self) -> dict[str, Any]:
-        definition = {
+        definition: Dict[str, Any] = {
             "apiVersion": "k3d.io/v1alpha5",
             "kind": "Simple",
             "metadata": {
