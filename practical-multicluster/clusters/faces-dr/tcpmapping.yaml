@@ -1,0 +1,9 @@
+---
+apiVersion: getambassador.io/v3alpha1
+kind: TCPMapping
+metadata:
+  name: faces-dr-mapping
+  namespace: faces
+spec:
+  port: 8080
+  service: faces-gui-faces-dr:80

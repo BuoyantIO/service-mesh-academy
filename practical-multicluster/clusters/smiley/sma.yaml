@@ -1,0 +1,33 @@
+kind: SMA-cluster
+apiVersion: sma.buoyant.io/v1alpha1
+metadata:
+  name: smiley
+spec:
+  # subnet is byte-ID/nybble-ID, both in hex. They get used for subnetting, so
+  # they must be unique across all clusters in the same group.
+  #
+  # If IPv6 is enabled, we use fd00:$byteID:1::/64 for pods and
+  # fd00:$byteID:2::/112 for services, and we set up MetalLB to carve out a
+  # /96 with a prefix of $byteID from the Docker network V6 space.
+  #
+  # If IPv4 is enabled, we use 10.$byteID.1.0/24 for pods and
+  # 10.$byteID.2.0/24 for services. The nybble ID comes in for MetalLB:
+  # the Docker network V4 space is likely already a /24, so we use the
+  # nybble ID to carve out a /28 from that.
+
+  # We would use "S1" for "smiley1" but that's not valid hex, so we use
+  # "51" instead.
+  subnet: 51/5
+
+  v4Enabled: true
+  v6Enabled: false  # We can't enable IPv6 for BEL yet.
+
+  # Provider sets what kind of cluster to create.
+  provider: kind
+
+  # Group is used to group clusters together for pod-to-pod multicluster.
+  group: face
+
+  # Zone tells us what AZ to put this cluster in. Yes, in the Real World
+  # you'd have multinode clusters, but we're keeping it simpler here.
+  zone: zone-east
