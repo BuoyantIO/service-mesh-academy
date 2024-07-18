@@ -7,9 +7,9 @@ SMA-Description: Practical Multicluster with Linkerd
 
 # Practical Multicluster with Linkerd
 
-This is the documentation - and executable code! - for the Service Mesh
-Academy workshop about Linkerd and IPv6. The easiest way to use this file is
-to execute it with [demosh].
+This is the documentation - and executable code! - for the Practical
+Multicluster Service Mesh Academy workshop. The easiest way to use this file
+is to execute it with [demosh].
 
 Things in Markdown comments are safe to ignore when reading this later. When
 executing this with [demosh], things after the horizontal rule below (which

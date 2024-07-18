@@ -33,20 +33,22 @@ export PATH=$PATH:$HOME/.linkerd2/bin
 kubectl --context faces create ns faces
 kubectl --context faces annotate ns/faces linkerd.io/inject=enabled
 
+    #  --set gui.serviceType=LoadBalancer \
+
 helm install --kube-context faces \
      faces -n faces \
      oci://ghcr.io/buoyantio/faces-chart --version 1.4.0 \
-     --set gui.serviceType=LoadBalancer \
      --set face.errorFraction=0 \
      --set backend.errorFraction=0
 
 kubectl --context faces-dr create ns faces
 kubectl --context faces-dr annotate ns/faces linkerd.io/inject=enabled
 
+    #  --set gui.serviceType=LoadBalancer \
+
 helm install --kube-context faces-dr \
      faces -n faces \
      oci://ghcr.io/buoyantio/faces-chart --version 1.4.0 \
-     --set gui.serviceType=LoadBalancer \
      --set face.errorFraction=0 \
      --set color.color=white \
      --set backend.errorFraction=0
