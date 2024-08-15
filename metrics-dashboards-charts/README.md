@@ -63,6 +63,27 @@ Then it's off to the real work.
 
 ## Metrics and Dashboards and Charts, Oh My!
 
+We're starting out with our cluster already set up with
+
+- Linkerd
+- Grafana
+- Linkerd Viz (pointing to our Grafana)
+- Faces (using Emissary)
+- Emojivoto
+
+(If you need to set up your cluster, RESET.sh can do it for you!)
+
+<!-- @wait -->
+
+All these things are meshed, and we have some Routes installed too:
+
+```bash
+kubectl get httproute.gateway.networking.k8s.io -A
+kubectl get grpcroute.gateway.networking.k8s.io -A
+```
+
+<!-- @wait_clear -->
+
 Let's start by looking at the metrics stored in the control plane:
 
 ```bash
@@ -82,7 +103,7 @@ this with `promtool`. We'll start with a brutal hack to get a port-forward
 running so that we can talk to Prometheus:
 
 ```bash
-kubectl -n linkerd port-forward svc/linkerd-prometheus 9090:9090 &
+kubectl port-forward -n linkerd-viz svc/prometheus 9090:9090 &
 ```
 
 Now we can use `promtool` to check the metrics. We'll ask it to pull all the
@@ -119,7 +140,9 @@ to Linkerd 2.16, so that should be fun.
 
 <!-- @wait -->
 
-The most basic retry info is the `outbound_http_route_retry_requests_total` metric: that's a counter of total retries, and it has a bunch of labels that we can use to slice and dice the data. We only need four of them, though:
+The most basic retry info is the `outbound_http_route_retry_requests_total`
+metric: that's a counter of total retries, and it has a bunch of labels that
+we can use to slice and dice the data. We only need four of them, though:
 
 - `deployment` and `namespace` identify the source of the request
 - `parent_name` and `parent_namespace` identify the destination
@@ -132,88 +155,153 @@ So let's start by trying to get a sense for how many retries are going from
 Emissary, by using `curl` to run raw queries against our Prometheus.
 Specifically we'll first do an 'instantaneous' query, which will return only
 values for a single moment, and we'll just filter to the `emissary` namespace
-and deployment:
+and deployment. The query here is actually
+
+```
+outbound_http_route_retry_requests_total{
+    namespace="emissary", deployment="emissary"
+}
+```
+
+just all on one line.
+
+<!-- @wait -->
 
 ```bash
 curl -G http://localhost:9090/api/v1/query \
-     --data-urlencode 'query=
-          outbound_http_route_retry_requests_total{
-              namespace="emissary", deployment="emissary"
-          }' \
+     --data-urlencode 'query=outbound_http_route_retry_requests_total{namespace="emissary", deployment="emissary"}' \
      | jq | bat -l json
 ```
+
+<!-- @clear -->
 
 There are a lot of labels in there, and they're kind of getting in our way. We
 can use the `sum` function to get rid of most of them -- let's keep just
 `parent_name` and `parent_namespace`:
 
+```
+sum by (parent_name, parent_namespace) (
+    outbound_http_route_retry_requests_total{
+        namespace="emissary", deployment="emissary"
+    }
+)
+```
+
 ```bash
 curl -G http://localhost:9090/api/v1/query \
-     --data-urlencode 'query=
-          sum by (parent_name, parent_namespace) (
-            outbound_http_route_retry_requests_total{
-                namespace="emissary", deployment="emissary"
-            }
-          )' \
+     --data-urlencode 'query=sum by (parent_name, parent_namespace) (outbound_http_route_retry_requests_total{namespace="emissary", deployment="emissary"})' \
      | jq | bat -l json
 ```
+
+<!-- @clear -->
 
 MUCH better. From this, we can see that the `emissary` deployment is retrying
 things only to `face` in the `faces` namespace, so let's add more labels to
 focus on that:
 
-```bash
-curl -G http://localhost:9090/api/v1/query \
-     --data-urlencode 'query=
-          sum by (parent_name, parent_namespace) (
-            outbound_http_route_retry_requests_total{
-                namespace="emissary", deployment="emissary",
-                parent_name="face", parent_namespace="faces"
-            }
-          )' \
-     | jq | bat -l json
 ```
-
-Now let's turn that into a rate, instead of an instantaneous count:
+sum by (parent_name, parent_namespace) (
+    outbound_http_route_retry_requests_total{
+        namespace="emissary", deployment="emissary",
+        parent_name="face", parent_namespace="faces"
+    }
+)
+```
 
 ```bash
 curl -G http://localhost:9090/api/v1/query \
-     --data-urlencode 'query=
-          sum by (parent_name, parent_namespace) (
-            rate(
-              outbound_http_route_retry_requests_total{
-                  namespace="emissary", deployment="emissary",
-                  parent_name="face", parent_namespace="faces"
-              }[1m]
-            )
-          )' \
+     --data-urlencode 'query=sum by (parent_name, parent_namespace) (outbound_http_route_retry_requests_total{namespace="emissary", deployment="emissary",parent_name="face", parent_namespace="faces"})' \
      | jq | bat -l json
 ```
 
-That's asking for a rate over one minute. Finally, we can ask for a time series of that rate:
+<!-- @wait_clear -->
+
+Now let's turn that into a rate, instead of an instantaneous count, using the `rate` function to get a rate calculated over a one-minute window:
+
+```
+sum by (parent_name, parent_namespace) (
+    rate(
+        outbound_http_route_retry_requests_total{
+            namespace="emissary", deployment="emissary",
+            parent_name="face", parent_namespace="faces"
+        }[1m]
+    )
+)
+```
 
 ```bash
 curl -G http://localhost:9090/api/v1/query \
-     --data-urlencode 'query=
-          sum by (parent_name, parent_namespace) (
-            rate(
-              outbound_http_route_retry_requests_total{
-                  namespace="emissary", deployment="emissary",
-                  parent_name="face", parent_namespace="faces"
-              }[1m]
-            )
-          )[5m:1m]' \
+     --data-urlencode 'query=sum by (parent_name, parent_namespace) (rate(outbound_http_route_retry_requests_total{namespace="emissary", deployment="emissary",parent_name="face", parent_namespace="faces"}[1m]))' \
      | jq | bat -l json
 ```
 
-...and that gives us five minutes of rates, spaced one minute apart.
+<!-- @wait_clear -->
+
+Finally, we can ask for a time series of that rate by adding a range to the
+whole query. In this case we use `[5m:1m]` to get five minutes of rates,
+spaced one minute apart:
+
+```
+sum by (parent_name, parent_namespace) (
+    rate(
+        outbound_http_route_retry_requests_total{
+            namespace="emissary", deployment="emissary",
+            parent_name="face", parent_namespace="faces"
+        }[1m]
+    )
+)[5m:1m]
+```
+
+```bash
+curl -G http://localhost:9090/api/v1/query \
+     --data-urlencode 'query=sum by (parent_name, parent_namespace) (rate(outbound_http_route_retry_requests_total{namespace="emissary", deployment="emissary",parent_name="face", parent_namespace="faces"}[1m]))[5m:1m]' \
+     | jq | bat -l json
+```
+
+<!-- @clear -->
 
 This is the basis of anything we want to do. Let's finish this by flipping
 over to Grafana and building this into the dashboard... which we'll do
 basically the exact same way.
 
-<!-- @show_browser -->
+<!-- @browser_then_terminal -->
+
+## One More Thing!
+
+Remember I said that there's nothing special about Viz, it's just a Prometheus
+client? Just to prove that, in our directory here is a Python program called
+`promq.py` that displays a running breakdown of some of the gRPC metrics for
+Emojivoto, without doing any math itself -- it's all just Prometheus queries.
+
+(`promq.py` also deliberately does everything the hard way instead of using
+the Python Prometheus client package.)
 
 
+```bash
+#@immed
+set +e
+python promq.py
+```
 
+We're not going to over the code in detail, but it's worth looking quickly at
+the queries it's running.
 
+```bash
+bat promq.py
+```
+
+<!-- @wait_clear -->
+
+## Summary
+
+There's a lot of useful information in the metrics, and even though they look
+complex, they're actually pretty easy to work with. The key is to start with
+what you want to know, and then build up from there.
+
+<!-- @wait -->
+
+Finally, feedback is always welcome! You can reach me at flynn@buoyant.io or
+as @flynn on the Linkerd Slack (https://slack.linkerd.io).
+
+<!-- @wait -->
+<!-- @show_slides -->

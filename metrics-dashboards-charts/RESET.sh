@@ -63,3 +63,5 @@ kubectl annotate -n faces service smiley \
 kubectl annotate -n faces service color \
         retry.linkerd.io/http=5xx retry.linkerd.io/limit=3
 kubectl annotate -n faces service color timeout.linkerd.io/request=300ms
+
+kubectl get svc -n emissary

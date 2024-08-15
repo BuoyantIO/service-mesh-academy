@@ -1324,8 +1324,8 @@
     ]
   },
   "timezone": "",
-  "title": "Linkerd NS 2",
-  "uid": "linkerd-namespace-2",
+  "title": "Linkerd Namespace",
+  "uid": "linkerd-namespace",
   "version": 1,
   "weekStart": ""
 }
