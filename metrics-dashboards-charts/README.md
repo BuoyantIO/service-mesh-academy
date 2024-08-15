@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2024 Buoyant Inc.
+SPDX-License-Identifier: Apache-2.0
+
+SMA-Description: Metrics and Dashboards and Charts, Oh My!
+-->
+
 # SMA: Metrics and Dashboards and Charts, Oh My!
 
 This is the documentation - and executable code! - for "Metrics and Dashboards
