@@ -22,9 +22,11 @@ Each workshop has a README.md that contains the instructions for the workshop.
 * [**Mesh Expansion with Linkerd**](2-15-mesh-expansion/README.md) - Using Linkerd 2.15 to expand a service mesh to workloads outside of Kubernetes
 * [**Multicluster Failover With Linkerd**](multicluster-failover/README.md) - Multicluster failover with Linkerd and the linkerd-failover extension
 * [**Observability with Linkerd**](observability/README.md) - Observability tools and capabilities in Linkerd
+* [**Practical Multicluster with Linkerd**](mcdemo/README.md) - Practical Multicluster with Linkerd
 * [**Practical Multicluster with Linkerd**](practical-multicluster/README.md) - Practical Multicluster with Linkerd
 * [**Real World GitOps**](real-world-gitops/README.md) - See https://github.com/BuoyantIO/gitops-linkerd
 * [**Route-Based Policy**](route-based-policy/README.md) - Exploring Linkerd route-based policy in detail
+* [**SMA: Metrics and Dashboards and Charts, Oh My!**](metrics-dashboards-charts/README.md) - Metrics and Dashboards and Charts, Oh My!
 * [**Sneak Peek: Linkerd 2.13**](sneak-peek-2-13/README.md) - New features coming in Linkerd 2.13
 * [**Sneak Peek: Linkerd 2.14**](sneak-peek-2-14/README.md) - New features coming in Linkerd 2.14
 * [**What Really Happens at Startup**](startup-deep-dive/README.md) - Taking a deep dive into Linkerd, init containers, CNI plugins, and more
