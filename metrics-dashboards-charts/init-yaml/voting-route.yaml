@@ -1,0 +1,18 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: GRPCRoute
+metadata:
+  name: voting-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      namespace: emojivoto
+      kind: Service
+      group: ""
+  rules:
+    - backendRefs:
+      - name: voting-svc
+        namespace: emojivoto
+        kind: Service
+        group: ""
+        port: 8080
