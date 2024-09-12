@@ -1,0 +1,38 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smiley2
+  namespace: faces
+spec:
+  type: ClusterIP
+  selector:
+    service: smiley2
+  ports:
+  - port: 80
+    targetPort: http
+---
+apiVersion: workload.buoyant.io/v1alpha1
+kind: ExternalGroup
+metadata:
+  name: smiley2
+  namespace: faces
+spec:
+  probes:
+  - failureThreshold: 1
+    httpGet:
+      path: /ready
+      port: 8000
+      scheme: HTTP
+      host: 127.0.0.1
+    initialDelaySeconds: 3
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  template:
+    metadata:
+      labels:
+        service: smiley2
+    ports:
+    - name: http
+      port: 8000

@@ -1,0 +1,60 @@
+#!/usr/bin/env sh
+
+# SPDX-FileCopyrightText: 2024 Buoyant Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2024 Buoyant Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+#       http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+echo "==== bootstrapping IPTables"
+
+# Create the PROXY_INIT_REDIRECT chain
+iptables -t nat -N PROXY_INIT_REDIRECT
+# Don't intercept control-plane traffic (ignore TCP ports 4190, 4191, 4567, and 4568)
+iptables -t nat -A PROXY_INIT_REDIRECT \
+         -p tcp --match multiport --dports 4190,4191,4567,4568 -j RETURN \
+         -m comment --comment bootstrap/ignore-control-plane-traffic
+# Redirect all TCP traffic to the Linkerd proxy
+iptables -t nat -A PROXY_INIT_REDIRECT \
+         -p tcp -j REDIRECT --to-port 4143 \
+         -m comment --comment bootstrap/redirect-all-tcp-to-proxy
+
+# Install the PROXY_INIT_REDIRECT chain in the PREROUTING chain
+iptables -t nat -A PREROUTING -j PROXY_INIT_REDIRECT \
+         -m comment --comment bootstrap/install-prerouting
+
+# Create the PROXY_INIT_OUTPUT chain
+iptables -t nat -N PROXY_INIT_OUTPUT
+# Don't intercept traffic from the root user
+iptables -t nat -A PROXY_INIT_OUTPUT \
+         -m owner --uid-owner 0 -j RETURN \
+         -m comment --comment bootstrap/ignore-root-user
+# Don't intercept traffic to the loopback interface
+iptables -t nat -A PROXY_INIT_OUTPUT \
+         -o lo -j RETURN \
+         -m comment --comment bootstrap/ignore-loopback
+# Don't intercept traffic to TCP ports 443 and 6443
+iptables -t nat -A PROXY_INIT_OUTPUT \
+         -p tcp --match multiport --dports 443,6443 -j RETURN \
+         -m comment --comment bootstrap/ignore-port-443,6443
+# Redirect all other TCP traffic to the Linkerd proxy
+iptables -t nat -A PROXY_INIT_OUTPUT \
+         -p tcp -j REDIRECT --to-port 4140 \
+         -m comment --comment bootstrap/redirect-outgoing-tcp-to-proxy
+
+# Install the PROXY_INIT_OUTPUT chain in the OUTPUT chain
+iptables -t nat -A OUTPUT -j PROXY_INIT_OUTPUT \
+         -m comment --comment bootstrap/install-output
+
+iptables-save -t nat

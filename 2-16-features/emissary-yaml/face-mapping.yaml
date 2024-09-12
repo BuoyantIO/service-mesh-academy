@@ -1,0 +1,11 @@
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: face-mapping
+  namespace: faces
+spec:
+  hostname: "*"
+  prefix: /face/
+  service: face.faces
+  timeout_ms: 0

@@ -1,0 +1,1818 @@
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-poop-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VotePoop
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-joy-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteJoy
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-sunglasses-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteSunglasses
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-relaxed-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteRelaxed
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-stuckouttonguewinkingeye-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteStuckOutTongueWinkingEye
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-moneymouthface-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteMoneyMouthFace
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-flushed-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteFlushed
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-mask-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteMask
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-nerdface-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteNerdFace
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-ghost-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteGhost
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-skullandcrossbones-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteSkullAndCrossbones
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-hearteyescat-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteHeartEyesCat
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-hearnoevil-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteHearNoEvil
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-seenoevil-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteSeeNoEvil
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-speaknoevil-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteSpeakNoEvil
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-boy-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBoy
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-girl-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteGirl
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-man-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteMan
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-woman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteWoman
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-olderman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteOlderMan
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-policeman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VotePoliceman
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-guardsman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteGuardsman
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-constructionworkerman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteConstructionWorkerMan
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-prince-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VotePrince
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-princess-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VotePrincess
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-manintuxedo-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteManInTuxedo
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-bridewithveil-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBrideWithVeil
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-mrsclaus-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteMrsClaus
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-santa-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteSanta
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-turkey-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteTurkey
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-rabbit-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteRabbit
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-nogoodwoman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteNoGoodWoman
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-okwoman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteOkWoman
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-raisinghandwoman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteRaisingHandWoman
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-bowingman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBowingMan
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-manfacepalming-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteManFacepalming
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-womanshrugging-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteWomanShrugging
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-massagewoman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteMassageWoman
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-walkingman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteWalkingMan
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-runningman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteRunningMan
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-dancer-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteDancer
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-mandancing-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteManDancing
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-dancingwomen-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteDancingWomen
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-rainbow-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteRainbow
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-skier-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteSkier
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-golfingman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteGolfingMan
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-surfingman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteSurfingMan
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-basketballman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBasketballMan
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-bikingman-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBikingMan
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-pointup2-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VotePointUp2
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-vulcansalute-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteVulcanSalute
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-metal-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteMetal
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-callmehand-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteCallMeHand
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-thumbsup-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteThumbsup
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-wave-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteWave
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-clap-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteClap
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-raisedhands-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteRaisedHands
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-pray-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VotePray
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-dog-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteDog
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-cat2-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteCat2
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-pig-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VotePig
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-hatchingchick-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteHatchingChick
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-snail-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteSnail
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-bacon-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBacon
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-pizza-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VotePizza
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-taco-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteTaco
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-burrito-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBurrito
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-ramen-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteRamen
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-doughnut-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteDoughnut
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-champagne-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteChampagne
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-tropicaldrink-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteTropicalDrink
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-beer-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBeer
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-tumblerglass-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteTumblerGlass
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-worldmap-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteWorldMap
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-beachumbrella-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBeachUmbrella
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-mountainsnow-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteMountainSnow
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-camping-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteCamping
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-steamlocomotive-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteSteamLocomotive
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-flightdeparture-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteFlightDeparture
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-rocket-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteRocket
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-star2-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteStar2
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-sunbehindsmallcloud-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteSunBehindSmallCloud
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-cloudwithrain-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteCloudWithRain
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-fire-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteFire
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-jackolantern-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteJackOLantern
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-balloon-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBalloon
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-tada-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteTada
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-trophy-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteTrophy
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-iphone-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteIphone
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-pager-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VotePager
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-fax-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteFax
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-bulb-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteBulb
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-moneywithwings-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteMoneyWithWings
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-crystalball-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteCrystalBall
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-underage-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteUnderage
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-interrobang-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteInterrobang
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-100-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: Vote100
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-checkeredflag-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteCheckeredFlag
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-crossedswords-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteCrossedSwords
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-floppydisk-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: VoteFloppyDisk
+---
+kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: vote-results-route
+  namespace: emojivoto
+spec:
+  parentRefs:
+    - name: voting-svc
+      kind: Service
+      group: core
+      port: 8080
+  rules:
+    - matches:
+        - method:
+            type: Exact
+            service: emojivoto.v1.VotingService
+            method: Results

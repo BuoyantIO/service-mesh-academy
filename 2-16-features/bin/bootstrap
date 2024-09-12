@@ -1,0 +1,100 @@
+#!/usr/bin/env sh
+
+# SPDX-FileCopyrightText: 2024 Buoyant Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2024 Buoyant Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+#       http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -eu
+
+echo '==========================================='
+echo '= WARNING WARNING WARNING WARNING WARNING ='
+echo '=                                         ='
+echo '=      NOT PRODUCTION-READY SOFTWARE      ='
+echo '=                                         ='
+echo '= This is only suitable for demonstration ='
+echo '= purposes. DO NOT run this in prod!!!!!! ='
+echo '=                                         ='
+echo '= WARNING WARNING WARNING WARNING WARNING ='
+echo '==========================================='
+echo
+echo 'SMA demo-external-base %%VERSION%% / proxy %%PROXY_VERSION%%'
+
+# We need to have WORKLOAD_NAME, WORKLOAD_NAMESPACE, and NODE_NAME set.
+if [ -z "$WORKLOAD_NAME" ]; then
+  echo "WORKLOAD_NAME must be set" >&2
+  exit 1
+fi
+
+if [ -z "$WORKLOAD_NAMESPACE" ]; then
+  echo "WORKLOAD_NAMESPACE must be set" >&2
+  exit 1
+fi
+
+if [ -z "$NODE_NAME" ]; then
+  echo "NODE_NAME must be set" >&2
+  exit 1
+fi
+
+# We also need to have a mounted /opt/spire/certs with ca.crt and ca.key in it.
+if [ ! -f /opt/spire/certs/ca.crt ]; then
+  echo "/opt/spire/certs/ca.crt is missing" >&2
+  exit 1
+fi
+
+if [ ! -f /opt/spire/certs/ca.key ]; then
+  echo "/opt/spire/certs/ca.key is missing" >&2
+  exit 1
+fi
+
+SPIFFE_ID="spiffe://root.linkerd.cluster.local/$WORKLOAD_NAME"
+
+# Start SPIRE running.
+
+spire-server run -config ./server.cfg &
+sleep 10
+AGENT_TOKEN=$(spire-server token generate -spiffeID spiffe://root.linkerd.cluster.local/agent -output json | jq -r '.value')
+echo "AGENT TOKEN IS $AGENT_TOKEN"
+spire-agent run -config ./agent.cfg -joinToken "$AGENT_TOKEN" &
+sleep 20
+spire-server entry create -parentID spiffe://root.linkerd.cluster.local/agent -spiffeID "$SPIFFE_ID" -selector unix:uid:$(id -u root)
+
+# Start the workload running.
+
+/workload/start &
+
+# Set up iptables rules.
+
+iptables -t nat -N PROXY_INIT_REDIRECT
+iptables -t nat -A PROXY_INIT_REDIRECT -p tcp --match multiport --dports 4190,4191,4567,4568 -j RETURN -m comment --comment proxy-init/ignore-port-4190,4191,4567,4568/1706093339
+iptables -t nat -A PROXY_INIT_REDIRECT -p tcp -j REDIRECT --to-port 4143 -m comment --comment proxy-init/redirect-all-incoming-to-proxy-port/1706093339
+iptables -t nat -A PREROUTING -j PROXY_INIT_REDIRECT -m comment --comment proxy-init/install-proxy-init-prerouting/1706093339
+iptables -t nat -N PROXY_INIT_OUTPUT
+iptables -t nat -A PROXY_INIT_OUTPUT -m owner --uid-owner 0 -j RETURN -m comment --comment proxy-init/ignore-proxy-user-id/1706093339
+iptables -t nat -A PROXY_INIT_OUTPUT -o lo -j RETURN -m comment --comment proxy-init/ignore-loopback/1706093339
+iptables -t nat -A PROXY_INIT_OUTPUT -p tcp --match multiport --dports 443,6443 -j RETURN -m comment --comment proxy-init/ignore-port-443,6443/1706093339
+iptables -t nat -A PROXY_INIT_OUTPUT -p tcp -j REDIRECT --to-port 4140 -m comment --comment proxy-init/redirect-all-outgoing-to-proxy-port/1706093339
+iptables -t nat -A OUTPUT -j PROXY_INIT_OUTPUT -m comment --comment proxy-init/install-proxy-init-output/1706093339
+iptables-save -t nat
+
+# Start the proxy running.
+
+export LINKERD2_PROXY_IDENTITY_SERVER_ID="$SPIFFE_ID"
+export LINKERD2_PROXY_IDENTITY_SERVER_NAME="$WORKLOAD_NAME.cluster.local"
+export LINKERD2_PROXY_POLICY_WORKLOAD="{\"ns\":\"$WORKLOAD_NAMESPACE\", \"external_workload\":\"$WORKLOAD_NAME\"}"
+export LINKERD2_PROXY_DESTINATION_CONTEXT="{\"ns\":\"$WORKLOAD_NAMESPACE\", \"nodeName\":\"$NODE_NAME\", \"external_workload\":\"$WORKLOAD_NAME\"}"
+
+cd /opt/linkerd
+./run-proxy

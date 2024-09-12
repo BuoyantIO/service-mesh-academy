@@ -1,0 +1,25 @@
+---
+apiVersion: workload.buoyant.io/v1alpha1
+kind: ExternalGroup
+metadata:
+  name: smiley
+  namespace: faces
+spec:
+  probes:
+  - failureThreshold: 1
+    httpGet:
+      path: /ready
+      port: 8000
+      scheme: HTTP
+      host: 127.0.0.1
+    initialDelaySeconds: 3
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  template:
+    metadata:
+      labels:
+        service: smiley
+    ports:
+    - name: http
+      port: 8000

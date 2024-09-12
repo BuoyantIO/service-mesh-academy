@@ -15,6 +15,7 @@ Each workshop has a README.md that contains the instructions for the workshop.
 * [**Hands on with BEL**](hands-on-with-linkerd-enterprise/README.md) - Exploring new features in Buoyant Enterprise for Linkerd
 * [**Introduction to Service Mesh and Linkerd**](intro-to-service-mesh-linkerd/README.md) - Introducing service mesh concepts using Linkerd
 * [**Linkerd 2.15 Features**](2-15-features/README.md) - Exploring new features in Linkerd 2.15
+* [**Linkerd 2.16 Features**](2-16-features/README.md) - Exploring new features in Linkerd 2.16
 * [**Linkerd Certificate Management**](l5d-certificate-management/README.md) - Managing Linkerd certificates both by hand and using cert-manager
 * [**Linkerd and IPv6**](IPv6/README.md) - Using Linkerd in IPv6 and dualstack Kubernetes clusters
 * [**Linkerd and Ingress**](linkerd-and-ingress/README.md) - Using Linkerd with various ingress controllers
