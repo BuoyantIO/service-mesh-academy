@@ -35,7 +35,7 @@ WORKLOAD_IMAGE_TAG=1.4.1
 ```
 
 ---
-<!-- @SKIP -->
+<!-- @SHOW -->
 
 # New Linkerd 2.16 features!
 
@@ -965,7 +965,6 @@ kubectl get pods -n emissary
 ```
 
 <!-- @wait_clear -->
-<!-- @SHOW -->
 
 Let's go ahead and lock things down so that only meshed workloads get to talk
 to Faces. Normally, we'd do this by setting the default inbound policy for the
