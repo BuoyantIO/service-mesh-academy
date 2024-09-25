@@ -23,7 +23,6 @@ Each workshop has a README.md that contains the instructions for the workshop.
 * [**Mesh Expansion with Linkerd**](2-15-mesh-expansion/README.md) - Using Linkerd 2.15 to expand a service mesh to workloads outside of Kubernetes
 * [**Multicluster Failover With Linkerd**](multicluster-failover/README.md) - Multicluster failover with Linkerd and the linkerd-failover extension
 * [**Observability with Linkerd**](observability/README.md) - Observability tools and capabilities in Linkerd
-* [**Practical Multicluster with Linkerd**](mcdemo/README.md) - Practical Multicluster with Linkerd
 * [**Practical Multicluster with Linkerd**](practical-multicluster/README.md) - Practical Multicluster with Linkerd
 * [**Real World GitOps**](real-world-gitops/README.md) - See https://github.com/BuoyantIO/gitops-linkerd
 * [**Route-Based Policy**](route-based-policy/README.md) - Exploring Linkerd route-based policy in detail
