@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2024 Buoyant Inc.
 SPDX-License-Identifier: Apache-2.0
 
-SMA-Description: Exploring new features in Linkerd 2.16
+SMA-Description: Exploring Linkerd 2.17 federated Services and egress
 -->
 
 # Linkerd 2.17 Features: Federated Services and Egress

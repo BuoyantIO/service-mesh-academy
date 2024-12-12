@@ -16,6 +16,7 @@ Each workshop has a README.md that contains the instructions for the workshop.
 * [**Introduction to Service Mesh and Linkerd**](intro-to-service-mesh-linkerd/README.md) - Introducing service mesh concepts using Linkerd
 * [**Linkerd 2.15 Features**](2-15-features/README.md) - Exploring new features in Linkerd 2.15
 * [**Linkerd 2.16 Features**](2-16-features/README.md) - Exploring new features in Linkerd 2.16
+* [**Linkerd 2.17 Features: Federated Services and Egress**](2-17-features/README.md) - Exploring Linkerd 2.17 federated Services and egress
 * [**Linkerd Certificate Management**](l5d-certificate-management/README.md) - Managing Linkerd certificates both by hand and using cert-manager
 * [**Linkerd and IPv6**](IPv6/README.md) - Using Linkerd in IPv6 and dualstack Kubernetes clusters
 * [**Linkerd and Ingress**](linkerd-and-ingress/README.md) - Using Linkerd with various ingress controllers
