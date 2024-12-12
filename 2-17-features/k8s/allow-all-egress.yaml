@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: linkerd-egress
+spec: {}
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: EgressNetwork
+metadata:
+  name: all-egress
+  namespace: linkerd-egress
+spec:
+  trafficPolicy: Allow

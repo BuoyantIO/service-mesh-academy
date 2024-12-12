@@ -1,0 +1,67 @@
+---
+apiVersion: ctlptl.dev/v1alpha1
+kind: Registry
+name: ctlptl-registry
+port: 5005
+labels:
+  "app": "k3d"
+  "k3d.role": "registry"
+---
+apiVersion: ctlptl.dev/v1alpha1
+kind: Cluster
+name: k3d-face
+product: k3d
+registry: ctlptl-registry
+k3d:
+  v1alpha5Simple:
+    network: kind
+    ports:
+      - port: 80:80
+        nodeFilters: [loadbalancer]
+      - port: 443:443
+        nodeFilters: [loadbalancer]
+    options:
+      k3s:
+        extraArgs:
+          - arg: --disable=traefik
+            nodeFilters: [server:*]
+          - arg: --cluster-cidr=10.55.0.0/24
+            nodeFilters: [server:*]
+          - arg: --service-cidr=10.56.0.0/24
+            nodeFilters: [server:*]
+---
+apiVersion: ctlptl.dev/v1alpha1
+kind: Cluster
+product: kind
+registry: ctlptl-registry
+kindV1Alpha4Cluster:
+  name: smiley-1
+  nodes:
+  - role: control-plane
+  networking:
+    podSubnet: "10.55.1.0/24"
+    serviceSubnet: "10.56.1.0/24"
+---
+apiVersion: ctlptl.dev/v1alpha1
+kind: Cluster
+product: kind
+registry: ctlptl-registry
+kindV1Alpha4Cluster:
+  name: smiley-2
+  nodes:
+  - role: control-plane
+  networking:
+    podSubnet: "10.55.2.0/24"
+    serviceSubnet: "10.56.2.0/24"
+---
+apiVersion: ctlptl.dev/v1alpha1
+kind: Cluster
+product: kind
+registry: ctlptl-registry
+kindV1Alpha4Cluster:
+  name: smiley-3
+  nodes:
+  - role: control-plane
+  networking:
+    podSubnet: "10.55.3.0/24"
+    serviceSubnet: "10.56.3.0/24"
