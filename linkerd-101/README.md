@@ -65,6 +65,8 @@ Once done, you'll get to a page that'll show you three environment variables:
 For this workshop, you only need `BUOYANT_LICENSE`, but go ahead and save all
 three.
 
+<!-- @wait -->
+
 After that, you can install the CLI. (You can leave out setting
 `LINKERD2_VERSION` if you want the latest -- we're pinning it here just to be
 cautious!)
@@ -137,8 +139,8 @@ linkerd install | kubectl apply -f -
 This will install the control plane into the `linkerd` namespace, but it won't
 wait for everything to start running (since we might have other things that
 need doing while that's going on). So, whenever we're ready, we'll use
-`linkerd check` _without_ the `--pre` switch to make sure the control plane
-got happily bootstrapped.
+`linkerd check` - _without_ the `--pre` switch - to make sure the control
+plane got happily bootstrapped.
 
 For this workshop, we can just run them back to back:
 
@@ -156,11 +158,14 @@ kubectl get ns
 kubectl get pods -n linkerd
 ```
 
+But it's time to add another simplification to our tally...
+
 <!-- @wait_clear -->
 
 ## SIMPLIFICATIONS
 
-**1. The `linkerd` CLI is managing the Gateway API CRDs.**
+1. The `linkerd` CLI is managing the Gateway API CRDs.
+
 **2. The `linkerd` CLI is managing our certificates, too.**
 
 Linkerd uses mTLS for secure communications -- and mTLS requires certificates.
@@ -196,12 +201,15 @@ and we can take a look at the dashboard in a web browser:
 linkerd viz dashboard
 ```
 
-<!-- @clear -->
+And we have another simplification to call out here!
+
+<!-- @wait_clear -->
 
 ## SIMPLIFICATIONS
 
-**1. The `linkerd` CLI is managing the Gateway API CRDs.**
-**2. The `linkerd` CLI is managing our certificates, too.**
+1. The `linkerd` CLI is managing the Gateway API CRDs.
+2. The `linkerd` CLI is managing our certificates, too.
+
 **3. We let Linkerd Viz install Prometheus for us.**
 
 Linkerd Viz is really a visualization layer built on top of Prometheus, so it
@@ -267,11 +275,16 @@ cluster.
 
 <!-- @browser_then_terminal -->
 
+Here's another simplification, too.
+
+<!-- @wait_clear -->
+
 ## SIMPLIFICATIONS
 
-**1. The `linkerd` CLI is managing the Gateway API CRDs.**
-**2. The `linkerd` CLI is managing our certificates, too.**
-**3. We let Linkerd Viz install Prometheus for us.**
+1. The `linkerd` CLI is managing the Gateway API CRDs.
+2. The `linkerd` CLI is managing our certificates, too.
+3. We let Linkerd Viz install Prometheus for us.
+
 **4. We're not running Faces behind an ingress controller.**
 
 This is honestly just to save the time of installing and configuring the
@@ -333,7 +346,7 @@ experience, but they don't protect the workload at all!
 linkerd viz dashboard
 ```
 
-<!-- @wait_clear -->
+<!-- @clear -->
 
 # Retries
 
@@ -464,6 +477,84 @@ kubectl apply -f edge-green.yaml
 <!-- @wait_clear -->
 <!-- @show_terminal -->
 
+# Auth
+
+One last thing: we mentioned that Linkerd can use mTLS identities for
+authentication and authorization of workloads. Auth policy can get _extremely_
+complex, but let's show a very simple example: we'll set up a policy that will
+only allow the `faces-gui` ServiceAccount to talk to the `face` workload.
+
+This is the most complex YAML in this workshop - we need three interlocking
+resources to get this done - but really it's not that awful.
+
+```bash
+bat face-auth.yaml
+```
+
+<!-- @clear -->
+<!-- @show_5 -->
+
+# Auth
+
+Applying this YAML will instantly break our demo -- we'll be back to frowning
+faces on purple backgrounds.
+
+```bash
+kubectl apply -f face-auth.yaml
+```
+
+<!-- @wait_clear -->
+<!-- @show_terminal -->
+
+# Auth
+
+The reason is that the `faces-gui` workload is currently using the `default`
+ServiceAccount, which we can see using the `linkerd identity` command.
+
+(`linkerd identity` works in terms of pods, since identity is a property of
+Linkerd's microproxy, and the microproxy is attached to a pod. You can either
+supply pod names directly or use label selectors, as we do here.)
+
+```bash
+linkerd identity -n faces -l service=faces-gui
+```
+
+That shows us the whole proxy, which is more than we need -- let's focus in on
+the `Subject:`, which is the name of the identity this microproxy will present
+when it makes requests:
+
+```bash
+linkerd identity -n faces -l service=faces-gui | grep Subject:
+```
+
+Now we can see that `faces-gui` is currently using the `default`
+ServiceAccount, which is why nothing is working.
+
+<!-- @wait_clear -->
+<!-- @show_5 -->
+
+# Auth
+
+To fix that, we first create the `faces-gui` ServiceAccount:
+
+```bash
+kubectl create serviceaccount -n faces faces-gui
+```
+
+and then we switch the `faces-gui` workload to use it.
+
+```bash
+kubectl set serviceaccount -n faces \
+    deployment/faces-gui faces-gui
+```
+
+This will take a few seconds, since the `faces-gui` Deployment
+has to restart, but things will start working again as soon as
+it does!
+
+<!-- @wait_clear -->
+<!-- @show_terminal -->
+
 # Wrapping Up
 
 So that's a whirlwind tour of Linkerd basics. There is a _lot_ more that we
@@ -490,6 +581,8 @@ could go into:
   traffic.
 
 <!-- @wait -->
+
+- BEL also includes policy generation tools to help with creating policy.
 
 For more on all of these, check out https://buoyant.io/sma!
 

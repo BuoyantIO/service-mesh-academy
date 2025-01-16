@@ -1,0 +1,37 @@
+---
+apiVersion: policy.linkerd.io/v1beta3
+kind: Server
+metadata:
+  name: face-http
+  namespace: faces
+spec:
+  accessPolicy: deny
+  podSelector:
+    matchLabels:
+      service: face
+  port: http
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: face-authn
+  namespace: faces
+spec:
+  identities:
+  - "faces-gui.faces.serviceaccount.identity.linkerd.cluster.local"
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: face-authz
+  namespace: faces
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: MeshTLSAuthentication
+    name: face-authn
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: face-http
+
