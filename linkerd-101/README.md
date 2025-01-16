@@ -370,7 +370,11 @@ kubectl annotate -n faces svc color \
     retry.linkerd.io/limit=3
 ```
 
-Hmmm. That didn't work. Why not?
+That should get rid of the grey backgrounds!
+
+<!-- @wait -->
+
+...but it didn't work. Why not?
 
 <!-- @wait_clear -->
 
