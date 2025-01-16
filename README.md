@@ -14,6 +14,7 @@ Each workshop has a README.md that contains the instructions for the workshop.
 * [**Eliminating Cross-Zone Traffic with HAZL**](eliminate-cross-zone-traffic-hazl/README.md) - Using HAZL to eliminate cross-zone traffic in a multizone Kubernetes cluster
 * [**Hands on with BEL**](hands-on-with-linkerd-enterprise/README.md) - Exploring new features in Buoyant Enterprise for Linkerd
 * [**Introduction to Service Mesh and Linkerd**](intro-to-service-mesh-linkerd/README.md) - Introducing service mesh concepts using Linkerd
+* [**Linkerd 101**](linkerd-101/README.md) - Getting Started with Linkerd
 * [**Linkerd 2.15 Features**](2-15-features/README.md) - Exploring new features in Linkerd 2.15
 * [**Linkerd 2.16 Features**](2-16-features/README.md) - Exploring new features in Linkerd 2.16
 * [**Linkerd 2.17 Features: Federated Services and Egress**](2-17-features/README.md) - Exploring Linkerd 2.17 federated Services and egress
