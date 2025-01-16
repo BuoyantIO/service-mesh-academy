@@ -417,7 +417,7 @@ we'll run it through a Python script to strip out the `LATENCY_P95` and
 `LATENCY_P99` columns:
 
 ```bash
-linkerd viz stat-outbound -n faces deploy/face | python filter-stats.py
+linkerd viz stat-outbound -n faces deploy/face | python3 filter-stats.py
 ```
 
 <!-- @wait_clear -->
