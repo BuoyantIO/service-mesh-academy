@@ -1,0 +1,30 @@
+# K3d
+docker.io/rancher/klipper-lb:v0.4.9
+docker.io/rancher/local-path-provisioner:v0.0.30
+docker.io/rancher/mirrored-coredns-coredns:1.11.3
+docker.io/rancher/mirrored-metrics-server:v0.7.2
+rancher/klipper-lb:v0.4.9
+rancher/local-path-provisioner:v0.0.30
+rancher/mirrored-coredns-coredns:1.11.3
+rancher/mirrored-metrics-server:v0.7.2
+
+# Linkerd
+ghcr.io/buoyantio/controller:enterprise-2.17.1
+ghcr.io/buoyantio/policy-controller:enterprise-2.17.1
+ghcr.io/buoyantio/proxy-init:enterprise-2.17.1
+ghcr.io/buoyantio/proxy:enterprise-2.17.1
+
+# Linkerd Viz
+cr.l5d.io/linkerd/metrics-api:edge-24.11.8
+cr.l5d.io/linkerd/tap:edge-24.11.8
+cr.l5d.io/linkerd/web:edge-24.11.8
+prom/prometheus:v2.48.1
+
+# Envoy Gateway
+docker.io/envoyproxy/envoy:distroless-v1.33.0
+docker.io/envoyproxy/gateway:v1.3.0
+
+# Faces
+ghcr.io/buoyantio/faces-color:2.0.0-rc.2
+ghcr.io/buoyantio/faces-gui:2.0.0-rc.2
+ghcr.io/buoyantio/faces-workload:2.0.0-rc.2

@@ -1,0 +1,45 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: smiley-egress-route
+  namespace: faces
+spec:
+  parentRefs:
+    - name: egress
+      namespace: default
+      kind: Gateway
+  hostnames:
+  - smiley
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    filters:
+      - type: URLRewrite
+        urlRewrite:
+          path:
+            type: ReplacePrefixMatch
+            replacePrefixMatch: /
+    backendRefs:
+    - name: smiley2
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: color-egress-route
+  namespace: faces
+spec:
+  parentRefs:
+    - name: egress
+      namespace: default
+      kind: Gateway
+  rules:
+    - matches:
+        - method:
+            service: ColorService
+      backendRefs:
+        - name: color2
+          port: 80
