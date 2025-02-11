@@ -1,0 +1,8 @@
+jaeger:
+  enabled: false
+collector:
+  enabled: false
+webhook:
+  collectorTraceProtocol: opentelemetry
+  collectorSvcAddr: otel-demo-otelcol.otel-demo:4317
+  collectorSvcAccount: otel-demo-otelcol
