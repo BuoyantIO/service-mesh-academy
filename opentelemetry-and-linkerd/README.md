@@ -37,6 +37,10 @@ with OpenTelemetry, using Dash0 (<https://www.dash0.com/>) to show off what
 OpenTelemetry brings you. If you don't already have a Dash0 account, head on
 over and get set up with one - it's free! - and then come back here.
 
+When you do that, make sure to set up your environment with `DASH0_AUTH_TOKEN`
+and `DASH0_OTLP_ENDPOINT` containing the token and the endpoint for the Dash0
+API. You can find these on the Settings page of the Dash0 dashboard.
+
 <!-- @wait_clear -->
 
 ## Installing Linkerd
@@ -96,19 +100,21 @@ kubectl create ns otel-demo
 kubectl annotate ns otel-demo linkerd.io/inject=enabled
 ```
 
-The `otel-demo` app also needs to use an auth token to send traces to Dash0.
-We'll get that from the `DASH0_AUTH_TOKEN` environment variable as we apply
-the `otel-demo` YAML:
+The `otel-demo` app also needs to use an auth token to send traces to Dash0,
+and it needs to know the OTLP endpoint for Dash0. We'll get those from the
+`DASH0_AUTH_TOKEN` and `DASH0_OTLP_ENDPOINT` environment variables, and
+substitute them into the correct places as we apply the `otel-demo` YAML:
 
 ```bash
 sed -e "s/DASH0_AUTH_TOKEN/$DASH0_AUTH_TOKEN/" \
-    < otel-demo/otel-demo.yaml \
-    | kubectl apply -n otel-demo -f -
+    -e "s/DASH0_OTLP_ENDPOINT/$DASH0_OTLP_ENDPOINT/" \
+        < otel-demo/otel-demo.yaml \
+        | kubectl apply -n otel-demo -f -
 
 watch kubectl get pods -n otel-demo
 ```
 
-<!-- @wait_clear -->
+<!-- @clear -->
 
 At this point, we can flip over and take a look at the `otel-demo` app in the
 Dash0 dashboard!
@@ -151,7 +157,8 @@ configuration.
 
 ## Rolling out linkerd proxies across the demo application
 
-To get the proxies to pick up their shiny new OTel configuration, we need to restart them. We can do this with a simple `kubectl rollout restart` command:
+To get the proxies to pick up their shiny new OTel configuration, we need to
+restart them. We can do this with a simple `kubectl rollout restart` command:
 
 ```bash
 kubectl rollout restart -n otel-demo deploy,statefulset

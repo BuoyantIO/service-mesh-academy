@@ -141,7 +141,7 @@ data:
         tls:
           insecure: true
       otlp/dash0:
-        endpoint: ingress.eu-west-1.aws.dash0-dev.com:4317
+        endpoint: DASH0_OTLP_ENDPOINT
         headers:
           Authorization: Bearer DASH0_AUTH_TOKEN
       otlphttp/prometheus:

@@ -25,6 +25,11 @@ if [ -z "$DASH0_AUTH_TOKEN" ]; then \
     exit 1; \
 fi
 
+if [ -z "$DASH0_OTLP_ENDPOINT" ]; then \
+    echo "DASH0_OTLP_ENDPOINT is not set" >&2; \
+    exit 1; \
+fi
+
 check () {
     cmd="$1"
     url="$2"
