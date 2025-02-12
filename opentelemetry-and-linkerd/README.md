@@ -18,9 +18,17 @@ just before a commented `@SHOW` directive) will get displayed.
 [demosh]: https://github.com/BuoyantIO/demosh
 
 You'll need to start this workshop with:
-* an EMPTY Kubernetes cluster
-* an account on [Dash0](https://www.dash0.com/sign-up)
-* the [`$DASH0_AUTH_TOKEN`](https://www.dash0.com/documentation/dash0/key-concepts/auth-tokens) environment variable set to your Dash0 authorization token
+
+- an EMPTY Kubernetes cluster
+- an account on [Dash0](https://www.dash0.com/sign-up)
+- the `$DASH0_AUTH_TOKEN` environment variable set to your [Dash0
+  authorization token][dash0-token]
+- the `$DASH0_OTLP_ENDPOINT` environment variable set to your [Dash0 OTLP via
+  GRPC endpoint][dash0-otlp]. Make sure you're using the "OTLP via GRPC"
+  endpoint, not the one for "OTLP via HTTP".
+
+[dash0-token]: https://www.dash0.com/documentation/dash0/key-concepts/auth-tokens
+[dash0-otlp]: https://www.dash0.com/documentation/dash0/get-started/sending-data-to-dash0#settings
 
 When you use `demosh` to run this file, requirements will be checked for you.
 
