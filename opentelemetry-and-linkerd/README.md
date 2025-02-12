@@ -17,9 +17,12 @@ just before a commented `@SHOW` directive) will get displayed.
 
 [demosh]: https://github.com/BuoyantIO/demosh
 
-You'll need to start this workshop with an EMPTY Kubernetes cluster, and
-you'll need $DASH0_AUTH_TOKEN set to your Dash0 authorization token. When you
-use `demosh` to run this file, requirements will be checked for you.
+You'll need to start this workshop with:
+* an EMPTY Kubernetes cluster
+* an account on [Dash0](https://www.dash0.com/sign-up)
+* the [`$DASH0_AUTH_TOKEN`](https://www.dash0.com/documentation/dash0/key-concepts/auth-tokens) environment variable set to your Dash0 authorization token
+
+When you use `demosh` to run this file, requirements will be checked for you.
 
 <!-- set -e >
 <!-- @import demosh/check-requirements.sh -->
