@@ -1,0 +1,19 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: color-canary
+  namespace: faces
+spec:
+  parentRefs:
+    - name: color
+      kind: Service
+      group: ""
+      port: 80
+  rules:
+    - backendRefs:
+        - name: color
+          port: 80
+          weight: 90
+        - name: color2
+          port: 80
+          weight: 10
