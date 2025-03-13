@@ -1,0 +1,41 @@
+---
+kind: GatewayClass
+apiVersion: gateway.networking.k8s.io/v1
+metadata:
+  name: kong
+spec:
+  controllerName: konghq.com/gateway-operator
+#  parametersRef:
+#    group: gateway-operator.konghq.com
+#    kind: GatewayConfiguration
+#    name: kong
+#    namespace: default
+---
+kind: Gateway
+apiVersion: gateway.networking.k8s.io/v1
+metadata:
+  name: ingress
+  namespace: faces
+spec:
+  gatewayClassName: kong
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: set-l5d-header
+  namespace: faces
+plugin: request-transformer
+config:
+  remove:
+    headers:
+    - l5d-dst-override # Prevents open relay
+  add:
+    headers:
+    - l5d-dst-override:$(headers.host).svc.cluster.local

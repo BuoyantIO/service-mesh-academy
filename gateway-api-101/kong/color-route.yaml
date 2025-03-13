@@ -1,0 +1,48 @@
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: GRPCRoute
+metadata:
+  name: color-center
+  namespace: faces
+spec:
+  parentRefs:
+    - group: ""
+      kind: Service
+      name: color
+      namespace: faces
+      port: 80
+  rules:
+    - matches:
+        - method:
+            service: ColorService
+            method: Center
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: color
+          namespace: faces
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: GRPCRoute
+metadata:
+  name: color-edge
+  namespace: faces
+spec:
+  parentRefs:
+    - group: ""
+      kind: Service
+      name: color
+      namespace: faces
+      port: 80
+  rules:
+    - matches:
+        - method:
+            service: ColorService
+            method: Edge
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: color2
+          namespace: faces
+          port: 80
