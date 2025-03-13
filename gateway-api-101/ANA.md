@@ -38,12 +38,7 @@ kubectl annotate ns faces \
 
 helm install faces -n faces \
     oci://ghcr.io/buoyantio/faces-chart --version 2.0.0-rc.3 \
-     --set face.errorFraction=0 \
-     --set backend.errorFraction=0 \
-     --set smiley2.enabled=true \
-     --set smiley3.enabled=true \
-     --set color2.enabled=true \
-     --set color3.enabled=true
+    -f ana/values.yaml
 
 kubectl rollout status -n faces deploy
 ```
@@ -99,4 +94,5 @@ route_status face-route faces
 
 And now we can see Faces at `http://${GATEWAYADDR}/gui/`!
 
-<!-- @wait -->
+<!-- @browser_then_terminal -->
+

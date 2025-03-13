@@ -64,7 +64,12 @@ done
 GATEWAYADDR=$(kubectl get gateway ingress -o jsonpath='{.status.addresses[0].value}')
 ```
 
-So we have a Gateway at ${GATEWAYADDR}! And with that our job is done and we
-can hand off to Ana!
+So we have a Gateway at ${GATEWAYADDR}!
+
+```bash
+kubectl get gateway ingress
+```
+
+And with that our job is done and we can hand off to Ana!
 
 <!-- @wait -->

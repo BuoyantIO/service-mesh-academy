@@ -1,0 +1,17 @@
+face:
+  errorFraction: 0
+
+backend:
+  errorFraction: 0
+
+smiley2:
+  enabled: true
+
+smiley3:
+  enabled: true
+
+color2:
+  enabled: true
+
+color3:
+  enabled: true
