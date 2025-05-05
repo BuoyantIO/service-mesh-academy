@@ -154,13 +154,12 @@ data:
     processors:
       batch: {}
       transform/normalize_k8s_attribute_keys:
-        transform:
-          error_mode: ignore
-          metric_statements:
-          - set(resource.attributes["k8s.pod.uid"], resource.attributes["k8s_pod_uid"])
-          - delete_key(resource.attributes, "k8s_pod_uid")
-          - set(resource.attributes["k8s.container.name"], resource.attributes["k8s_container_name"])
-          - delete_key(resource.attributes, "k8s_container_name")
+        error_mode: ignore
+        metric_statements:
+        - set(resource.attributes["k8s.pod.uid"], resource.attributes["k8s_pod_uid"])
+        - delete_key(resource.attributes, "k8s_pod_uid")
+        - set(resource.attributes["k8s.container.name"], resource.attributes["k8s_container_name"])
+        - delete_key(resource.attributes, "k8s_container_name")
       k8sattributes:
         extract:
           metadata:
@@ -224,48 +223,58 @@ data:
             endpoint: ${env:MY_POD_IP}:4318
       prometheus/linkerd:
         config:
-
-        - job_name: 'linkerd-controller'
-          kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-              - linkerd
-          relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_uid]
-            action: replace
-            target_label: k8s_pod_uid
-          - source_labels: [__meta_kubernetes_pod_container_name]
-            action: replace
-            target_label: k8s_container_name
-    
-        - job_name: 'linkerd-service-mirror'
-          kubernetes_sd_configs:
-          - role: pod
-          relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_uid]
-            action: replace
-            target_label: k8s_pod_uid
-          - source_labels: [__meta_kubernetes_pod_container_name]
-            action: replace
-            target_label: k8s_container_name
-    
-        - job_name: 'linkerd-proxy'
-          kubernetes_sd_configs:
-          - role: pod
-          relabel_configs:
-          - source_labels:
-            - __meta_kubernetes_pod_container_name
-            - __meta_kubernetes_pod_container_port_name
-            - __meta_kubernetes_pod_label_linkerd_io_control_plane_ns
-            action: keep
-            regex: ^linkerd-proxy;linkerd-admin;linkerd$
-          - source_labels: [__meta_kubernetes_pod_uid]
-            action: replace
-            target_label: k8s_pod_uid
-          - source_labels: [__meta_kubernetes_pod_container_name]
-            action: replace
-            target_label: k8s_container_name
+          scrape_configs:
+          - job_name: 'linkerd-controller'
+            kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names:
+                - linkerd
+            relabel_configs:
+            # Target the Linkerd admin port
+            - source_labels: [__address__]
+              action: replace
+              regex: ([^:]+):.*
+              replacement: $1:4191 # port you want to use
+              target_label: __address__
+            - source_labels: [__meta_kubernetes_pod_uid]
+              action: replace
+              target_label: k8s_pod_uid
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              action: replace
+              target_label: k8s_container_name
+          - job_name: 'linkerd-service-mirror'
+            kubernetes_sd_configs:
+            - role: pod
+            relabel_configs:
+            # Target the Linkerd admin port
+            - source_labels: [__address__]
+              action: replace
+              regex: ([^:]+):.*
+              replacement: $1:4191 # port you want to use
+              target_label: __address__
+            - source_labels: [__meta_kubernetes_pod_uid]
+              action: replace
+              target_label: k8s_pod_uid
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              action: replace
+              target_label: k8s_container_name
+          - job_name: 'linkerd-proxy'
+            kubernetes_sd_configs:
+            - role: pod
+            relabel_configs:
+            # Target the Linkerd admin port
+            - source_labels: [__address__]
+              action: replace
+              regex: ([^:]+):.*
+              replacement: $1:4191 # port you want to use
+              target_label: __address__
+            - source_labels: [__meta_kubernetes_pod_uid]
+              action: replace
+              target_label: k8s_pod_uid
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              action: replace
+              target_label: k8s_container_name
       prometheus/self-monitoring:
         config:
           scrape_configs:
