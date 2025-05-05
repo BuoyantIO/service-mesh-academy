@@ -156,10 +156,12 @@ data:
       transform/normalize_k8s_attribute_keys:
         error_mode: ignore
         metric_statements:
-        - set(resource.attributes["k8s.pod.uid"], resource.attributes["k8s_pod_uid"])
-        - delete_key(resource.attributes, "k8s_pod_uid")
-        - set(resource.attributes["k8s.container.name"], resource.attributes["k8s_container_name"])
-        - delete_key(resource.attributes, "k8s_container_name")
+        - error_mode: propagate
+          statements:
+          - set(resource.attributes["k8s.pod.uid"], resource.attributes["k8s_pod_uid"])
+          - delete_key(resource.attributes, "k8s_pod_uid")
+          - set(resource.attributes["k8s.container.name"], resource.attributes["k8s_container_name"])
+          - delete_key(resource.attributes, "k8s_container_name")
       k8sattributes:
         extract:
           metadata:
@@ -231,12 +233,6 @@ data:
                 names:
                 - linkerd
             relabel_configs:
-            # Target the Linkerd admin port
-            - source_labels: [__address__]
-              action: replace
-              regex: ([^:]+):.*
-              replacement: $1:4191 # port you want to use
-              target_label: __address__
             - source_labels: [__meta_kubernetes_pod_uid]
               action: replace
               target_label: k8s_pod_uid
@@ -247,12 +243,6 @@ data:
             kubernetes_sd_configs:
             - role: pod
             relabel_configs:
-            # Target the Linkerd admin port
-            - source_labels: [__address__]
-              action: replace
-              regex: ([^:]+):.*
-              replacement: $1:4191 # port you want to use
-              target_label: __address__
             - source_labels: [__meta_kubernetes_pod_uid]
               action: replace
               target_label: k8s_pod_uid
@@ -263,12 +253,12 @@ data:
             kubernetes_sd_configs:
             - role: pod
             relabel_configs:
-            # Target the Linkerd admin port
-            - source_labels: [__address__]
-              action: replace
-              regex: ([^:]+):.*
-              replacement: $1:4191 # port you want to use
-              target_label: __address__
+            - source_labels: # Target the Linkerd admin port
+              - __meta_kubernetes_pod_container_name
+              - __meta_kubernetes_pod_container_port_name
+              - __meta_kubernetes_pod_label_linkerd_io_control_plane_ns
+              action: keep
+              regex: ^{{default .Values.proxyContainerName "linkerd-proxy" .Values.proxyContainerName}};linkerd-admin;{{.Values.linkerdNamespace}}$
             - source_labels: [__meta_kubernetes_pod_uid]
               action: replace
               target_label: k8s_pod_uid
