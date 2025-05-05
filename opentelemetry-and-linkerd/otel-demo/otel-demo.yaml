@@ -156,7 +156,8 @@ data:
       transform/normalize_k8s_attribute_keys:
         error_mode: ignore
         metric_statements:
-        - statements:
+        - context: metric
+          statements:
           - set(resource.attributes["k8s.pod.uid"], resource.attributes["k8s_pod_uid"])
           - delete_key(resource.attributes, "k8s_pod_uid")
           - set(resource.attributes["k8s.container.name"], resource.attributes["k8s_container_name"])
