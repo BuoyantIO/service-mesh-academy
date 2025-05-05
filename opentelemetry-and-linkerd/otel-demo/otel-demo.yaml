@@ -153,6 +153,15 @@ data:
         endpoint: ${env:MY_POD_IP}:13133
     processors:
       batch: {}
+      transform/normalize_k8s_attribute_keys:
+        error_mode: ignore
+        metric_statements:
+        - context: metric
+          statements:
+          - set(resource.attributes["k8s.pod.uid"], resource.attributes["k8s_pod_uid"])
+          - delete_key(resource.attributes, "k8s_pod_uid")
+          - set(resource.attributes["k8s.container.name"], resource.attributes["k8s_container_name"])
+          - delete_key(resource.attributes, "k8s_container_name")
       k8sattributes:
         extract:
           metadata:
@@ -185,7 +194,7 @@ data:
         - action: insert
           from_attribute: k8s.pod.uid
           key: service.instance.id
-      transform:
+      transform/product_id:
         error_mode: ignore
         trace_statements:
         - context: span
@@ -214,7 +223,49 @@ data:
               - http://*
               - https://*
             endpoint: ${env:MY_POD_IP}:4318
-      prometheus:
+      prometheus/linkerd:
+        config:
+          scrape_configs:
+          - job_name: 'linkerd-controller'
+            kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names:
+                - linkerd
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_uid]
+              action: replace
+              target_label: k8s_pod_uid
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              action: replace
+              target_label: k8s_container_name
+          - job_name: 'linkerd-service-mirror'
+            kubernetes_sd_configs:
+            - role: pod
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_uid]
+              action: replace
+              target_label: k8s_pod_uid
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              action: replace
+              target_label: k8s_container_name
+          - job_name: 'linkerd-proxy'
+            kubernetes_sd_configs:
+            - role: pod
+            relabel_configs:
+            - source_labels: # Target the Linkerd admin port
+              - __meta_kubernetes_pod_container_name
+              - __meta_kubernetes_pod_container_port_name
+              - __meta_kubernetes_pod_label_linkerd_io_control_plane_ns
+              action: keep
+              regex: ^{{default .Values.proxyContainerName "linkerd-proxy" .Values.proxyContainerName}};linkerd-admin;{{.Values.linkerdNamespace}}$
+            - source_labels: [__meta_kubernetes_pod_uid]
+              action: replace
+              target_label: k8s_pod_uid
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              action: replace
+              target_label: k8s_container_name
+      prometheus/self-monitoring:
         config:
           scrape_configs:
           - job_name: opentelemetry-collector
@@ -232,44 +283,46 @@ data:
       - health_check
       pipelines:
         logs:
-          exporters:
-          - otlp/dash0
-          - debug
-          processors:
-          - k8sattributes
-          - memory_limiter
-          - resource
-          - batch
           receivers:
           - otlp
-        metrics:
-          exporters:
-          - otlp/dash0
-          - debug
           processors:
           - k8sattributes
           - memory_limiter
           - resource
           - batch
+          exporters:
+          - otlp/dash0
+          - debug
+        metrics:
           receivers:
           - httpcheck/frontendproxy
           - redis
           - otlp
-          - prometheus
-        traces:
-          exporters:
-          - otlp/dash0
-          - debug
+          - prometheus/self-monitoring
+          - prometheus/linkerd
           processors:
+          - transform/normalize_k8s_attribute_keys
           - k8sattributes
           - memory_limiter
           - resource
-          - transform
           - batch
+          exporters:
+          - otlp/dash0
+          - debug
+        traces:
           receivers:
           - otlp
           - jaeger
           - zipkin
+          processors:
+          - k8sattributes
+          - memory_limiter
+          - resource
+          - transform/product_id
+          - batch
+          exporters:
+          - otlp/dash0
+          - debug
       telemetry:
         metrics:
           address: ${env:MY_POD_IP}:8888
