@@ -62,15 +62,29 @@ installation based on the Linkerd installation instructions at
 <https://linkerd.io/2/getting-started>
 
 We'll be using an edge release of Linkerd for this workshop - you need at
-least edge-25.1.3 - but stable releases after that will work fine too.
+least edge-25.4.2 - but stable releases after that will work fine too.
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSfL https://run.linkerd.io/install-edge | sh
 linkerd version --short --client
 linkerd check --pre
+```
+
+We'll start by installing the Gateway API CRDs, which are required for
+Linkerd. If your cluster comes up with them pre-installed, you can skip this
+step.
+
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml
+```
+
+Next, we'll install Linkerd itself. This is a pretty standard installation
+using the command line: first we install the CRDs, then we install Linkerd
+itself.
+
+```bash
 linkerd install --crds | kubectl apply -f -
-linkerd install ${LINKERD_EXTRA_INSTALL_FLAGS} | kubectl apply -f -
-linkerd viz install | kubectl apply -f -
+linkerd install | kubectl apply -f -
 linkerd check
 ```
 
@@ -118,9 +132,9 @@ substitute them into the correct places as we apply the `otel-demo` YAML:
 
 ```bash
 sed -e "s/DASH0_AUTH_TOKEN/$DASH0_AUTH_TOKEN/" \
-    -e "s/DASH0_OTLP_ENDPOINT/$DASH0_OTLP_ENDPOINT/" \
-        < otel-demo/otel-demo.yaml \
-        | kubectl apply -n otel-demo -f -
+      -e "s/DASH0_OTLP_ENDPOINT/$DASH0_OTLP_ENDPOINT/" \
+          < otel-demo/otel-demo.yaml \
+          | kubectl apply -n otel-demo -f -
 
 watch kubectl get pods -n otel-demo
 ```
