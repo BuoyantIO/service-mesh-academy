@@ -2,7 +2,6 @@
 SPDX-FileCopyrightText: 2024 Buoyant Inc.
 SPDX-License-Identifier: Apache-2.0
 
-SMA-Index: skip
 SMA-Description: Exploring Linkerd 2.18 features
 -->
 
@@ -25,7 +24,7 @@ you're on a Mac, check out Orbstack instead.
 <!-- @import demosh/check-requirements.sh -->
 <!-- @start_livecast -->
 ---
-<!-- @SKIP -->
+<!-- @SHOW -->
 
 # Linkerd 2.18 Features
 
@@ -129,7 +128,7 @@ echo "Faces: http://${IP}/"
 
 And we can prove that the `west` cluster has working Gateway API by installing
 a couple of Routes. First, we'll use an HTTPRoute to route `smiley` traffic to
-`smiley2`:
+`smiley2`, which returns a heart-eyed smiley instead of a grinning smiley:
 
 <!-- @show_5 -->
 
@@ -138,8 +137,8 @@ bat clusters/west/smiley-route.yaml
 kubectl --context west apply -f clusters/west/smiley-route.yaml
 ```
 
-Then we'll use a GRPCRoute to route `color` for just the center cells to
-`color2`:
+Then we'll use a GRPCRoute to route `color` for just the center
+cells to `color2`, which returns green instead of blue:
 
 ```bash
 bat clusters/west/color-method.yaml
@@ -290,7 +289,8 @@ kubectl --context west \
 
 As long as those are the same, we're good to go. Let's get the multicluster
 extension installed, remembering that we need to provide values that specify
-the links we'll be creating...
+the links we'll be creating _and_ that we need to specify `--gateway=false`
+so that we can use federated Services!
 
 ```bash
 bat clusters/east/mc-values.yaml
@@ -312,13 +312,13 @@ linkerd --context west multicluster check
 ```
 
 <!-- @wait_clear -->
-<!-- @SHOW -->
 
 ## Generating Links
 
 So far so good! Next up, we need to generate link resources. This is pretty
 simple -- but pay attention to the output! We're not just passing it to
-`kubectl apply`; instead, we're just saving the link YAML.
+`kubectl apply`; instead, we're just saving the link YAML. (And, again, using
+`--gateway=false` is important here.)
 
 ```bash
 linkerd --context east multicluster link-gen \
@@ -351,7 +351,8 @@ to do that right now.
 ## Side Quest: Faces and Federated Services
 
 We'd like to see something to prove that we really can just apply the
-generated Links, though, so let's fire up Faces in the `east` cluster too:
+generated Links and have things work, though, so let's fire up Faces in the
+`east` cluster too:
 
 ```bash
 kubectl --context east create ns faces
@@ -406,9 +407,10 @@ linkerd --context west diagnostics endpoints smiley-federated.faces.svc.cluster.
 <!-- @wait_clear -->
 <!-- @show_5 -->
 
-To prove that the `smiley-federated` Service is actually working, let's tweak
-Faces to go directly to it (we could also do this with an HTTPRoute, but let's
-show off using the federated Service directly):
+To prove that the `smiley-federated` and `color-federated` Services are
+actually working, let's tweak Faces to go directly to them (we could also do
+this with HTTPRoutes, but let's show off using the federated Services
+directly):
 
 ```bash
 kubectl --context east set env -n faces deploy/face \
