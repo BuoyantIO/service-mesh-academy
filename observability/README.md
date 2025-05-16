@@ -7,16 +7,16 @@ SMA-Description: Observability tools and capabilities in Linkerd
 
 # Observability with Linkerd
 
-This is the source directory for "Seeing the Invisble: Observability with Linkerd"
+This is the source directory for "Seeing the Invisible: Observability with Linkerd"
 presented on 18 August 2022. In here you will find:
 
 - `steps.sh`, the [demo-magic] script driving most of the presentation
 - `create-cluster.sh`, a shell script to create a `k3d` cluster and prep it
   with [Linkerd], the [books] and [emojivoto] demo apps, and [Emissary-ingress]
   for the ingress
-   - All of these things are installed mostly straight from the quickstart,
-     except that we use `sed` to force everything to just one replica when
-     installing Emissary. **DON'T** do that in production.
+  - All of these things are installed mostly straight from the quickstart,
+    except that we use `sed` to force everything to just one replica when
+    installing Emissary. **DON'T** do that in production.
 
 To actually run the workshop:
 
@@ -27,10 +27,11 @@ To actually run the workshop:
 
 - If you need to, run `bash create-cluster.sh` to create a new `k3d` cluster to
   use.
-   - **Note:** `create-cluster.sh` will delete any existing `k3d` cluster named
-     "observability"
 
-- Finally, run `bash steps.sh` to actually run the workshop demo! or just read it, and 
+  - **Note:** `create-cluster.sh` will delete any existing `k3d` cluster named
+    "observability"
+
+- Finally, run `bash steps.sh` to actually run the workshop demo! or just read it, and
   run what it does by hand.
 
 [books]: https://github.com/BuoyantIO/booksapp

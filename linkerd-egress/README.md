@@ -8,8 +8,9 @@ SMA-Description: Linkerd Egress and Routing
 # Linkerd Egress and Routing
 
 This is the documentation - and executable code! - for the Service Mesh
-Academy Egress and Routing workshop. Things in Markdown comments are safe to
-ignore when reading this later.
+Academy Egress and Routing workshop, which draws heavily from the "One Gateway
+API to Rule Them All" talk from KubeCon NA 2024. Things in Markdown comments
+are safe to ignore when reading this later.
 
 The simplest way to use this file is:
 
