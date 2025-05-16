@@ -38,12 +38,15 @@ kubectl apply -f ian/experimental-install.yaml
 
 Next, install Linkerd and Linkerd Viz. We'll use the latest edge release for
 this, and we'll explicitly tell Linkerd _not_ to install Gateway API CRDs
-(that's the "--set installGatewayAPI=false" flag).
+(that's those "--set enable*=false" flags).
 
 ```bash
 linkerd check --pre
 
-linkerd install --crds --set installGatewayAPI=false \
+linkerd install --crds \
+    --set enableHttpRoutes=false \
+    --set enableTcpRoutes=false \
+    --set enableTlsRoutes=false \
   | kubectl apply -f -
 
 linkerd install | kubectl apply -f -
