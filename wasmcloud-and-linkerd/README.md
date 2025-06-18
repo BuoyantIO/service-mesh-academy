@@ -182,7 +182,7 @@ kubectl rollout status deploy,sts
 Finally, we can deploy the `rusty` workload!
 
 ```bash
-kubectl apply -f wadm.yaml
+kubectl apply -f rusty.yaml
 kubectl get application
 ```
 
