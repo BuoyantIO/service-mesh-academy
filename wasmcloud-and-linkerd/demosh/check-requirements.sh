@@ -31,13 +31,13 @@ check () {
 }
 
 check bat "https://github.com/sharkdp/bat"
-check docker "https://docs.docker.com/get-docker/"
+# check docker "https://docs.docker.com/get-docker/"
 check helm "https://helm.sh/docs/intro/quickstart/"
 check jq "https://github.com/jqlang/jq#installation"
 check linkerd "https://linkerd.io/2/getting-started/"
-check kind "https://kind.sigs.k8s.io/docs/user/quick-start/"
+# check kind "https://kind.sigs.k8s.io/docs/user/quick-start/"
 check kubectl "https://kubernetes.io/docs/tasks/tools/"
-check python3 "https://www.python.org/downloads/"
-check step "https://smallstep.com/docs/step-cli/installation"
+# check python3 "https://www.python.org/downloads/"
+# check step "https://smallstep.com/docs/step-cli/installation"
 
 set +e
