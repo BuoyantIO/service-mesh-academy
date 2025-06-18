@@ -80,6 +80,8 @@ Finally, we'll check that everything is working:
 linkerd check
 ```
 
+So far, so good! Now on to Faces.
+
 <!-- @wait_clear -->
 
 ## Installing Faces
@@ -129,9 +131,9 @@ First we get wasmCloud's CRDs and base controllers running:
 ```bash
 helm upgrade --install \
     wasmcloud-platform \
-    --values ./wasmcloud-platform/values.yaml \
+    --values ./values.yaml \
     oci://ghcr.io/wasmcloud/charts/wasmcloud-platform \
-    --dependency-update \
+    --dependency-update
 ```
 
 Wait for all components to install and wadm-nats communications to establish:
@@ -177,6 +179,8 @@ kubectl patch service wasmcloud-host -n default \
     --patch-file=wasmcloud-host-service-patch.json
 
 kubectl rollout status deploy,sts
+
+kubectl get svc
 ```
 
 Finally, we can deploy the `rusty` workload!
@@ -186,9 +190,15 @@ kubectl apply -f rusty.yaml
 kubectl get application
 ```
 
+<!-- @show_5 -->
+
 ## Switching Faces to use the Rusty workload
 
-Now that `rusty` is running, let's Faces to use it instead of the `smiley` workload (this is OK because `rusty` implements the same interface as `smiley`).
+Now that `rusty` is running, let's Faces to use it instead of the `smiley`
+workload (this is OK because `rusty` implements the same interface as
+`smiley`). Again, we use the `wasmcloud-host` Service to connect to the
+`rusty` workload... and as we do this, we shouldn't see anything change in our
+browser!
 
 ```bash
 kubectl set env -n faces deploy/face \
