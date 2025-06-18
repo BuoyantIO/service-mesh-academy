@@ -1,0 +1,17 @@
+[
+    {
+        "op": "add",
+        "path": "/spec/ports/0/name",
+        "value": "admin"
+    },
+    {
+        "op": "add",
+        "path": "/spec/ports/-",
+        "value": {
+            "port": 8000,
+            "targetPort": 8000,
+            "protocol": "TCP",
+            "name": "http"
+        }
+    }
+]
