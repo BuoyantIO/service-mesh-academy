@@ -65,8 +65,6 @@ linkerd install \
     | kubectl apply -f -
 ```
 
-<!-- @wait_clear -->
-
 Once that's done, we can install Linkerd's Viz extension. This is the easy way
 to make sure that we really have our Wasm workload meshed.
 
@@ -131,8 +129,8 @@ First we get wasmCloud's CRDs and base controllers running:
 ```bash
 helm upgrade --install \
     wasmcloud-platform \
-    --values ./values.yaml \
     oci://ghcr.io/wasmcloud/charts/wasmcloud-platform \
+    --values https://raw.githubusercontent.com/wasmCloud/wasmcloud/main/charts/wasmcloud-platform/values.yaml \
     --dependency-update
 ```
 
@@ -147,15 +145,11 @@ kubectl wait --for=condition=available --timeout=600s deploy -l app.kubernetes.i
 Next we create a wasmCloud host. This is a Kubernetes pod that will run our
 wasmCloud workloads:
 
-Used to be:
-    --values https://raw.githubusercontent.com/wasmCloud/wasmcloud/main/charts/wasmcloud-platform/values.yaml \
-
-
 ```bash
 helm upgrade --install \
     wasmcloud-platform \
-    --values ./values.yaml \
     oci://ghcr.io/wasmcloud/charts/wasmcloud-platform \
+    --values https://raw.githubusercontent.com/wasmCloud/wasmcloud/main/charts/wasmcloud-platform/values.yaml \
     --dependency-update \
     --set "hostConfig.enabled=true"
 
