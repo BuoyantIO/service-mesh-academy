@@ -40,16 +40,4 @@ check kubectl "https://kubernetes.io/docs/tasks/tools/"
 check python3 "https://www.python.org/downloads/"
 check step "https://smallstep.com/docs/step-cli/installation"
 
-# Make sure the `east` and `west` clusters are running.
-
-if ! kubectl --context east get nodes >/dev/null 2>&1; then \
-    echo "The east cluster is not running; please run setup-base.sh" >&2 ;\
-    exit 1 ;\
-fi
-
-if ! kubectl --context west get nodes >/dev/null 2>&1; then \
-    echo "The west cluster is not running; please run setup-base.sh" >&2 ;\
-    exit 1 ;\
-fi
-
 set +e
