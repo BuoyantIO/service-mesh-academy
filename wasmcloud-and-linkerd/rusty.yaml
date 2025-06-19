@@ -3,32 +3,29 @@ kind: Application
 metadata:
   name: rusty
   annotations:
-    description: 'HTTP demo in Rust, using the WebAssembly Component Model and WebAssembly Interfaces Types (WIT)'
-    wasmcloud.dev/authors: wasmCloud team
-    wasmcloud.dev/source-url: https://github.com/wasmCloud/wasmCloud/blob/main/examples/rust/components/rusty/wadm.yaml
-    wasmcloud.dev/readme-md-url: https://github.com/wasmCloud/wasmCloud/blob/main/examples/rust/components/rusty/README.md
-    wasmcloud.dev/homepage: https://github.com/wasmCloud/wasmCloud/tree/main/examples/rust/components/rusty
+    description: 'rusty, a WebAssembly component that works with wasmCloud and the Faces demo'
+    wasmcloud.dev/authors: Flynn and Bailey Hayes
+    wasmcloud.dev/source-url: https://github.com/BuoyantIO/faces-demo/blob/main/rust/rusty/rusty.yaml
+    wasmcloud.dev/readme-md-url: https://github.com/BuoyantIO/faces-demo/blob/main/rust/rusty/README.md
+    wasmcloud.dev/homepage: https://github.com/BuoyantIO/faces-demo/tree/main/rust/rusty
     wasmcloud.dev/categories: |
-      http,http-server,rust,hello-world,example
+      http,http-server,rust,rusty,faces
 spec:
   components:
     - name: http-component
       type: component
       properties:
         image: ghcr.io/BuoyantIO/faces-components/rusty:0.1.1
-        # image: ghcr.io/ricochet/components/rusty:0.1.0
-        # image: file://./build/http_hello_world_s.wasm
       traits:
         # Govern the spread/scheduling of the component
         - type: daemonscaler
           properties:
             replicas: 100
-      config:
-        - name: custom-config
-          properties:
-            SMILEY: HeartEyes
-            ERROR_FRACTION: 1
-            DELAY_BUCKETS: 5,10,20
+      # config:
+      #   - name: custom-config
+      #     properties:
+      #       ERROR_FRACTION: 1
+      #       DELAY_BUCKETS: 5,10,20
 
     # Add a capability provider that enables HTTP access
     - name: httpserver

@@ -1,0 +1,23 @@
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: rusty-route
+  namespace: default
+spec:
+  parentRefs:
+    - name: wasmcloud-host
+      kind: Service
+      group: ""
+      port: 8000
+  rules:
+    - matches:
+      - path:
+          value: "/center"
+      backendRefs:
+        - name: smiley
+          namespace: faces
+          port: 80
+    - backendRefs:
+        - name: wasmcloud-host
+          port: 8000
