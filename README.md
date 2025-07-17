@@ -12,6 +12,7 @@ Each workshop has a README.md that contains the instructions for the workshop.
 * [**Deploying BEL with HAZL**](deploying-bel-with-hazl/README.md) - Using Linkerd's High Availability Zonal Load balancing (HAZL)
 * [**Dynamic Request Routing & Circuit Breaking**](dynamic-routing-and-circuit-breaking/README.md) - A demo of dynamic request routing and circuit breaking in Linkerd 2.13
 * [**Eliminating Cross-Zone Traffic with HAZL**](eliminate-cross-zone-traffic-hazl/README.md) - Using HAZL to eliminate cross-zone traffic in a multizone Kubernetes cluster
+* [**Federated Services**](federated-services/README.md) - Exploring federated Services
 * [**Gateway API 101**](gateway-api-101/README.md) - None
 * [**Hands on with BEL**](hands-on-with-linkerd-enterprise/README.md) - Exploring new features in Buoyant Enterprise for Linkerd
 * [**Introduction to Service Mesh and Linkerd**](intro-to-service-mesh-linkerd/README.md) - Introducing service mesh concepts using Linkerd
@@ -37,3 +38,4 @@ Each workshop has a README.md that contains the instructions for the workshop.
 * [**Sneak Peek: Linkerd 2.14**](sneak-peek-2-14/README.md) - New features coming in Linkerd 2.14
 * [**What Really Happens at Startup**](startup-deep-dive/README.md) - Taking a deep dive into Linkerd, init containers, CNI plugins, and more
 * [**mTLS workshop**](mtls-workshop/README.md) - Exploring mTLS in Linkerd
+* [**wasmCloud and Linkerd**](wasmcloud-and-linkerd/README.md) - wasmCloud and Linkerd

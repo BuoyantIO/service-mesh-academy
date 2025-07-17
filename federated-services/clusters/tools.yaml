@@ -1,0 +1,25 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tools
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tools
+  template:
+    metadata:
+      labels:
+        app: tools
+    spec:
+      containers:
+      - name: tools
+        args:
+        - -c
+        - |
+          sleep 86400
+        command:
+        - /bin/sh
+        image: jonlabelle/network-tools

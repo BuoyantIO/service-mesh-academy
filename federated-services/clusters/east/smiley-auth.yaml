@@ -1,0 +1,37 @@
+---
+apiVersion: policy.linkerd.io/v1beta3
+kind: Server
+metadata:
+  name: smiley-http
+  namespace: faces
+spec:
+  accessPolicy: deny
+  podSelector:
+    matchLabels:
+      faces.buoyant.io/component: smiley
+  port: http
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: face-authn
+  namespace: faces
+spec:
+  identities:
+  - "face.faces.serviceaccount.identity.linkerd.cluster.local"
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: smiley-authz
+  namespace: faces
+spec:
+  requiredAuthenticationRefs:
+  - group: policy.linkerd.io
+    kind: MeshTLSAuthentication
+    name: face-authn
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: smiley-http
+

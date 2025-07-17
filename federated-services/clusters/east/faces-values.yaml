@@ -1,0 +1,30 @@
+gui:
+  serviceType: LoadBalancer
+
+face:
+  errorFraction: 0
+  delayBuckets: 0
+
+backend:
+  errorFraction: 0
+  delayBuckets: 0
+
+# smiley:
+#   smiley: Grinning
+
+smiley2:
+  enabled: true
+  smiley: Neutral
+
+# smiley3:
+#   enabled: true
+
+# color:
+#   color: green
+
+color2:
+  enabled: true
+  color: yellow
+
+# color3:
+#   enabled: true

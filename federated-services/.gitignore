@@ -1,0 +1,5 @@
+kind.yaml
+k3d.yaml
+*-link.yaml
+*.crt
+*.key

@@ -1,0 +1,910 @@
+#!/usr/bin/env python
+
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
+
+import argparse
+import os
+import json
+import yaml
+import subprocess
+import sys
+
+# def generate_random_ipv6():
+#     subnet = "fd00"
+#     for _ in range(3):
+#         subnet += ":" + format(random.randint(0, 65535), 'x')
+#     subnet += "::/64"
+#     return subnet
+
+GATEWAY_API_CRD_URL = "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml"
+
+class Shell:
+    dryrun: ClassVar[bool] = False
+    verbose: ClassVar[bool] = True
+
+    start_red: ClassVar[str] = "\033[91m"
+    end_red: ClassVar[str] = "\033[0m"
+
+    @classmethod
+    def run(cls, cmd: List[str], shell: bool=False, always_exec: bool=False, silent: bool=False) -> str:
+        if (cls.verbose and not silent) or cls.dryrun:
+            sys.stdout.write(cls.start_red)
+            sys.stdout.write(subprocess.list2cmdline(cmd))
+            sys.stdout.write(cls.end_red)
+            sys.stdout.write("\n")
+
+        if always_exec or not cls.dryrun:
+            return subprocess.check_output(cmd, shell=shell).decode()
+
+        return ""
+
+    @classmethod
+    def run_shell(cls, cmd: str, always_exec: bool=False, silent: bool=False) -> str:
+        if (cls.verbose and not silent) or cls.dryrun:
+            sys.stdout.write(cls.start_red)
+            sys.stdout.write(cmd)
+            sys.stdout.write(cls.end_red)
+            sys.stdout.write("\n")
+
+        if always_exec or not cls.dryrun:
+            return subprocess.check_output(cmd, shell=True).decode()
+
+        return ""
+
+
+class IPAM:
+    def __init__(self) -> None:
+        self.v6_base = None
+        self.v4_base = None
+        self.containers: Dict[str, Dict[str, str]] = {}
+
+        # Read IPAM.Config from "docker inspect kind"
+        ipam_config: List[Dict[str, str]] = []
+        container_config: Dict[str, Dict[str, str]] = {}
+
+        try:
+            output = Shell.run(["docker", "inspect", "kind"], always_exec=True, silent=True)
+            # Convert the output to JSON
+            config = json.loads(output)
+
+            if (not config or
+                not config[0] or
+                not config[0].get('IPAM') or
+                not config[0]['IPAM'].get('Config')):
+                raise ValueError("No IPAM configuration found in docker inspect output")
+
+            ipam_config = config[0]['IPAM']['Config']
+
+            if config[0].get("Containers"):
+                container_config = config[0]["Containers"]
+        except (subprocess.CalledProcessError, IndexError, KeyError) as e:
+            raise RuntimeError(f"Failed to read IPAM.Config from 'docker inspect kind': {e}")
+
+        for config in ipam_config:
+            subnet = config.get('Subnet')
+
+            if not subnet:
+                raise ValueError(f"No subnet found in IPAM configuration {config}")
+
+            address, bits = subnet.split('/')
+            bits = int(bits)
+
+            if address.endswith("::"):
+                # IPv6
+                if bits < 64:
+                    raise ValueError(f"Subnet {subnet} is too small for IPv6")
+
+                self.v6_base = address[:-2]
+            elif address.endswith(".0"):
+                # IPv4
+                if bits < 24:
+                    raise ValueError(f"Subnet {subnet} is too small for IPv4")
+
+                self.v4_base = address[:-2]  # Pull off the ".0"
+            else:
+                raise ValueError(f"Unknown subnet format {subnet}")
+
+        # Yes, it's true that this arguably doesn't belong in a class called
+        # "IPAM", but whatever.
+        for container in container_config.values():
+            container_name = container.get("Name")
+
+            if not container_name:
+                raise ValueError(f"No name found in container configuration {container}")
+
+            cluster_name = ""
+            v4addr = ""
+            v6addr = ""
+
+            if container_name.endswith("-control-plane"):
+                # This is a relevant Kind Node.
+                cluster_name = container_name[:-len("-control-plane")]
+            elif container_name.endswith("-server-0"):
+                # This is a relevant K3d Node.
+                cluster_name = container_name[:-len("-server-0")]
+
+                if cluster_name.startswith("k3d-"):
+                    cluster_name = cluster_name[len("k3d-"):]
+
+            if not cluster_name:
+                continue
+
+            # If we're doing V4, we need a V4 address.
+            if self.v4_base:
+                if container["IPv4Address"]:
+                    v4addr, _ = container["IPv4Address"].split('/', 1)
+
+            # If we're doing V6, we need a V6 address.
+            if self.v6_base:
+                if container["IPv6Address"]:
+                    v6addr, _ = container["IPv6Address"].split('/', 1)
+
+            self.containers[cluster_name] = {
+                "full_name": container_name,
+                "v4": v4addr,
+                "v6": v6addr,
+            }
+
+            # print(f"IPAM: {cluster_name} V4 {v4addr} V6 {v6addr}")
+
+    def v6_range(self, v6prefix: int) -> Optional[str]:
+        if not self.v6_base:
+            return None
+
+        return f"{self.v6_base}:{v6prefix:02x}::/96"
+
+    def v4_range(self, v4prefix: int) -> Optional[str]:
+        if not self.v4_base:
+            return None
+
+        return f"{self.v4_base}.{v4prefix * 16}/28"
+
+
+class Cluster:
+    @classmethod
+    def load_all(cls, dirs: List[str]) -> List["Cluster"]:
+        clusters: List["Cluster"] = []
+
+        for cluster_dir in dirs:
+            for root, dirs, files in os.walk(cluster_dir):
+                if "sma.yaml" in files:
+                    clusters.append(cls.load(root))
+
+        return clusters
+
+    @classmethod
+    def load(cls, cluster_dir: str) -> "Cluster":
+        # print(f"== Loading cluster from {cluster_dir} ==")
+        cluster_file = os.path.join(cluster_dir, "sma.yaml")
+
+        with open(cluster_file, "r") as f:
+            cluster_data = yaml.safe_load(f)
+
+            if not "spec" in cluster_data:
+                raise ValueError(f"No spec in {cluster_file}")
+            if not "provider" in cluster_data["spec"]:
+                raise ValueError(f"No provider in {cluster_file}")
+
+            if not isinstance(cluster_data["spec"]["provider"], str):
+                raise ValueError(f"Provider is not a string in {cluster_file}")
+
+            provider: str = cluster_data["spec"]["provider"]
+
+            if provider == "kind":
+                return KindCluster(cluster_file, cluster_dir, cluster_data)
+            elif provider == "k3d":
+                return K3dCluster(cluster_file, cluster_dir, cluster_data)
+            else:
+                raise ValueError(f"Unknown provider '{provider}' in {cluster_file}")
+
+    @classmethod
+    def root_cert_path(cls, trust_anchor_dir: str) -> str:
+        if not trust_anchor_dir:
+            trust_anchor_dir = "./certs"
+
+        trust_anchor_dir = os.path.abspath(trust_anchor_dir)
+
+        root_crt_path = os.path.join(trust_anchor_dir, "root.crt")
+
+        return root_crt_path
+
+    @classmethod
+    def trust_anchor(cls, trust_anchor_dir: str, force: bool=False) -> Tuple[str, bool]:
+        trust_anchor_dir = os.path.dirname(cls.root_cert_path(trust_anchor_dir))
+
+        # Make sure the trust anchor directory exists.
+        if not os.path.exists(trust_anchor_dir):
+            os.makedirs(trust_anchor_dir)
+
+        root_crt_path = os.path.join(trust_anchor_dir, "root.crt")
+        root_key_path = os.path.join(trust_anchor_dir, "root.key")
+
+        if force or not (os.path.exists(root_crt_path) and os.path.exists(root_key_path)):
+            try:
+                os.remove(root_crt_path)
+                os.remove(root_key_path)
+            except FileNotFoundError:
+                pass
+
+            cmd = [ "step", "certificate", "create",
+                    "root.linkerd.cluster.local",
+                    root_crt_path, root_key_path,
+                    "--profile", "root-ca",
+                    "--no-password", "--insecure" ]
+
+            Shell.run(cmd)
+
+            # If we regenerated the trust anchor, we must regenerate the issuers.
+            force = True
+
+        return (root_crt_path, force)
+
+    def __init__(self, cluster_file: str, cluster_dir: str, cluster_data: dict[str, Any]) -> None:
+        self.dir = cluster_dir
+        self.cluster_file = cluster_file
+        self.cluster_data = cluster_data
+
+        # These things need to be set later by the subclass
+        self.provider: Optional[str] = None
+        self.provider_yaml_file: Optional[str] = None
+        self.kubectx: Optional[str] = None
+
+        self.name: str = self.cluster_data["metadata"]["name"]
+
+        spec = self.cluster_data["spec"]
+
+        v6hex, v4hex = spec["subnet"].split("/")
+
+        assert isinstance(v6hex, str)
+        assert isinstance(v4hex, str)
+
+        self.v6subnet = int(v6hex, 16)
+        self.v4subnet = int(v4hex, 16)
+
+        self.v6enabled: bool = spec.get("v6Enabled", False)
+        self.v4enabled: bool = spec.get("v4Enabled", False)
+        self.group: Optional[str] = spec.get("group", None)
+        self.zone: Optional[str] = spec.get("zone", None)
+
+        self.pod_cidrs: Dict[str, str] = {}
+        self.service_cidrs: Dict[str, str] = {}
+
+        # Assume we're IPv4-only for the moment.
+        self.ip_family = "ipv4"
+
+        if self.v6enabled:
+            self.pod_cidrs["v6"] = f"fd00:{self.v6subnet:02x}:1::/64"
+            self.service_cidrs["v6"] = f"fd00:{self.v6subnet:02x}:2::/112"
+            self.ip_family = "ipv6"
+
+        if self.v4enabled:
+            self.pod_cidrs["v4"] = f"10.{self.v4subnet:d}.1.0/24"
+            self.service_cidrs["v4"] = f"10.{self.v4subnet:d}.2.0/24"
+            self.ip_family = "ipv4"
+
+        if self.v6enabled and self.v4enabled:
+            self.ip_family = "dual"
+
+        self.all_pod_cidrs = ",".join(self.pod_cidrs.values())
+        self.all_service_cidrs = ",".join(self.service_cidrs.values())
+
+        # print(f"== Cluster {self.name}: Pod {self.all_pod_cidrs} Service {self.all_service_cidrs} ==")
+
+    def _definition(self) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def _save_provider_yaml(self) -> None:
+        cluster_yaml = yaml.safe_dump(self._definition(), default_flow_style=False)
+
+        # Write YAML file to the directory
+        if not self.provider_yaml_file:
+            raise ValueError("No provider_yaml_file set")
+
+        with open(self.provider_yaml_file, "w") as f:
+            f.write(cluster_yaml)
+
+    def _create(self) -> None:
+        raise NotImplementedError
+
+    def _delete(self) -> None:
+        raise NotImplementedError
+
+    def _lb(self, ipam: IPAM) -> None:
+        raise NotImplementedError
+
+    def create(self) -> None:
+        print(f"== Creating cluster {self.name} ==")
+        self._save_provider_yaml()
+        self._delete()
+        self._create()
+
+        if not self.kubectx:
+            raise ValueError("No kubectx set")
+
+        # Rename the context from kubectx to the cluster name. Make sure to delete
+        # any old context with the same name first.
+        try:
+            Shell.run(["kubectl", "config", "delete-context", self.name])
+        except subprocess.CalledProcessError:
+            pass
+
+        try:
+            Shell.run(["kubectl", "config", "rename-context", self.kubectx, self.name])
+        except subprocess.CalledProcessError as e:
+            print(f"Command execution failed: {e}")
+            exit(1)
+
+        # Also update the cluster definition to use the node address for the APIServer
+        # instead of relying on the port forward.
+        node_address: Optional[str] = None
+
+        cmd = [ "kubectl", "--context", self.name,
+                "get", "nodes", "-ojsonpath={.items[0].status.addresses[0].address}" ]
+        try:
+            node_address = Shell.run(cmd).strip()
+        except subprocess.CalledProcessError as e:
+            print(f"{self.name}: couldn't get first node address: {e}")
+            exit(1)
+
+        cmd = [ "kubectl", "config", "set",
+                f"clusters.{self.kubectx}.server", f"https://{node_address}:6443" ]
+
+        Shell.run(cmd)
+
+    def delete(self) -> None:
+        print(f"== Deleting cluster {self.name} ==")
+        self._delete()
+
+    def lb(self, ipam: IPAM) -> None:
+        print(f"== Setting up load balancer for {self.name} ==")
+        self._lb(ipam)
+
+    def routes(self, clusters: List["Cluster"], ipam: IPAM) -> None:
+        print(f"== Setting up routes for {self.name} ==")
+
+        group_clusters = [cluster for cluster in clusters
+                          if cluster.group == self.group]
+
+        print(f"Group clusters: {[cluster.name for cluster in group_clusters]}")
+
+        if Shell.dryrun or not group_clusters:
+            # Nothing to do.
+            return
+
+        # Start by finding our full container name.
+        if not self.name in ipam.containers:
+            raise ValueError(f"Cluster {self.name} not found in IPAM containers")
+
+        self_container_name = ipam.containers[self.name]["full_name"]
+
+        for cluster in group_clusters:
+            if cluster.name == self.name:
+                continue
+
+            if not cluster.name in ipam.containers:
+                print(f"Cluster {cluster.name} not found in IPAM containers")
+                continue
+
+            container = ipam.containers[cluster.name]
+
+            if self.v4enabled:
+                container_v4_addr = container["v4"]
+
+                if not container_v4_addr:
+                    print(f"Cluster {cluster.name} has no IPv4 address")
+                    continue
+
+                cluster_v4_pod_cidr = cluster.pod_cidrs["v4"]
+
+                if not cluster_v4_pod_cidr:
+                    print(f"Cluster {cluster.name} has no IPv4 pod CIDR")
+                    continue
+
+                try:
+                    Shell.run(["docker", "exec", self_container_name,
+                            "ip", "route", "add", cluster_v4_pod_cidr, "via", container_v4_addr])
+                except subprocess.CalledProcessError as e:
+                    print(f"Failed to add route to {cluster.name}: {e}, continuing")
+
+            if self.v6enabled:
+                container_v6_addr = container["v6"]
+
+                if not container_v6_addr:
+                    print(f"Cluster {cluster.name} has no IPv6 address")
+                    continue
+
+                cluster_v6_pod_cidr = cluster.pod_cidrs["v6"]
+
+                if not cluster_v6_pod_cidr:
+                    print(f"Cluster {cluster.name} has no IPv6 pod CIDR")
+                    continue
+
+                Shell.run(["docker", "exec", self_container_name,
+                           "ip", "route", "add", cluster_v6_pod_cidr, "via", container_v6_addr])
+
+    def certs(self, trust_anchor_dir: Optional[str]=None, force: bool=False) -> None:
+        print(f"== Setting up certs for {self.name} ==")
+
+        if not trust_anchor_dir:
+            trust_anchor_dir = "./certs"
+
+        trust_anchor_dir = os.path.abspath(trust_anchor_dir)
+
+        if not os.path.exists(trust_anchor_dir):
+            raise ValueError(f"Trust anchor directory {trust_anchor_dir} does not exist")
+
+        issuer_crt_path = os.path.join(self.dir, "issuer.crt")
+        issuer_key_path = os.path.join(self.dir, "issuer.key")
+
+        if force or not (os.path.exists(issuer_crt_path) and os.path.exists(issuer_key_path)):
+            try:
+                os.remove(issuer_crt_path)
+                os.remove(issuer_key_path)
+            except FileNotFoundError:
+                pass
+
+            cmd = [ "step", "certificate", "create",
+                    "identity.linkerd.cluster.local",
+                    os.path.join(self.dir, "issuer.crt"),
+                    os.path.join(self.dir, "issuer.key"),
+                    "--profile", "intermediate-ca",
+                    "--ca", os.path.join(trust_anchor_dir, "root.crt"),
+                    "--ca-key", os.path.join(trust_anchor_dir, "root.key"),
+                    "--not-after", "8760h",
+                    "--no-password", "--insecure"]
+
+            Shell.run(cmd)
+
+    # Install Linkerd using whatever Linkerd CLI is currently installed.
+    def linkerd(self, root_cert_path: str) -> None:
+        issuer_cert = os.path.join(self.dir, "issuer.crt")
+        issuer_key = os.path.join(self.dir, "issuer.key")
+
+        print(f"== Installing Gateway API CRDs for {self.name} ==")
+
+        cmd = f"kubectl --context {self.name} apply -f {GATEWAY_API_CRD_URL}"
+        Shell.run_shell(cmd)
+
+        print(f"== Installing Linkerd for {self.name} ==")
+
+        cmd = f"linkerd --context {self.name} install --crds"
+        cmd += f" | kubectl --context {self.name} apply -f -"
+        Shell.run_shell(cmd)
+
+        cmd = f"linkerd --context {self.name} install"
+        cmd += " --set disableIPv6=true"
+        cmd += f" --identity-trust-anchors-file {root_cert_path}"
+        cmd += f" --identity-issuer-certificate-file {issuer_cert}"
+        cmd += f" --identity-issuer-key-file {issuer_key}"
+        cmd += f" | kubectl --context {self.name} apply -f -"
+
+        Shell.run_shell(cmd)
+
+    def multicluster(self) -> None:
+        values_path = os.path.join(self.dir, "mc-values.yaml")
+
+        cmd = f"linkerd --context {self.name} multicluster install"
+
+        if os.path.exists(values_path):
+            cmd += f" --values {values_path}"
+
+        cmd += f" | kubectl --context {self.name} apply -f -"
+
+        Shell.run_shell(cmd)
+
+    def link(self, other_cluster: "Cluster", gateway: bool=False) -> None:
+        # Link this cluster to another cluster. This means we run linkerd
+        # multicluster link in the _other_ cluster, and then apply the result
+        # in _this_ cluster.
+
+        print(f"== Linking {self.name} to {other_cluster.name} ==")
+
+        cmd = f"linkerd --context {other_cluster.name} multicluster link"
+        cmd += f" --cluster-name {other_cluster.name}"
+
+        # if not gateway:
+        #     cmd += " --gateway=false"
+
+        cmd += f" | kubectl --context {self.name} apply -f -"
+
+        Shell.run_shell(cmd)
+
+    def link_to_group(self, clusters: List["Cluster"], ipam: IPAM) -> None:
+        # Link this cluster to all other clusters in the same group.
+
+        for cluster in clusters:
+            if cluster.name == self.name:
+                continue
+
+            if cluster.group != self.group:
+                continue
+
+            if not cluster.name in ipam.containers:
+                # Can't do this one yet, it hasn't been created!
+                continue
+
+            # Do this link without gateways.
+            self.link(cluster)
+
+    def info(self, ipam: IPAM) -> None:
+        if not self.name in ipam.containers:
+            print(f"{self.name}: not found in IPAM containers")
+            return
+
+        container = ipam.containers[self.name]
+
+        print(f"{self.name}:")
+
+        if self.v4enabled:
+            print(f"  Node address (v4): {container['v4']}")
+
+        if self.v6enabled:
+            print(f"  Node address (v6): {container['v6']}")
+
+        print(f"  Pod CIDRs:     {', '.join(self.pod_cidrs.values())}")
+        print(f"  Service CIDRs: {', '.join(self.service_cidrs.values())}")
+        print(f"  Group:         {self.group}")
+        print(f"  Zone:          {self.zone}")
+
+    def v6OK(self) -> bool:
+        return self.v6enabled and bool(self.v6subnet)
+
+    def v4OK(self) -> bool:
+        return self.v4enabled and bool(self.v4subnet)
+
+class KindCluster (Cluster):
+    def __init__(self, cluster_file: str, cluster_dir: str, cluster_data: dict[str, Any]) -> None:
+        super().__init__(cluster_file, cluster_dir, cluster_data)
+        self.provider = "kind"
+        self.provider_yaml_file = os.path.join(self.dir, "kind.yaml")
+        self.kubectx = f"{self.provider}-{self.name}"
+
+    def _definition(self) -> dict[str, Any]:
+        definition: dict[str, Any] = {
+            "kind": "Cluster",
+            "apiVersion": "kind.x-k8s.io/v1alpha4",
+            "name": self.name,
+            "networking": {
+                "ipFamily": self.ip_family,
+                "podSubnet": self.all_pod_cidrs,
+                "serviceSubnet": self.all_service_cidrs,
+            },
+        }
+
+        if self.zone:
+            definition["nodes"] = [
+                {
+                    "role": "control-plane",
+                    "labels": {
+                        "topology.kubernetes.io/zone": self.zone
+                    }
+                }
+            ]
+
+        return definition
+
+    def _delete(self) -> None:
+        print(f"==== KIND: deleting cluster {self.name}")
+        # Delete any old cluster with the same name as ours.
+        try:
+            Shell.run(["kind", "delete", "cluster", "--name", self.name])
+        except subprocess.CalledProcessError:
+            pass
+
+    def _create(self) -> None:
+        print(f"==== KIND: creating cluster {self.name}")
+        # Create a new cluster using our YAML file.
+        if not self.provider_yaml_file:
+            raise ValueError("No provider_yaml_file set")
+
+        Shell.run(["kind", "create", "cluster", "--config", self.provider_yaml_file])
+
+    def _lb_ranges(self, ipam: IPAM) -> Tuple[Optional[str], List[str]]:
+        ranges: List[str] = []
+
+        if self.v6OK():
+            v6_range = ipam.v6_range(self.v6subnet)
+
+            if v6_range:
+                ranges.append(v6_range)
+
+        if self.v4OK():
+            v4_range = ipam.v4_range(self.v4subnet)
+
+            if v4_range:
+                ranges.append(v4_range)
+
+        metallb_path = os.path.join(self.dir, "metallb.yaml")
+
+        config_in = yaml.safe_load_all(open(metallb_path).read())
+        config_out = []
+
+        for doc in config_in:
+            if doc.get('kind') == 'IPAddressPool':
+                doc['spec']['addresses'] = ranges
+
+            config_out.append(doc)
+
+        with open(metallb_path, 'w') as f:
+            yaml.dump_all(config_out, f)
+
+        return (metallb_path, ranges)
+
+    def _lb_install(self, path: str) -> None:
+        # Wait for the cluster to have podCIDRs listed in the node spec.
+        cmd = ["kubectl", "--context", self.name,
+               "wait", "--for=condition=Ready", "--timeout=5m", "nodes", "--all"]
+        try:
+            Shell.run(cmd)
+        except subprocess.CalledProcessError as e:
+            print(f"Command execution failed: {e}")
+            exit(1)
+
+        # Next up, install metallb.
+        cmd = ["helm", "install", "--kube-context", self.name,
+               "-n", "metallb", "--create-namespace",
+               "metallb", "metallb/metallb" ]
+        try:
+            Shell.run(cmd)
+        except subprocess.CalledProcessError as e:
+            print(f"Command execution failed: {e}")
+            exit(1)
+
+        cmd = ["kubectl", "--context", self.name,
+               "rollout", "status", "-n", "metallb", "deploy"]
+        try:
+            Shell.run(cmd)
+        except subprocess.CalledProcessError as e:
+            print(f"Command execution failed: {e}")
+            exit(1)
+
+        cmd = ["kubectl", "--context", self.name, "apply", "-f", path]
+        try:
+            Shell.run(cmd)
+        except subprocess.CalledProcessError as e:
+            print(f"Command execution failed: {e}")
+            exit(1)
+
+    def _lb(self, ipam: IPAM) -> None:
+        print(f"==== KIND: setting up load balancer for {self.name}")
+        path, ranges = self._lb_ranges(ipam)
+
+        if path and ranges:
+            print(path)
+            print("- " + "\n- ".join(ranges) + "\n")
+
+            self._lb_install(path)
+
+
+class K3dCluster (Cluster):
+    def __init__(self, cluster_file: str, cluster_dir: str, cluster_data: dict[str, Any]) -> None:
+        super().__init__(cluster_file, cluster_dir, cluster_data)
+        self.provider = "k3d"
+        self.provider_yaml_file = os.path.join(self.dir, "k3d.yaml")
+        self.kubectx = f"{self.provider}-{self.name}"
+
+    def _definition(self) -> dict[str, Any]:
+        definition: Dict[str, Any] = {
+            "apiVersion": "k3d.io/v1alpha5",
+            "kind": "Simple",
+            "metadata": {
+                "name": self.name,
+            },
+            "servers": 1,
+            "image": "rancher/k3s:v1.29.2-k3s1",
+            "network": "kind",
+            "options": {
+                "k3s": {
+                    "extraArgs": [
+                        {
+                            "arg": f"--cluster-cidr={self.all_pod_cidrs}",
+                            "nodeFilters": ["server:*"]
+                        },
+                        {
+                            "arg": f"--service-cidr={self.all_service_cidrs}",
+                            "nodeFilters": ["server:*"]
+                        },
+                        {
+                            "arg": "--disable=traefik,metrics-server",
+                            "nodeFilters": ["server:*"]
+                        }
+                    ]
+                }
+            },
+        }
+
+        if self.zone:
+            definition["options"]["k3s"]["nodeLabels"] = [
+                {
+                    "label": f"topology.kubernetes.io/zone={self.zone}",
+                    "nodeFilters": ["server:*"]
+                }
+            ]
+
+        return definition
+
+    def _delete(self) -> None:
+        print(f"==== K3D: deleting cluster {self.name}")
+
+        try:
+            Shell.run(["k3d", "cluster", "delete", self.name])
+        except subprocess.CalledProcessError:
+            pass
+
+    def _create(self) -> None:
+        print(f"==== K3D: creating cluster {self.name}")
+
+        # Create a new cluster using our YAML file.
+        if not self.provider_yaml_file:
+            raise ValueError("No provider_yaml_file set")
+
+        Shell.run(["k3d", "cluster", "create", "--config", self.provider_yaml_file])
+
+    def _lb(self, ipam: IPAM) -> None:
+        print(f"==== K3D: setting up load balancer for {self.name}")
+        pass
+
+
+basic_actions = {
+    # cmd: ( do_create, do_lb, do_routes, do_delete )
+    "create":  ( True,  True,  True,  False, ),
+    "lb":      ( False, True,  False, False, ),
+    "route":   ( False, False, True,  False, ),
+    "delete":  ( False, False, False, True,  ),
+}
+
+linkerd_actions= {
+    # cmd: ( do_certs, do_linkerd, do_multicluster )
+    "certs":        ( True,  False, False, ),
+    "linkerd":      ( True,  True,  False,  ),
+    "multicluster": ( False, False, True,  ),
+}
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Generate YAML files based on provider")
+    # parser.add_argument("--debug", action="store_true", help="Enable debug output")
+    parser.add_argument("--dryrun", action="store_true", help="Dry run only")
+    parser.add_argument("--force", action="store_true", help="Force regeneration of certificates")
+    parser.add_argument("--src", type=str, help="Source cluster for link command")
+    parser.add_argument("--dst", type=str, help="Target cluster for link command")
+    parser.add_argument("--trust-dir", type=str, default="./certs",
+                        help="Directory with trust anchor certificates")
+    parser.add_argument("cmd", type=str, help="What to do")
+    parser.add_argument("cluster_dirs", type=str, default="clusters",
+                        help="Comma-separated paths to directories with sma.yaml files")
+    parser.add_argument("cluster_names", type=str, nargs='*', help="Names of clusters to operate on")
+
+    args = parser.parse_args()
+
+    Shell.verbose = True
+
+    if args.dryrun:
+        Shell.dryrun = True
+
+    clusters = Cluster.load_all(args.cluster_dirs.split(","))
+
+    cluster_names = args.cluster_names
+
+    if not cluster_names:
+        cluster_names = [cluster.name for cluster in clusters]
+
+    # This is kinda hideous, I know. It's "grab only the clusters whose names
+    # are in the cluster_names list".
+    #
+    # And, yes, it's a O(n^2) operation, but N should be small.
+    action_clusters = [cluster for cluster in clusters
+                       if cluster.name in cluster_names]
+
+    if args.cmd in basic_actions:
+        do_create, do_lb, do_routes, do_delete = basic_actions[args.cmd]
+
+        if do_create:
+            for cluster in action_clusters:
+                cluster.create()
+
+        ipam = IPAM()
+
+        if do_lb:
+            for cluster in action_clusters:
+                cluster.lb(ipam)
+
+        if do_routes:
+            affected = set()
+
+            for cluster in action_clusters:
+                if cluster.name not in ipam.containers:
+                    # Can't do this one yet, it hasn't been created!
+                    continue
+
+                # Here's another O(n^2) operation (for the moment): we need to
+                # redo routes for any cluster that's in the same group as any
+                # of the action clusters.
+
+                for group_cluster in clusters:
+                    if group_cluster.group == cluster.group:
+                        affected.add(group_cluster)
+
+            for cluster in affected:
+                if not cluster.name in ipam.containers:
+                    # Can't do this one yet, it hasn't been created!
+                    continue
+
+                cluster.routes(clusters, ipam)
+
+        if do_delete:
+            for cluster in action_clusters:
+                cluster.delete()
+    elif args.cmd in linkerd_actions:
+        do_certs, do_linkerd, do_multicluster = linkerd_actions[args.cmd]
+        root_cert_path = Cluster.root_cert_path(args.trust_dir)
+
+        if do_certs:
+            _, force = Cluster.trust_anchor(args.trust_dir, force=args.force)
+
+            for cluster in action_clusters:
+                cluster.certs(args.trust_dir, force=force)
+
+        if do_linkerd:
+            for cluster in action_clusters:
+                cluster.linkerd(root_cert_path=root_cert_path)
+
+        if do_multicluster:
+            for cluster in action_clusters:
+                cluster.multicluster()
+    elif (args.cmd == "link-groups") or (args.cmd == "group"):
+        ipam = IPAM()
+
+        affected = set()
+
+        for cluster in action_clusters:
+            # Here's another O(n^2) operation (for the moment): we need to
+            # redo routes for any cluster that's in the same group as any
+            # of the action clusters.
+
+            for group_cluster in clusters:
+                if group_cluster.group == cluster.group:
+                    affected.add(group_cluster)
+
+        for cluster in affected:
+            if not cluster.name in ipam.containers:
+                # Can't do this one yet, it hasn't been created!
+                continue
+
+            cluster.link_to_group(clusters, ipam)
+    elif args.cmd == "link":
+        if not args.src or not args.dst:
+            print("Need --src and --dst for link command")
+            sys.exit(1)
+
+        source_cluster = None
+        target_cluster = None
+
+        for cluster in action_clusters:
+            if cluster.name == args.src:
+                source_cluster = cluster
+                break
+        else:
+            print(f"Cluster {args.src} not found")
+            sys.exit(1)
+
+        for cluster in action_clusters:
+            if cluster.name == args.dst:
+                target_cluster = cluster
+                break
+        else:
+            print(f"Cluster {args.dst} not found")
+            sys.exit(1)
+
+        source_cluster.link(target_cluster, gateway=True)
+    elif args.cmd == "info":
+        ipam = IPAM()
+
+        for cluster in action_clusters:
+            if cluster.name in ipam.containers:
+                cluster.info(ipam)
+    else:
+        print(f"Unknown command {args.cmd}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
