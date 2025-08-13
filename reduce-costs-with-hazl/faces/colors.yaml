@@ -1,0 +1,179 @@
+---
+# Source: faces-chart/templates/color.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: "color"
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: backend
+    faces.buoyant.io/component: "color"
+spec:
+  type: ClusterIP
+  selector:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: backend
+    faces.buoyant.io/component: "color"
+  ports:
+  - port: 80
+    name: http2
+    targetPort: http
+---
+# Source: faces-chart/templates/color.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "color-zone-a"
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: backend
+    faces.buoyant.io/component: "color"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component-type: backend
+      faces.buoyant.io/component: "color"
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component-type: backend
+        faces.buoyant.io/component: "color"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-a]
+      containers:
+      - name: "color"
+        image: ghcr.io/buoyantio/faces-color:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "color"
+        - name: USER_HEADER_NAME
+          value: "X-Faces-User"
+        - name: "COLOR"
+          value: blue
+        - name: DELAY_BUCKETS
+          value: "50,100,200,500"
+
+        - name: ERROR_FRACTION
+          value: ""
+---
+# Source: faces-chart/templates/color.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "color-zone-b"
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: backend
+    faces.buoyant.io/component: "color"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component-type: backend
+      faces.buoyant.io/component: "color"
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component-type: backend
+        faces.buoyant.io/component: "color"
+    spec:
+
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-b]
+      containers:
+      - name: "color"
+        image: ghcr.io/buoyantio/faces-color:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "color"
+        - name: USER_HEADER_NAME
+          value: "X-Faces-User"
+        - name: "COLOR"
+          value: green
+        - name: DELAY_BUCKETS
+          value: "10,20,50,100"
+
+        - name: ERROR_FRACTION
+          value: ""
+---
+# Source: faces-chart/templates/color.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "color-zone-c"
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: backend
+    faces.buoyant.io/component: "color"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component-type: backend
+      faces.buoyant.io/component: "color"
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component-type: backend
+        faces.buoyant.io/component: "color"
+    spec:
+
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-c]
+      containers:
+      - name: "color"
+        image: ghcr.io/buoyantio/faces-color:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "color"
+        - name: USER_HEADER_NAME
+          value: "X-Faces-User"
+        - name: "COLOR"
+          value: yellow
+        - name: DELAY_BUCKETS
+          value: "10,20,50,100"
+
+        - name: ERROR_FRACTION
+          value: ""

@@ -1,0 +1,139 @@
+---
+# Source: faces-chart/templates/face.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: face
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: edge
+    faces.buoyant.io/component: "face"
+spec:
+  type: ClusterIP
+  selector:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: edge
+    faces.buoyant.io/component: "face"
+  ports:
+  - port: 80
+    name: http
+    targetPort: http
+---
+# Source: faces-chart/templates/faces-gui.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: faces-gui
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: frontend
+    faces.buoyant.io/component: faces-gui
+spec:
+  type: LoadBalancer
+  selector:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: frontend
+    faces.buoyant.io/component: faces-gui
+  ports:
+  - port: 80
+    name: http
+    targetPort: http
+---
+# Source: faces-chart/templates/face.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: face
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: edge
+    faces.buoyant.io/component: "face"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component-type: edge
+      faces.buoyant.io/component: "face"
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component-type: edge
+        faces.buoyant.io/component: "face"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-a]
+      containers:
+      - name: face
+        image: ghcr.io/buoyantio/faces-face:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "face"
+        - name: USER_HEADER_NAME
+          value: "X-Faces-User"
+        - name: SMILEY_SERVICE
+          value: "smiley"
+        - name: COLOR_SERVICE
+          value: "color"
+        - name: ERROR_FRACTION
+          value: ""
+        - name: DELAY_BUCKETS
+          value: ""
+---
+# Source: faces-chart/templates/faces-gui.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: faces-gui
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: frontend
+    faces.buoyant.io/component: faces-gui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component-type: frontend
+      faces.buoyant.io/component: faces-gui
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component-type: frontend
+        faces.buoyant.io/component: faces-gui
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-a]
+
+      containers:
+      - name: faces-gui
+        image: ghcr.io/buoyantio/faces-gui:2.0.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: USER_HEADER_NAME
+          value: "X-Faces-User"
+        ports:
+        - name: http
+          containerPort: 8000

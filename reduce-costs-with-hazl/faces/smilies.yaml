@@ -1,0 +1,179 @@
+---
+# Source: faces-chart/templates/smiley.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: "smiley"
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: backend
+    faces.buoyant.io/component: "smiley"
+spec:
+  type: ClusterIP
+  selector:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: backend
+    faces.buoyant.io/component: "smiley"
+  ports:
+  - port: 80
+    name: http
+    targetPort: http
+---
+# Source: faces-chart/templates/smiley.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "smiley-zone-a"
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: backend
+    faces.buoyant.io/component: "smiley"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component-type: backend
+      faces.buoyant.io/component: "smiley"
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component-type: backend
+        faces.buoyant.io/component: "smiley"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-a]
+      containers:
+      - name: "smiley"
+        image: ghcr.io/buoyantio/faces-smiley:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "smiley"
+        - name: USER_HEADER_NAME
+          value: "X-Faces-User"
+        - name: "SMILEY"
+          value: Grinning
+        - name: DELAY_BUCKETS
+          value: "50,100,200,500"
+
+        - name: ERROR_FRACTION
+          value: ""
+---
+# Source: faces-chart/templates/smiley.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "smiley-zone-b"
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: backend
+    faces.buoyant.io/component: "smiley"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component-type: backend
+      faces.buoyant.io/component: "smiley"
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component-type: backend
+        faces.buoyant.io/component: "smiley"
+    spec:
+
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-b]
+      containers:
+      - name: "smiley"
+        image: ghcr.io/buoyantio/faces-smiley:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "smiley"
+        - name: USER_HEADER_NAME
+          value: "X-Faces-User"
+        - name: "SMILEY"
+          value: HeartEyes
+        - name: DELAY_BUCKETS
+          value: "10,20,50,100"
+
+        - name: ERROR_FRACTION
+          value: ""
+---
+# Source: faces-chart/templates/smiley.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "smiley-zone-c"
+  namespace: faces
+  labels:
+    buoyant.io/application: faces
+    faces.buoyant.io/component-type: backend
+    faces.buoyant.io/component: "smiley"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component-type: backend
+      faces.buoyant.io/component: "smiley"
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component-type: backend
+        faces.buoyant.io/component: "smiley"
+    spec:
+
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values: [zone-c]
+      containers:
+      - name: "smiley"
+        image: ghcr.io/buoyantio/faces-smiley:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        env:
+        - name: FACES_SERVICE
+          value: "smiley"
+        - name: USER_HEADER_NAME
+          value: "X-Faces-User"
+        - name: "SMILEY"
+          value: RollingEyes
+        - name: DELAY_BUCKETS
+          value: "10,20,50,100"
+
+        - name: ERROR_FRACTION
+          value: ""
