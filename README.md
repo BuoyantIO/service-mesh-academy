@@ -32,6 +32,7 @@ Each workshop has a README.md that contains the instructions for the workshop.
 * [**OpenTelemetry and Linkerd with Dash0**](opentelemetry-and-linkerd/README.md) - OpenTelemetry and Linkerd with Dash0
 * [**Practical Multicluster with Linkerd**](practical-multicluster/README.md) - Practical Multicluster with Linkerd
 * [**Real World GitOps**](real-world-gitops/README.md) - See https://github.com/BuoyantIO/gitops-linkerd
+* [**Reduce Cross-Zone Costs with HAZL**](reduce-costs-with-hazl/README.md) - Reduce Cross-Zone Costs with HAZL
 * [**Route-Based Policy**](route-based-policy/README.md) - Exploring Linkerd route-based policy in detail
 * [**SMA: Metrics and Dashboards and Charts, Oh My!**](metrics-dashboards-charts/README.md) - Metrics and Dashboards and Charts, Oh My!
 * [**Sneak Peek: Linkerd 2.13**](sneak-peek-2-13/README.md) - New features coming in Linkerd 2.13

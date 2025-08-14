@@ -23,7 +23,7 @@ already have a cluster named "hazl".
 <!-- @import demosh/check-requirements.sh -->
 <!-- @start_livecast -->
 ---
-<!-- @SKIP -->
+<!-- @SHOW -->
 
 ## Creating the Cluster
 
@@ -167,7 +167,6 @@ OK! At this point everything should be running for us -- let's make sure of
 that in the browser.
 
 <!-- @browser_then_terminal -->
-<!-- @SHOW -->
 
 ## Testing the Application
 
@@ -214,21 +213,14 @@ linkerd upgrade \
     | kubectl apply -f -
 ```
 
+We'll be able to see goodness happen in the browser _and_ in our metrics
+output.
+
 <!-- @wait_clear -->
 
 ## HAZL
 
-We can also see goodness with our metrics script:
-
-```bash
-python zone-metrics.py
-```
-
-<!-- @clear -->
-
-## HAZL
-
-This, of course, we could probably get with Kubernetes own topology-aware
+This, of course, we could probably get with Kubernetes's own topology-aware
 routing. What topology-aware routing doesn't give us is resilience. Suppose
 our `color-zone-a` workload crashes?
 
@@ -236,15 +228,14 @@ our `color-zone-a` workload crashes?
 kubectl scale -n faces deploy/color-zone-a --replicas=0
 ```
 
-Over in the browser, we'll see that we've just seamlessly switched
-to a different zone.
+Over in the browser, we'll see that we've just seamlessly switched to a
+different zone.
 
 <!-- @wait_clear -->
 
 ## HAZL
 
-If `color-zone-a` comes back up, we'll see it start taking traffic
-again.
+If `color-zone-a` comes back up, we'll see it start taking traffic again.
 
 ```bash
 kubectl scale -n faces deploy/color-zone-a --replicas=1
@@ -254,8 +245,8 @@ kubectl scale -n faces deploy/color-zone-a --replicas=1
 
 ## HAZL
 
-Of course we can show this with `smiley-zone-a` as well... in fact,
-let's drop `smiley-zone-a` and `smiley-zone-b` at the same time.
+Of course we can show this with `smiley-zone-a` as well... in fact, let's drop
+`smiley-zone-a` and `smiley-zone-b` at the same time.
 
 ```bash
 kubectl scale -n faces deploy/smiley-zone-a --replicas=0
@@ -269,11 +260,19 @@ Suppose we bring Zone B back?
 kubectl scale -n faces deploy/smiley-zone-b --replicas=1
 ```
 
-Of course, bringing Zone A back will immediately bring us all
-the way back to just grinning smilies.
+Let's wait till we know it's running again...
+
+```bash
+kubectl rollout status -n faces deploy
+```
+
+Nothing happens, because things are stable right now, and HAZL doesn't switch
+routing just for the fun of it. Of course, bringing Zone A back will
+immediately bring us all the way back to just grinning smilies.
 
 ```bash
 kubectl scale -n faces deploy/smiley-zone-a --replicas=1
+kubectl rollout status -n faces deploy
 ```
 
 <!-- @wait_clear -->
@@ -412,7 +411,8 @@ as shown by the `scaled` numbers from `zone-metrics.py`.
 Actually tuning HAZL takes a bit of practice, but here's a way to approach it:
 
 - Start with real-world load that matches your expected steady state, when all
-  traffic should stay in zone. Set the load band to `low`: .5, `high`: 1000 (or some other number that's ridiculously higher than your expected load).
+  traffic should stay in zone. Set the load band to `low`: .5, `high`: 1000
+  (or some other number that's ridiculously higher than your expected load).
 
 <!-- @wait -->
 
@@ -536,7 +536,11 @@ bash set-latency.sh 500
 ```
 
 We can see that HAZL is now a bit quicker to bring in endpoints, which seems
-pretty reasonable. Now, how about on the way back down?
+pretty reasonable.
+
+<!-- @wait -->
+
+Now, how about on the way back down?
 
 ```bash
 bash set-latency.sh 300
@@ -561,6 +565,8 @@ End result: with properly tuned load bands, things can respond pretty quickly
 in either direction. Tuning can take time, but it's a big win for the user
 experience.
 
+<!-- @wait_clear -->
+
 ## HAZL and Retries
 
 HAZL, of course, keeps working with other Linkerd features. As a really quick
@@ -582,7 +588,11 @@ kubectl annotate -n faces service/smiley \
 ```
 
 You can see both that the retries make the cursing faces go away... and that
-the load goes up! If we bump the latency now...
+the load goes up!
+
+<!-- @wait -->
+
+If we bump the latency now...
 
 ```bash
 bash set-latency.sh 200
@@ -591,10 +601,20 @@ bash set-latency.sh 200
 ...then after a bit we'll see HAZL pull in new endpoints for `smiley` but not
 for `color`, because the load on `color` is still too low.
 
+<!-- @wait_clear -->
+<!-- @show_terminal -->
+
 ## Summary
 
 And that's HAZL! It's a powerful tool for managing traffic in a service mesh,
-providing features like adaptive load balancing and zone-aware routing, and it can save a ton of money in cloud infrastructure costs.
+providing features like adaptive load balancing and zone-aware routing, and it
+can save a ton of money in cloud infrastructure costs.
+
+Obviously there's a lot more we could show here: some really obvious things
+are multicluster HAZL and Grafana dashboards. But this should get you started:
+for more, check out the HAZL reference docs at
+
+https://docs.buoyant.io/buoyant-enterprise-linkerd/ latest/reference/hazl/
 
 <!-- @wait -->
 <!-- @show_slides -->
