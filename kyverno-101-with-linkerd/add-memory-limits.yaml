@@ -1,0 +1,37 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: add-memory-limits
+spec:
+  rules:
+  - name: add-memory-limits
+    match:
+      any:
+      - resources:
+          kinds:
+          - Deployment
+    exclude:
+      any:
+        - resources:
+            namespaces:
+              - kube-system
+              - kyverno
+              - linkerd
+              - linkerd-viz
+    mutate:
+      patchStrategicMerge:
+        spec:
+          template:
+            spec:
+              containers:
+              - (resources):
+                  limits:
+                    +(memory): "128Mi"
+              =(initContainers):
+              - (resources):
+                  limits:
+                    +(memory): "64Mi"
+              =(ephemeralContainers):
+              - (resources):
+                  limits:
+                    +(memory): "64Mi"
