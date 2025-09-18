@@ -1,0 +1,45 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-linkerd-proxy
+  annotations:
+    policies.kyverno.io/title: Require Linkerd Proxy Container
+    policies.kyverno.io/category: Linkerd
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      This policy ensures that every Pod has at least two containers, with at least one
+      container running a Linkerd proxy image from official Linkerd registries
+      (ghcr.io/linkerd/proxy:* or cr.l5d.io/linkerd/proxy:*). This helps ensure that
+      workloads are properly injected with the standard Linkerd proxy sidecar and have
+      an application container.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+  - name: require-linkerd-proxy
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          operations:
+          - CREATE
+          - UPDATE
+    exclude:
+      any:
+        - resources:
+            namespaces:
+              - kube-system
+              - kyverno
+              - linkerd
+              - linkerd-viz
+    validate:
+      cel:
+        expressions:
+          - expression: >
+              object.spec.containers.size() >= 2 &&
+              object.spec.containers.exists(container,
+                container.image.startsWith('cr.l5d.io/linkerd/proxy:') ||
+                container.image.startsWith('ghcr.io/linkerd/proxy:'))
+            message: "Pod must have at least two containers, with at least one container using an image starting with 'cr.l5d.io/linkerd/proxy:' or 'ghcr.io/linkerd/proxy:'"

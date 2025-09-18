@@ -1,0 +1,131 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: no-resources
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component: face
+      faces.buoyant.io/component-type: edge
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component: face
+        faces.buoyant.io/component-type: edge
+    spec:
+      containers:
+      - name: face
+        image: ghcr.io/buoyantio/faces-face:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+      serviceAccount: default
+      serviceAccountName: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: only-requests
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component: face
+      faces.buoyant.io/component-type: edge
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component: face
+        faces.buoyant.io/component-type: edge
+    spec:
+      containers:
+      - name: face
+        image: ghcr.io/buoyantio/faces-face:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        resources:
+          requests:
+            memory: "128Mi"
+      serviceAccount: default
+      serviceAccountName: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: only-limits
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component: face
+      faces.buoyant.io/component-type: edge
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component: face
+        faces.buoyant.io/component-type: edge
+    spec:
+      containers:
+      - name: face
+        image: ghcr.io/buoyantio/faces-face:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            memory: "128Mi"
+      serviceAccount: default
+      serviceAccountName: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: requests-and-limits
+  namespace: faces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      buoyant.io/application: faces
+      faces.buoyant.io/component: face
+      faces.buoyant.io/component-type: edge
+  template:
+    metadata:
+      labels:
+        buoyant.io/application: faces
+        faces.buoyant.io/component: face
+        faces.buoyant.io/component-type: edge
+    spec:
+      containers:
+      - name: face
+        image: ghcr.io/buoyantio/faces-face:2.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            memory: "128Mi"
+          requests:
+            memory: "128Mi"
+      serviceAccount: default
+      serviceAccountName: default

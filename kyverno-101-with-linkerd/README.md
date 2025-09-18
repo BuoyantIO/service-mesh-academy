@@ -28,7 +28,7 @@ You'll also need the Kyverno CLI,
 <!-- @import demosh/check-requirements.sh -->
 <!-- @start_livecast -->
 ---
-<!-- @SKIP -->
+<!-- @SHOW -->
 
 # Kyverno 101 and Linkerd
 
@@ -78,7 +78,7 @@ OK! Let's get Kyverno installed too. We'll use Helm for this.
 ```bash
 helm repo add kyverno https://kyverno.github.io/kyverno/
 helm repo update
-helm install kyverno kyverno/kyverno -n kyverno --create-namespace
+helm install kyverno kyverno/kyverno -n kyverno --create-namespace --wait
 ```
 
 At this point, Kyverno is running, but it's not actually doing anything yet.
@@ -117,18 +117,23 @@ something simple: a policy that requires all Pods outside system namespaces to
 have a memory limit.
 
 ```bash
-bat require-memory-limits.yaml
-kubectl apply -f require-memory-limits.yaml
+bat kyverno/require-memory-limits/require-pod-memory-limits.yaml
+kubectl apply -f kyverno/require-memory-limits/require-pod-memory-limits.yaml
 ```
 
 We set up that policy in audit mode, so it should generate policy reports but
-not block anything. Let's see if it found any violations:
+not block anything. Let's see if it found any violations (this might take a
+minute or two):
 
 ```bash
-kubectl get policyreports -n faces
+watch kubectl get policyreports -n faces
 ```
 
-Yeah, quite a few! Let's look at the first one:
+So yeah, quite a few errors! Note that we see reports for Pods, ReplicaSets,
+and Deployments -- this is because when we ask for Pods, we get the things
+connected to Pods as well.
+
+Let's look at the first one:
 
 ```bash
 kubectl get policyreport -n faces -o yaml | yq '.items[0]'
@@ -141,23 +146,23 @@ notes about the violations that were found.
 
 ## Aside: Finding Specific PolicyReports
 
-One weird bit about PolicyReports is that they have UUIDs for names, which
-makes it a bit weird to find them if you want to look at the report for a
-specific resource. A given PolicyReport will always be owned by the resource
-on which it's reporting, though, and it will also always have a `scope` stanza
-that gives the owner too. We can use either with `jq` to find the name of the
-PolicyReport for a specific resource.
+One weird bit about PolicyReports is that they have UUIDs for names, which can
+make it tricky to the report for a specific resource. A given PolicyReport
+will always be owned by the resource on which it's reporting, though, and it
+will also always have a `scope` stanza that gives the owner too. We can use
+either with `jq` to find the name of the PolicyReport for a specific resource.
 
 Of course, for Pods that's a little weird in its own right, since they have
-derived names themselves! But it's scriptable anyway:
+derived names themselves! But it's scriptable anyway -- first we use `kubectl
+get` with a `jsonpath` to get the name of a Pod given a label selector:
 
 ```bash
 FACE_POD_NAME=$(kubectl get pods -n faces -l faces.buoyant.io/component=face -o jsonpath='{.items[0].metadata.name}')
 echo $FACE_POD_NAME
 ```
 
-Given the Pod name, we can then use `jq` to find the name of the PolicyReport
-for that Pod. We'll work with the `scope` stanza here, it's a little simpler.
+...and then we use `jq` to find the name of the PolicyReport for that Pod.
+We'll work with the `scope` stanza here, it's a little simpler.
 
 ```bash
 FACE_REPORT_NAME=$(kubectl get policyreports -n faces -o json | \
@@ -190,18 +195,244 @@ watch kubectl get policyreports -n faces
 ```
 
 Note that fixing the Deployment fixed its ReplicaSet and Pods too, which is
-kind of nice.
+kind of nice... but, weirdly, note that there's still a report for the _old_
+ReplicaSet. We'll come back to that.
 
-We could do the rest by hand, of course, but wouldn't it be more fun to just
-get Kyverno to fix these pods for us?
+<!-- @wait_clear -->
+
+## Cleaning up the Situation
+
+We could fix up the of the Deployments by hand, of course, but wouldn't it be
+more fun to just get Kyverno to fix these pods for us?
 
 ```bash
-bat add-memory-limits.yaml
-kubectl apply -f add-memory-limits.yaml
+bat kyverno/add-memory-limits/add-memory-limits.yaml
+kubectl apply -f kyverno/add-memory-limits/add-memory-limits.yaml
 ```
 
-Let's see what happens now:
+Again, restarting our Pods is the simplest way to get Kyverno to act on our
+new policy, so let's do that:
 
 ```bash
+kubectl rollout restart -n faces deploy
+kubectl rollout status -n faces deploy/face
+
 watch kubectl get policyreports -n faces
 ```
+
+At this point, the only failures we see should be for the old ReplicaSets.
+But, again, we'll come back to them later.
+
+<!-- @wait_clear -->
+
+## Aside: `kyverno test`
+
+We've shown a couple of policies so far, and we've shown them a couple of
+levels deep in the directory structure. Here's the full set:
+
+```bash
+tree kyverno
+```
+
+The point of this is the `kyverno test` command, which is a way of checking
+Kyverno policies before applying them. Let's give this a shot (we're using
+`--remove-color` here to make the output a little easier to read when piped
+through `more`):
+
+```bash
+kyverno test --remove-color kyverno | more
+```
+
+Everything shows us a result of `Pass`, which is what we want -- it lets us
+know that these policies are likely to work when we apply them.
+
+<!-- @wait_clear -->
+
+## Aside: `kyverno test`
+
+The `kyverno test` command works by recursively looking for
+`kyverno-test.yaml` files. Here's the one for the `add-memory-limits` policy
+that we've already applied:
+
+```bash
+bat kyverno/add-memory-limits/kyverno-test.yaml
+```
+
+The `policies` stanza tells `kyverno test` which policies to test, and the
+`resources` stanza tells it which resources to test them against. In this
+case, we're testing the `add-memory-limits` policy against these resources:
+
+```bash
+bat kyverno/add-memory-limits/resource.yaml
+```
+
+There are four Deployments in `reource.yaml`, for the four possible
+combinations of memory requests and limits. If we look back at
+`kyverno-test.yaml`, we can see that we expect two Deployments to be modified
+by the policy and thus pass, and the other two to be left alone because they
+need nothing, so they'll be skipped:
+
+```bash
+bat kyverno/add-memory-limits/kyverno-test.yaml
+```
+
+(We can also mark tests that are expected to fail, using `result: fail`.
+You'll see that if you look at some of the other tests.)
+
+Overall, this is a pretty powerful and flexible way to test Kyverno policies
+before trying them on a live system.
+
+<!-- @wait_clear -->
+
+## Requiring Linkerd
+
+Let's get back to policies, though. You might recall, back from when we
+installed Faces, that we _didn't_ enable automatic Linkerd injection for the
+`faces` namespace. So, in fact, Faces is not meshed right now. We can tell
+because there's only one container in the Faces Pods, not two:
+
+```bash
+kubectl get pods -n faces
+```
+
+We can, of course, use a Kyverno policy to notice that as well! Let's take a
+look at the `require-bel-proxy`, which requires that Pods have a running
+Buoyant Enterprise for Linkerd proxy sidecar:
+
+```bash
+bat kyverno/require-bel/require-bel-proxy.yaml
+```
+
+(There's also a `require-linkerd-proxy` policy that does the same thing for
+the open-source Linkerd proxy sidecar.)
+
+Let's take advantage of `kyverno test` again to make sure that
+`require-bel-proxy` looks good, since we're running Buoyant Enterprise for
+Linkerd for this demo:
+
+```bash
+kyverno test --remove-color kyverno/require-bel | more
+```
+
+Looks good, so let's apply `require-bel-proxy` and see what happens!
+
+```bash
+kubectl apply -f kyverno/require-bel/require-bel-proxy.yaml
+watch kubectl get policyreports -n faces
+```
+
+Suddenly we're seeing a stack of failures! Let's look at what's up for our
+`face` workload Pod again:
+
+```bash
+FACE_POD_NAME=$(kubectl get pods -n faces -l faces.buoyant.io/component=face \
+                        -o jsonpath='{.items[0].metadata.name}')
+echo "face Pod: ${FACE_POD_NAME}"
+FACE_REPORT_NAME=$(kubectl get policyreports -n faces -o json | \
+    jq -r ".items[] | select(.scope.name==\"${FACE_POD_NAME}\") | select(.scope.kind==\"Pod\") | .metadata.name")
+echo "face Pod report: ${FACE_REPORT_NAME}"
+kubectl describe policyreport -n faces ${FACE_REPORT_NAME} | more
+```
+
+As expected, the `require-bel-proxy` policy is complaining that our Pod
+doesn't have a Linkerd proxy sidecar -- which makes sense, because it doesn't.
+We _could_ actually have Kyverno go and mutate things for us, but honestly,
+it's simpler to just enable automatic injection for the namespace and restart
+the workloads.
+
+```bash
+kubectl annotate namespace faces linkerd.io/inject=enabled --overwrite
+kubectl rollout restart -n faces deploy
+kubectl rollout status -n faces deploy/face
+
+watch 'sh -c "kubectl get policyreports -n faces | grep Pod"'
+```
+
+Give that a little bit, and we should see that our Pods are showing no
+failures!
+
+<!-- @wait_clear -->
+
+## Cleaning up the ReplicaSets
+
+Finally, let's get back to the policy reports for those ReplicaSets...
+
+<!-- @wait -->
+
+As it happens, those old PolicyReports are still around because the old
+ReplicaSets are still around!
+
+```bash
+kubectl get replicaset -n faces
+```
+
+This isn't a secret, but neither is it all that widely known: when a
+Deployment creates a new ReplicaSet, it leaves the old ReplicaSet around (up
+to the Deployment's `revisionHistoryLimit`, which defaults to 10). In theory
+this is useful for rollbacks; in practice it's mostly just annoying, because
+we have to clean up the old ReplicaSets ourselves if we want them gone...
+
+Happily, Kyverno can do that for us too! We can use a `ClusterCleanupPolicy`
+for this:
+
+```bash
+bat kyverno/cleanup-old-replicasets/cleanup-old-replicasets.yaml
+```
+
+Unfortunately, `kyverno test` doesn't work with `ClusterCleanupPolicy` yet, so
+we can't test it beforehand -- we'll just have to apply it and hope for the
+best! Since we have it set up to run every minute, we should be able to see
+changes pretty quickly:
+
+```bash
+kubectl apply -f kyverno/cleanup-old-replicasets/cleanup-old-replicasets.yaml
+```
+
+Oops. First we have to wrestle RBAC. Looking in the Kyverno docs at
+https://kyverno.io/docs/installation/customization/#role-based-access-controls,
+we can see that Kyverno is using an aggregated ClusterRole for its cleanup
+controllers, so we should be able to fix this by adding an additional
+ClusterRole resource. First, let's confirm that the cleanup controller's
+account cannot do what we want:
+
+```bash
+kubectl auth can-i delete replicaset --as system:serviceaccount:kyverno:kyverno-cleanup-controller
+```
+
+Nope, it can't. Let's fix that:
+
+```bash
+bat cleanup-replicaset-rbac.yaml
+kubectl apply -f cleanup-replicaset-rbac.yaml
+kubectl auth can-i delete replicaset --as system:serviceaccount:kyverno:kyverno-cleanup-controller
+```
+
+OK, let's try that cleanup policy again:
+
+```bash
+kubectl apply -f kyverno/cleanup-empty-replicasets/cleanup-empty-replicasets.yaml
+```
+
+There we go! Let's see what happens.
+
+```bash
+watch kubectl get replicaset -n faces
+```
+
+<!-- @wait_clear -->
+<!-- @show_terminal -->
+
+## Summary
+
+So there's your whirlwind tour of Kyverno keeping an eye on a Linkerd cluster!
+As always, there's a lot more to Kyverno than we could cover here, but
+hopefully this gives a good idea of how to get started. Remember `kyverno
+test` as you get started!
+
+<!-- @wait -->
+
+As always, feedback is welcome! You can reach me at flynn@buoyant.io or as
+@flynn on the Linkerd Slack (https://slack.linkerd.io).
+
+<!-- @wait -->
+<!-- @show_slides -->

@@ -1,0 +1,32 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-pod-memory-limits
+spec:
+  rules:
+  - name: require-pod-memory-limits
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    exclude:
+      any:
+        - resources:
+            namespaces:
+              - kube-system
+              - kyverno
+              - linkerd
+              - linkerd-viz
+    validate:
+      failureAction: Audit
+      message: "Pod requires memory limits on all non-proxy containers"
+      cel:
+        expressions:
+          - expression: >
+              object.spec.containers.all(container,
+                container.image.startsWith('ghcr.io/buoyantio/proxy:') ||
+                container.image.startsWith('ghcr.io/linkerd/proxy:') ||
+                container.image.startsWith('cr.l5d.io/linkerd/proxy:') ||
+                (container.?resources.limits.memory.hasValue()))
+            message: "All containers except Linkerd proxy containers must have memory limits"

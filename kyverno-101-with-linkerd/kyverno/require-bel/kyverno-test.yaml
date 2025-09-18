@@ -1,0 +1,27 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: require-bel-proxy
+policies:
+  - require-bel-proxy.yaml
+resources:
+  - resource.yaml
+results:
+  - policy: require-bel-proxy
+    rule: require-bel-proxy
+    resources:
+    - pod-with-buoyant-proxy
+    kind: Pod
+    result: pass
+
+  - policy: require-bel-proxy
+    rule: require-bel-proxy
+    resources:
+    - pod-with-no-proxy
+    - pod-just-proxy
+    - pod-with-other-proxy
+    - pod-with-linkerd-proxy
+    - pod-with-l5d-proxy
+    kind: Pod
+    result: fail
+

@@ -1,0 +1,27 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: require-pod-memory-limits
+policies:
+  - require-pod-memory-limits.yaml
+resources:
+  - resource.yaml
+results:
+  - policy: require-pod-memory-limits
+    rule: require-pod-memory-limits
+    resources:
+    - no-resources
+    - only-requests
+    - app-no-limits-proxy-no-limits
+    kind: Pod
+    result: fail
+
+  - policy: require-pod-memory-limits
+    rule: require-pod-memory-limits
+    resources:
+    - only-limits
+    - requests-and-limits
+    - with-linkerd-proxy-no-limits
+    - with-buoyant-proxy-no-limits
+    kind: Pod
+    result: pass

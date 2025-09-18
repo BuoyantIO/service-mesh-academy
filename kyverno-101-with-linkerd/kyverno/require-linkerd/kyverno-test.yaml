@@ -1,0 +1,26 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: require-linkerd-proxy
+policies:
+  - require-linkerd-proxy.yaml
+resources:
+  - resource.yaml
+results:
+  - policy: require-linkerd-proxy
+    rule: require-linkerd-proxy
+    resources:
+    - pod-with-linkerd-proxy
+    - pod-with-l5d-proxy
+    kind: Pod
+    result: pass
+
+  - policy: require-linkerd-proxy
+    rule: require-linkerd-proxy
+    resources:
+    - pod-with-no-proxy
+    - pod-with-buoyant-proxy
+    - pod-just-proxy
+    - pod-with-other-proxy
+    kind: Pod
+    result: fail

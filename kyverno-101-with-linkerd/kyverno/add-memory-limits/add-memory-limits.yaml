@@ -24,14 +24,14 @@ spec:
           template:
             spec:
               containers:
-              - (resources):
+              - resources:
                   limits:
                     +(memory): "128Mi"
               =(initContainers):
-              - (resources):
+              - resources:
                   limits:
                     +(memory): "64Mi"
               =(ephemeralContainers):
-              - (resources):
+              - resources:
                   limits:
                     +(memory): "64Mi"

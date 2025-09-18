@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: injection-default
+  namespace: faces
+spec:
+  containers:
+  - name: face
+    image: ghcr.io/buoyantio/faces-face:2.0.0
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8000
+      name: http
+      protocol: TCP
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-vlgjk
+      readOnly: true
+  serviceAccount: default
+  serviceAccountName: default
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: injection-enabled
+  namespace: faces
+  annotations:
+    linkerd.io/inject: enabled
+spec:
+  containers:
+  - name: face
+    image: ghcr.io/buoyantio/faces-face:2.0.0
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8000
+      name: http
+      protocol: TCP
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-vlgjk
+      readOnly: true
+  serviceAccount: default
+  serviceAccountName: default
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: injection-disabled
+  namespace: faces
+  annotations:
+    linkerd.io/inject: disabled
+spec:
+  containers:
+  - name: face
+    image: ghcr.io/buoyantio/faces-face:2.0.0
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8000
+      name: http
+      protocol: TCP
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-vlgjk
+      readOnly: true
+  serviceAccount: default
+  serviceAccountName: default

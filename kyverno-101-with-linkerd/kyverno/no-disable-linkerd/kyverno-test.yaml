@@ -1,0 +1,23 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: prevent-linkerd-pod-injection-override
+policies:
+  - prevent-linkerd-pod-injection-override.yaml
+resources:
+  - resource.yaml
+results:
+  - policy: prevent-linkerd-pod-injection-override
+    rule: prevent-linkerd-pod-injection-override
+    resources:
+    - injection-default
+    - injection-enabled
+    kind: Pod
+    result: pass
+
+  - policy: prevent-linkerd-pod-injection-override
+    rule: prevent-linkerd-pod-injection-override
+    resources:
+    - injection-disabled
+    kind: Pod
+    result: fail

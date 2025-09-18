@@ -1,0 +1,120 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-with-no-proxy
+  namespace: faces
+spec:
+  containers:
+  - name: face
+    image: ghcr.io/buoyantio/faces-face:2.0.0
+    ports:
+    - containerPort: 8000
+      name: http
+      protocol: TCP
+  serviceAccount: default
+  serviceAccountName: default
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-with-buoyant-proxy
+  namespace: faces
+spec:
+  containers:
+  - name: face
+    image: ghcr.io/buoyantio/faces-face:2.0.0
+    ports:
+    - containerPort: 8000
+      name: http
+      protocol: TCP
+  - name: linkerd-proxy
+    image: ghcr.io/buoyantio/proxy:enterprise-2.18.3
+    ports:
+    - containerPort: 4143
+      name: linkerd-proxy
+      protocol: TCP
+  serviceAccount: default
+  serviceAccountName: default
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-just-proxy
+  namespace: faces
+spec:
+  containers:
+  - name: linkerd-proxy
+    image: cr.l5d.io/linkerd/proxy:edge-25.9.3
+    ports:
+    - containerPort: 4143
+      name: linkerd-proxy
+      protocol: TCP
+  serviceAccount: default
+  serviceAccountName: default
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-with-other-proxy
+  namespace: faces
+spec:
+  containers:
+  - name: face
+    image: ghcr.io/buoyantio/faces-face:2.0.0
+    ports:
+    - containerPort: 8000
+      name: http
+      protocol: TCP
+  - name: other-proxy
+    image: docker.io/some-other-proxy:latest
+    ports:
+    - containerPort: 8080
+      name: proxy
+      protocol: TCP
+  serviceAccount: default
+  serviceAccountName: default
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-with-linkerd-proxy
+  namespace: faces
+spec:
+  containers:
+  - name: face
+    image: ghcr.io/buoyantio/faces-face:2.0.0
+    ports:
+    - containerPort: 8000
+      name: http
+      protocol: TCP
+  - name: linkerd-proxy
+    image: ghcr.io/linkerd/proxy:edge-25.9.3
+    ports:
+    - containerPort: 4143
+      name: linkerd-proxy
+      protocol: TCP
+  serviceAccount: default
+  serviceAccountName: default
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-with-l5d-proxy
+  namespace: faces
+spec:
+  containers:
+  - name: face
+    image: ghcr.io/buoyantio/faces-face:2.0.0
+    ports:
+    - containerPort: 8000
+      name: http
+      protocol: TCP
+  - name: linkerd-proxy
+    image: cr.l5d.io/linkerd/proxy:edge-25.9.3
+    ports:
+    - containerPort: 4143
+      name: linkerd-proxy
+      protocol: TCP
+  serviceAccount: default
+  serviceAccountName: default
