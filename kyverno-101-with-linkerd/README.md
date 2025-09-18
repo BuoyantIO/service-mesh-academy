@@ -23,8 +23,6 @@ create a k3d cluster for you. (Note that if you're on a Mac, you'll have to
 mess with things if you're using Docker Desktop for Mac. I highly recommend
 you check out Orbstack instead.)
 
-You'll also need the Kyverno CLI,
-
 <!-- @import demosh/check-requirements.sh -->
 <!-- @start_livecast -->
 ---
@@ -44,6 +42,12 @@ Of course, we need the Linkerd CLI too:
 ```bash
 linkerd version --client --short
 ```
+
+We'll be using Buoyant Enterprise for Linkerd for this demo. If you want to do
+the same, you will need a free Buoyant ID from https://enterprise.buoyant.io/.
+We promise it’s worth it and we won’t sell your information to anyone! 🙂
+
+(Linkerd edge-25.4.4 or later will work, too.)
 
 Given the CLIs, we can get things set up on our cluster!
 
@@ -221,7 +225,26 @@ watch kubectl get policyreports -n faces
 ```
 
 At this point, the only failures we see should be for the old ReplicaSets.
-But, again, we'll come back to them later.
+So what's up with that?
+
+<!-- @wait -->
+
+As it turns out, they're still around because the old ReplicaSets are still
+around!
+
+```bash
+kubectl get replicaset -n faces
+```
+
+This isn't a secret, but neither is it all that widely known: when a
+Deployment creates a new ReplicaSet, it leaves the old ReplicaSet around (up
+to the Deployment's `revisionHistoryLimit`, which defaults to 10). In theory
+this is useful for rollbacks; in practice it's mostly just annoying, because
+we have to clean up the old ReplicaSets ourselves if we want them gone.
+
+We're not going to worry about that right now, though -- we could delete them
+by hand, or we could configure Kyverno to do it for us, but in the interest of
+time we'll set it aside for now.
 
 <!-- @wait_clear -->
 
@@ -350,74 +373,6 @@ watch 'sh -c "kubectl get policyreports -n faces | grep Pod"'
 
 Give that a little bit, and we should see that our Pods are showing no
 failures!
-
-<!-- @wait_clear -->
-
-## Cleaning up the ReplicaSets
-
-Finally, let's get back to the policy reports for those ReplicaSets...
-
-<!-- @wait -->
-
-As it happens, those old PolicyReports are still around because the old
-ReplicaSets are still around!
-
-```bash
-kubectl get replicaset -n faces
-```
-
-This isn't a secret, but neither is it all that widely known: when a
-Deployment creates a new ReplicaSet, it leaves the old ReplicaSet around (up
-to the Deployment's `revisionHistoryLimit`, which defaults to 10). In theory
-this is useful for rollbacks; in practice it's mostly just annoying, because
-we have to clean up the old ReplicaSets ourselves if we want them gone...
-
-Happily, Kyverno can do that for us too! We can use a `ClusterCleanupPolicy`
-for this:
-
-```bash
-bat kyverno/cleanup-old-replicasets/cleanup-old-replicasets.yaml
-```
-
-Unfortunately, `kyverno test` doesn't work with `ClusterCleanupPolicy` yet, so
-we can't test it beforehand -- we'll just have to apply it and hope for the
-best! Since we have it set up to run every minute, we should be able to see
-changes pretty quickly:
-
-```bash
-kubectl apply -f kyverno/cleanup-old-replicasets/cleanup-old-replicasets.yaml
-```
-
-Oops. First we have to wrestle RBAC. Looking in the Kyverno docs at
-https://kyverno.io/docs/installation/customization/#role-based-access-controls,
-we can see that Kyverno is using an aggregated ClusterRole for its cleanup
-controllers, so we should be able to fix this by adding an additional
-ClusterRole resource. First, let's confirm that the cleanup controller's
-account cannot do what we want:
-
-```bash
-kubectl auth can-i delete replicaset --as system:serviceaccount:kyverno:kyverno-cleanup-controller
-```
-
-Nope, it can't. Let's fix that:
-
-```bash
-bat cleanup-replicaset-rbac.yaml
-kubectl apply -f cleanup-replicaset-rbac.yaml
-kubectl auth can-i delete replicaset --as system:serviceaccount:kyverno:kyverno-cleanup-controller
-```
-
-OK, let's try that cleanup policy again:
-
-```bash
-kubectl apply -f kyverno/cleanup-empty-replicasets/cleanup-empty-replicasets.yaml
-```
-
-There we go! Let's see what happens.
-
-```bash
-watch kubectl get replicaset -n faces
-```
 
 <!-- @wait_clear -->
 <!-- @show_terminal -->
