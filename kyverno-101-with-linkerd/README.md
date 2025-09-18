@@ -148,6 +148,22 @@ notes about the violations that were found.
 
 <!-- @wait_clear -->
 
+## Auditing vs Enforcing
+
+Kyverno policies can be run in either `audit` or `enforce` mode. In `audit`
+mode, violations are reported but not blocked; in `enforce` mode, violations
+are blocked. We'll stick with `audit` today: it's a useful way to get started
+with Kyverno, since you can see what the impact of a policy would be before
+actually enforcing it.
+
+`enforce` mode is useful when you're ready to actually block things that
+violate your policies: in particular, you can use `enforce` mode to actually
+prevent changes that would violate your policies from being applied to your
+cluster. Obviously, you'll want to be very, very careful with this! It's not
+hard to accidentally block legitimate changes.
+
+<!-- @wait_clear -->
+
 ## Aside: Finding Specific PolicyReports
 
 One weird bit about PolicyReports is that they have UUIDs for names, which can
