@@ -8,6 +8,7 @@ Each workshop has a README.md that contains the instructions for the workshop.
 (To rebuild this master index, just run `make` in the root of this repo.)
 
 ## Workshops
+* [**Certificate Management Without Losing Your Mind**](certificate-management/README.md) - Certificate Management Without Losing Your Mind
 * [**Certificate Management with Vault**](certificates-with-vault/README.md) - Using Vault and cert-manager to manage Linkerd's control plane certificates
 * [**Deploying BEL with HAZL**](deploying-bel-with-hazl/README.md) - Using Linkerd's High Availability Zonal Load balancing (HAZL)
 * [**Dynamic Request Routing & Circuit Breaking**](dynamic-routing-and-circuit-breaking/README.md) - A demo of dynamic request routing and circuit breaking in Linkerd 2.13
@@ -16,6 +17,7 @@ Each workshop has a README.md that contains the instructions for the workshop.
 * [**Gateway API 101**](gateway-api-101/README.md) - None
 * [**Hands on with BEL**](hands-on-with-linkerd-enterprise/README.md) - Exploring new features in Buoyant Enterprise for Linkerd
 * [**Introduction to Service Mesh and Linkerd**](intro-to-service-mesh-linkerd/README.md) - Introducing service mesh concepts using Linkerd
+* [**Kyverno 101 and Linkerd**](kyverno-101-with-linkerd/README.md) - Kyverno 101 and Linkerd
 * [**Linkerd 101**](linkerd-101/README.md) - Getting Started with Linkerd
 * [**Linkerd 2.15 Features**](2-15-features/README.md) - Exploring new features in Linkerd 2.15
 * [**Linkerd 2.16 Features**](2-16-features/README.md) - Exploring new features in Linkerd 2.16
