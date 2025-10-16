@@ -26,6 +26,9 @@ k3d cluster create auto \
     --no-lb \
     --k3s-arg --disable=traefik@server:0
 
+kubectl config delete-context auto || true
+kubectl config rename-context k3d-auto auto
+
 ### INSTALL CERT-MANAGER
 
 helm repo add jetstack https://charts.jetstack.io --force-update

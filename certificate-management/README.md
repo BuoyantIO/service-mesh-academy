@@ -99,20 +99,28 @@ inspect_certs () {
 ```
 
 This looks horrible, but it's really mostly just picking lines and
-reformatting. We can use this function to look at the trust bundle and the
-identity issuer and focus in on what we want to see:
+reformatting. We'll use this function in another function to look at the trust
+bundle and the identity issuer and focus in on what we want to see:
 
 ```bash
-echo "Trust bundle:" ;\
-kubectl get cm -n linkerd linkerd-identity-trust-roots \
-    -o jsonpath='{.data.ca-bundle\.crt}' \
-  | inspect_certs ;\
-echo ;\
-echo "Identity issuer:" ;\
-kubectl get secret -n linkerd linkerd-identity-issuer \
-    -o jsonpath='{.data.tls\.crt}' \
-  | base64 -d \
-  | inspect_certs
+show_chain () {
+  echo "Trust bundle:"
+  kubectl get cm -n linkerd linkerd-identity-trust-roots \
+                 -o jsonpath='{.data.ca-bundle\.crt}' \
+    | inspect_certs
+  echo
+  echo "Identity issuer:"
+  kubectl get secret -n linkerd linkerd-identity-issuer \
+                     -o jsonpath='{.data.tls\.crt}' \
+    | base64 -d \
+    | inspect_certs
+}
+```
+
+Let's run this function and see what we get:
+
+```bash
+show_chain
 ```
 
 We can see that the identity issuer cert was, indeed, issued using the
@@ -144,7 +152,7 @@ This ID matches the `subject ID` of the identity issuer certificate we saw
 above.
 
 <!-- @wait_clear -->
-<!-- @show_slides -->
+<!-- @start_livecast -->
 
 ## Manual Rotation
 
@@ -160,15 +168,17 @@ rm -rf certs2
 #@immed
 mkdir -p certs2
 step certificate create \
-     --profile root-ca --no-password --insecure \
+     --profile root-ca \
+     --no-password --insecure \
      --not-after='87600h' \
      root.linkerd.cluster.local \
      certs2/anchor.crt certs2/anchor.key
 
 step certificate create \
-     --profile intermediate-ca --no-password --insecure \
-     --ca certs2/anchor.crt --ca-key certs2/anchor.key \
+     --profile intermediate-ca \
+     --no-password --insecure \
      --not-after='2160h' \
+     --ca certs2/anchor.crt --ca-key certs2/anchor.key \
      identity.linkerd.cluster.local \
      certs2/issuer.crt certs2/issuer.key
 ```
@@ -209,23 +219,14 @@ If we look at the trust chain now, we can see that there are _two_
 certificates in the trust bundle:
 
 ```bash
-kubectl get configmap \
-    -n linkerd linkerd-identity-trust-roots \
-    -o jsonpath='{ .data.ca-bundle\.crt }' \
- | inspect_certs
+show_chain
 ```
 
-The sorting looks weird, but note that we have _two_ IDs now -- one for the
-old cert and one for the new. If we check the identity issuer, we'll see that
-it's still signed by the old trust anchor:
+The sorting looks weird, but note that we have _two_ IDs now - one for the old
+cert and one for the new - and the identity issuer is still signed by the old
+trust anchor.
 
-```bash
-kubectl get secret \
-    -n linkerd linkerd-identity-issuer \
-    -o jsonpath='{ .data.tls\.crt }' \
-  | base64 -d \
-  | inspect_certs
-```
+<!-- @wait_clear -->
 
 ### 3. Restart the World
 
@@ -255,34 +256,24 @@ identity issuer.
 
 Updating the identity issuer is more straightforward than updating the trust
 bundle: we'll use `kubectl patch` to update the Secret with the new
-certificate and key.
+certificate and key. (This is just overwriting `data/tls.crt` and
+`data/tls.key` in the Secret with new base64-encoded values, but the shell
+escaping makes it look awful.)
 
 ```bash
-kubectl patch secret -n linkerd linkerd-identity-issuer --type='json' -p="[
-  {\"op\": \"replace\", \"path\": \"/data/tls.crt\", \"value\": \"$(base64 -w0 < certs2/issuer.crt)\"},
-  {\"op\": \"replace\", \"path\": \"/data/tls.key\", \"value\": \"$(base64 -w0 < certs2/issuer.key)\"}
-]"
+kubectl patch secret -n linkerd linkerd-identity-issuer --type='json' -p="[ {\"op\": \"replace\", \"path\": \"/data/tls.crt\", \"value\": \"$(base64 -w0 < certs2/issuer.crt)\"}, {\"op\": \"replace\", \"path\": \"/data/tls.key\", \"value\": \"$(base64 -w0 < certs2/issuer.key)\"} ]"
 ```
 
-We can verify that this worked with with the `inspect_certs` function again:
+We can verify that this worked with with the `show_chain` function again:
 
 ```bash
-echo "Trust bundle:" ;\
-kubectl get configmap \
-    -n linkerd linkerd-identity-trust-roots \
-    -o jsonpath='{ .data.ca-bundle\.crt }' \
- | inspect_certs ;\
-echo ;\
-echo "Identity issuer:" ;\
-kubectl get secret \
-    -n linkerd linkerd-identity-issuer \
-    -o jsonpath='{ .data.tls\.crt }' \
-  | base64 -d \
-  | inspect_certs
+show_chain
 ```
 
 We can see that our identity issuer is now signed by the new trust anchor, but the
 old trust anchor is still in the trust bundle.
+
+<!-- @wait_clear -->
 
 ### 5. Restart the Control Plane
 
@@ -297,6 +288,8 @@ We could also wait two minutes, but let's not.
 kubectl rollout restart -n linkerd deploy
 kubectl rollout status -n linkerd deploy
 ```
+
+<!-- @wait_clear -->
 
 ### 6. Restart the Data Plane(s)
 
@@ -328,10 +321,12 @@ above:
 inspect_certs < certs2/issuer.crt
 ```
 
+<!-- @wait_clear -->
+
 ### 7. Remove the Old Trust Anchor
 
-Finally, once we're sure that everything is working with the new trust anchor
-and identity issuer, we can remove the old trust anchor from the trust bundle.
+Once we're sure that everything is working with the new trust anchor and
+identity issuer, we can remove the old trust anchor from the trust bundle.
 We'll do this with `kubectl edit` again.
 
 ```bash
@@ -342,22 +337,13 @@ We can verify that this worked by looking at the trust bundle and the identity
 issuer again:
 
 ```bash
-echo "Trust bundle:" ;\
-kubectl get configmap \
-    -n linkerd linkerd-identity-trust-roots \
-    -o jsonpath='{ .data.ca-bundle\.crt }' \
- | inspect_certs ;\
-echo ;\
-echo "Identity issuer:" ;\
-kubectl get secret \
-    -n linkerd linkerd-identity-issuer \
-    -o jsonpath='{ .data.tls\.crt }' \
-  | base64 -d \
-  | inspect_certs
+show_chain
 ```
 
 We can see that now we have only a single trust anchor in the bundle, and that
 it's the signer of the identity issuer.
+
+<!-- @wait_clear -->
 
 ### 8. Restart the World
 
@@ -376,7 +362,7 @@ At this point, everything should be working with the new trust anchor and
 identity issuer, and the old trust anchor should be gone.
 
 <!-- @wait_clear -->
-<!-- @show_slides -->
+<!-- @start_livecast -->
 
 ## Certificate Management With cert-manager
 
@@ -455,24 +441,12 @@ bat cert-manager/linkerd-identity-trust-roots-bundle.yaml
 
 ## Using Cert-Manager
 
-So! Let's start by looking at the trust bundle. This is _exactly_ the same set
-of commands that we used when manually managing certificates, because we're
-sticking with the external-CA setup (since we have to for cert-manager to
-work!).
+So! Let's start by looking at the trust bundle. Our trusty `show_chain`
+function will work just fine for this, because we're sticking with the
+external-CA setup (since we have to for cert-manager to work!).
 
 ```bash
-echo "Trust bundle:" ;\
-kubectl get configmap \
-    -n linkerd linkerd-identity-trust-roots \
-    -o jsonpath='{ .data.ca-bundle\.crt }' \
- | inspect_certs ;\
-echo ;\
-echo "Identity issuer:" ;\
-kubectl get secret \
-    -n linkerd linkerd-identity-issuer \
-    -o jsonpath='{ .data.tls\.crt }' \
-  | base64 -d \
-  | inspect_certs
+show_chain
 ```
 
 So far so good!
@@ -502,12 +476,16 @@ anchor and identity issuer:
 
 ```bash
 previous_anchor=$(get_subject cert-manager linkerd-trust-anchor)
-#@immed echo "Previous trust anchor ID: ${previous_anchor}"
+#@immed
+echo "Previous trust anchor ID: ${previous_anchor}"
 previous_issuer=$(get_subject linkerd linkerd-identity-issuer)
-#@immed echo "Previous identity issuer ID: ${previous_issuer}"
+#@immed
+echo "Previous identity issuer ID: ${previous_issuer}"
 ```
 
-OK, time to do the rotation!
+And with that, off we go!
+
+<!-- @wait_clear -->
 
 ### 1. Rotate the Trust Anchor
 
@@ -531,23 +509,14 @@ but we should see that the identity issuer is still signed by the old trust
 anchor:
 
 ```bash
-echo "Trust bundle:" ;\
-kubectl get configmap \
-    -n linkerd linkerd-identity-trust-roots \
-    -o jsonpath='{ .data.ca-bundle\.crt }' \
- | inspect_certs ;\
+echo "Old trust anchor ID $previous_anchor" ;\
 echo ;\
-echo "Old trust anchor ID ${previous_anchor}" ;\
-echo ;\
-echo "Identity issuer:" ;\
-kubectl get secret \
-    -n linkerd linkerd-identity-issuer \
-    -o jsonpath='{ .data.tls\.crt }' \
-  | base64 -d \
-  | inspect_certs
+show_chain
 ```
 
 Remember, cert-manager _won't_ actually rotate the identity issuer.
+
+<!-- @wait_clear -->
 
 ### 2. Restart the World
 
@@ -560,6 +529,8 @@ kubectl -n linkerd rollout status deploy
 kubectl -n faces rollout restart deploy
 kubectl -n faces rollout status deploy
 ```
+
+<!-- @wait_clear -->
 
 ### 3. Rotate the Identity Issuer
 
@@ -581,21 +552,14 @@ At this point, if we check the chain again, we should see that the identity
 issuer is now signed by the new trust anchor:
 
 ```bash
-echo "Trust bundle:" ;\
-kubectl get configmap \
-    -n linkerd linkerd-identity-trust-roots \
-    -o jsonpath='{ .data.ca-bundle\.crt }' \
- | inspect_certs ;\
+#@immed
+new_anchor=$(get_subject cert-manager linkerd-trust-anchor)
+echo "New trust anchor ID $new_anchor" ;\
 echo ;\
-echo "New trust anchor ID ${new_anchor}" ;\
-echo ;\
-echo "Identity issuer:" ;\
-kubectl get secret \
-    -n linkerd linkerd-identity-issuer \
-    -o jsonpath='{ .data.tls\.crt }' \
-  | base64 -d \
-  | inspect_certs
+show_chain
 ```
+
+<!-- @wait_clear -->
 
 ### 4. Restart the Control Plane
 
@@ -607,15 +571,19 @@ kubectl -n linkerd rollout restart deploy
 kubectl -n linkerd rollout status deploy
 ```
 
+<!-- @wait_clear -->
+
 ### 5. Restart the Data Plane(s)
 
-Finally, we need to restart the data plane(s) so that they get new workload
+Next, we need to restart the data plane(s) so that they get new workload
 certificates signed by the new identity issuer.
 
 ```bash
 kubectl -n faces rollout restart deploy
 kubectl -n faces rollout status deploy
 ```
+
+<!-- @wait_clear -->
 
 ### 6. Remove the Old Trust Anchor
 
@@ -636,21 +604,12 @@ Once that's done, we can check the chain again, and we should see just the new
 trust anchor in the trust bundle:
 
 ```bash
-echo "Trust bundle:" ;\
-kubectl get configmap \
-    -n linkerd linkerd-identity-trust-roots \
-    -o jsonpath='{ .data.ca-bundle\.crt }' \
- | inspect_certs ;\
+echo "New trust anchor ID $new_anchor" ;\
 echo ;\
-echo "New trust anchor ID ${new_anchor}" ;\
-echo ;\
-echo "Identity issuer:" ;\
-kubectl get secret \
-    -n linkerd linkerd-identity-issuer \
-    -o jsonpath='{ .data.tls\.crt }' \
-  | base64 -d \
-  | inspect_certs
+show_chain
 ```
+
+<!-- @wait_clear -->
 
 ### 7. Restart the World (again)
 
@@ -680,7 +639,16 @@ for the trust anchor, but cert-manager supports a wide variety of Issuers,
 including ACME (for Let's Encrypt), HashiCorp Vault, Venafi's commercial
 issuers, and many others. This means that you can integrate with your existing
 PKI infrastructure, and you can use cert-manager to manage certificates for
-other applications in your cluster as well.
+other applications in your cluster as well. This is _much_ cleaner than
+storing private keys on your own.
+
+<!-- @wait -->
+
+It's also simpler - as you saw - to trigger renewals. `cmctl renew` works with
+any cert-manager integrations, and you don't need to worry about the details
+of how each Issuer works.
+
+<!-- @wait -->
 
 And, of course, this is obviously an area where we're actively exploring how
 to make things more seamless. Hopefully, though, this gives you a good idea of

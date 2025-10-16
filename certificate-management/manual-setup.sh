@@ -24,6 +24,8 @@ k3d cluster create manual \
     --no-lb \
     --k3s-arg --disable=traefik@server:0
 
+kubectl config rename-context k3d-manual manual
+
 ### GENERATE CERTIFICATES
 
 mkdir -p certs
