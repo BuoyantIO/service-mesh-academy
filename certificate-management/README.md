@@ -90,10 +90,10 @@ can pull the names and key IDs out of a certificate dump:
 inspect_certs () {
   step certificate inspect --bundle --format json \
     | egrep 'issuer_dn|subject_dn|subject_key_id|authority_key_id' \
-    | sed -e 's/^.*"issuer_dn": "\(.*\)",$/issuer DN:  \1/' \
-          -e 's/^.*"subject_dn": "\(.*\)",$/subject DN: \1/' \
-          -e 's/^.*"subject_key_id": "\(.*\)"$/subject ID: \1/' \
-          -e 's/^.*"authority_key_id": "\(.*\)".*$/issuer ID:  \1/' \
+    | sed -e 's/^.*"issuer_dn": "\(.*\)",\{0,1\}$/issuer DN:  \1/' \
+          -e 's/^.*"subject_dn": "\(.*\)",\{0,1\}$/subject DN: \1/' \
+          -e 's/^.*"subject_key_id": "\(.*\)",\{0,1\}$/subject ID: \1/' \
+          -e 's/^.*"authority_key_id": "\(.*\)",\{0,1\}.*$/issuer ID:  \1/' \
     | sort
 }
 ```
