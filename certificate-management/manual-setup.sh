@@ -17,6 +17,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
 ### SET UP CLUSTER
 
 k3d cluster delete manual
@@ -24,6 +26,7 @@ k3d cluster create manual \
     --no-lb \
     --k3s-arg --disable=traefik@server:0
 
+kubectl config delete-context manual || true
 kubectl config rename-context k3d-manual manual
 
 ### GENERATE CERTIFICATES
