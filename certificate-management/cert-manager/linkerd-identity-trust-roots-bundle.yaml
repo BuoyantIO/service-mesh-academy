@@ -1,0 +1,35 @@
+---
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  # This is the name of the Bundle and _also_ the name of the
+  # ConfigMap in which we'll write the trust bundle.
+  name: linkerd-identity-trust-roots
+  namespace: cert-manager
+spec:
+  # This tells trust-manager where to find the public keys to copy into
+  # the trust bundle.
+  sources:
+    # This is the Secret that cert-manager will update when it rotates
+    # the trust anchor.
+    - secret:
+        name: "linkerd-trust-anchor"
+        key: "tls.crt"
+
+    # This is the Secret that we will use to hold the previous trust
+    # anchor; we'll manually update this Secret after we're finished
+    # restarting things.
+    - secret:
+        name: "linkerd-previous-anchor"
+        key: "tls.crt"
+
+  # This tells trust-manager the key to use when writing the trust
+  # bundle into the ConfigMap. The target stanza doesn't have a way
+  # to simply specify the name of the namespace, but we can use a
+  # label selector.
+  target:
+    configMap:
+      key: "ca-bundle.crt"
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: "linkerd"

@@ -1,0 +1,33 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  # This is the name of the Certificate resource, but the Secret
+  # we save the certificate into can be different.
+  name: trust-anchor-cert
+  namespace: cert-manager
+spec:
+  # This tells cert-manager which issuer to use for this Certificate:
+  # in this case, the Issuer named linkerd-trust-anchor-issuer.
+  issuerRef:
+    kind: Issuer
+    name: trust-anchor-issuer
+
+  # The issued certificate will be saved in this Secret
+  secretName: linkerd-trust-anchor
+
+  # These are details about the certificate to be issued: check
+  # out the cert-manager docs for more, but realize that setting
+  # the private key's rotationPolicy to Always is _very_ important,
+  # and that for Linkerd you _must_ set isCA to true!
+  isCA: true
+  commonName: root.linkerd.cluster.local
+  # This is a one-year duration, rotating two months before expiry.
+  # Feel free to reduce this, but remember that there is a manual
+  # process for rotating the trust anchor!
+  duration: 8760h0m0s
+  renewBefore: 7320h0m0s
+  privateKey:
+    # VERY VERY IMPORTANT: always explicitly set rotationPolicy: Always
+    rotationPolicy: Always
+    algorithm: ECDSA

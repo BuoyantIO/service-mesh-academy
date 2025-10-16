@@ -1,0 +1,10 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  # This is the name of the Issuer resource; it's the way
+  # Certificate resources can find this issuer.
+  name: trust-anchor-issuer
+  namespace: cert-manager
+spec:
+  selfSigned: {}
