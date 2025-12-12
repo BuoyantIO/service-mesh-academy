@@ -1,0 +1,23 @@
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  namespace: win-demo
+  name: server-one
+spec:
+  podSelector:
+    matchLabels:
+      app: server
+      os: linux
+  port: 80
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  namespace: win-demo
+  name: server-two
+spec:
+  podSelector:
+    matchLabels:
+      app: server
+      os: windows
+  port: 80

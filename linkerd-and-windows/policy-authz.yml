@@ -1,0 +1,22 @@
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: server-policy-windows
+  namespace: win-demo
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: server-two
+  requiredAuthenticationRefs:
+    - name:  server-windows-tls
+      kind: MeshTLSAuthentication
+      group: policy.linkerd.io
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: server-windows-tls
+  namespace: win-demo
+spec:
+  identities: ["*"]

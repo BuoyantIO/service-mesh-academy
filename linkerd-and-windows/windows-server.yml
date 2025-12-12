@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: windows-server
+  namespace: win-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: windows-server
+  namespace: win-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: server
+      os: windows
+  template:
+    metadata:
+      labels:
+        app: server
+        os: windows
+      annotations:
+        config.linkerd.io/proxy-image: ghcr.io/buoyantio/proxy-win
+        linkerd.io/inject: windows
+    spec:
+      serviceAccountName: windows-server
+      nodeSelector:
+        kubernetes.io/os: windows
+      containers:
+        - name: windowswebserver
+          image: mcr.microsoft.com/windows-cssc/python:3.9-nanoserver-ltsc2022
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -u
+            - -c
+            - |
+              import uuid
+              import json
+              from http.server import BaseHTTPRequestHandler, HTTPServer
+
+              class Handler(BaseHTTPRequestHandler):
+                  def do_GET(self):
+                      # Generate a unique request ID (not derived from headers)
+                      req_uid = str(uuid.uuid4())
+
+                      body = json.dumps(
+                          {
+                              "requestUID": req_uid,
+                              "payload": "hello-from-windows"
+                          }
+                      ).encode("utf-8")
+
+                      self.send_response(200)
+                      self.send_header("Content-Type", "application/json")
+                      self.send_header("Content-Length", str(len(body)))
+                      self.end_headers()
+                      self.wfile.write(body)
+
+              if __name__ == "__main__":
+                  HTTPServer(("", 80), Handler).serve_forever()

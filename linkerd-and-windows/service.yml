@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: server
+  namespace: win-demo
+spec:
+  type: ClusterIP
+  selector:
+    app: server
+  ports:
+  - port: 80
+    protocol: TCP
