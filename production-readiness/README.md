@@ -41,7 +41,7 @@ This file is intended to be run with demosh.
 This demo uses a local Kubernetes cluster with more than three nodes.
 
 ```bash
-kubectl get nodes -o wide
+kubectl get nodes
 ```
 
 We should see multiple nodes available for scheduling.
@@ -82,8 +82,33 @@ kubectl get pods -n monitoring
 
 # Helm values used for observability
 
+<!-- @SHOW -->
+
+# Loki Values
+
+This is the Observability Loki values file used for this demo.
+
 ```bash
-ls -1 linkerd-*-values.yaml linkerd-o11y-stack.yaml
+less linkerd-loki-values.yaml
+```
+
+<!-- @wait_clear -->
+
+# Alloy Values
+
+```bash
+less linkerd-alloy-values.yaml
+```
+
+<!-- @wait_clear -->
+
+# Linkerd o11y stack values
+
+<!-- @notypeout -->
+
+
+```bash
+less linkerd-o11y-stack.yaml
 ```
 
 <!-- @wait_clear -->
@@ -96,21 +121,13 @@ kubectl get pods -n faces
 
 <!-- @wait_clear -->
 
-# Gateway API routes
-
-```bash
-kubectl get httproute,grpcroute -n faces
-```
-
-<!-- @wait_clear -->
-
 # Grafana
+
+Open http://localhost:3000
 
 ```bash
 kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
 ```
-
-Open http://localhost:3000
 
 <!-- @wait_clear -->
 

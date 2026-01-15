@@ -7,12 +7,7 @@ check_ns () {
 # We need an empty cluster with at least three Nodes.
 
 if ! check_ns kube-system; then \
-    echo "No cluster found. Please create one." >&2 ;\
-    exit 1 ;\
-fi
-
-if check_ns linkerd; then \
-    echo "Cluster is not empty. Please create an empty cluster." >&2 ;\
+    echo "No cluster found. Please run ./create.sh" >&2 ;\
     exit 1 ;\
 fi
 
