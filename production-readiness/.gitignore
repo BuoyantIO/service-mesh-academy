@@ -1,0 +1,9 @@
+ca.crt
+ca.key
+cloud-values.yaml
+linkerd-enterprise-control-plane
+linkerd-loki-values.yaml
+linkerd-alloy-values.yaml
+linkerd-o11y-stack.yaml
+update-stack.sh
+data-plane.yaml
