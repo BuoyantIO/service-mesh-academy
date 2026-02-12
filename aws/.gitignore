@@ -1,0 +1,15 @@
+# Terraform build artifacts
+.terraform/
+*/*.tfstate
+*/*.tfstate.*
+*/crash.log
+*/crash.*.log
+*/.terraform.lock.hcl
+
+# Local overrides and secrets
+terraform.tfvars
+*.tfvars
+*.tfvars.json
+
+# IDE noise
+.DS_Store

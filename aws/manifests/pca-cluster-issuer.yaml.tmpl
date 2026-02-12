@@ -1,0 +1,7 @@
+apiVersion: awspca.cert-manager.io/v1beta1
+kind: AWSPCAClusterIssuer
+metadata:
+  name: linkerd-identity-issuer
+spec:
+  arn: ${pca_issuer_ca_arn}
+  region: ${region}

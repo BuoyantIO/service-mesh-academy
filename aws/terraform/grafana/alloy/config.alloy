@@ -1,0 +1,347 @@
+// ============================================================
+// Kubernetes discovery
+// ============================================================
+
+discovery.kubernetes "pods" {
+  role = "pod"
+}
+
+// ============================================================
+// Job: linkerd-controller
+// ============================================================
+
+discovery.relabel "linkerd_controller" {
+  targets = discovery.kubernetes.pods.targets
+
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    action        = "keep"
+    regex         = "linkerd"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_port_name"]
+    action        = "keep"
+    regex         = "admin-http"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_name"]
+    action        = "replace"
+    target_label  = "component"
+  }
+}
+
+prometheus.scrape "linkerd_controller" {
+  targets    = discovery.relabel.linkerd_controller.output
+  job_name   = "linkerd-controller"
+  forward_to = [prometheus.remote_write.amp.receiver]
+}
+
+// ============================================================
+// Job: linkerd-multicluster-controller
+// ============================================================
+
+discovery.relabel "linkerd_multicluster" {
+  targets = discovery.kubernetes.pods.targets
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_label_component", "__meta_kubernetes_pod_container_port_name"]
+    action        = "keep"
+    regex         = "(linkerd-service-mirror|controller);admin-http$"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_name"]
+    action        = "replace"
+    target_label  = "component"
+  }
+}
+
+prometheus.scrape "linkerd_multicluster" {
+  targets    = discovery.relabel.linkerd_multicluster.output
+  job_name   = "linkerd-multicluster-controller"
+  forward_to = [prometheus.remote_write.amp.receiver]
+}
+
+// ============================================================
+// Job: linkerd-proxy
+// ============================================================
+
+discovery.relabel "linkerd_proxy" {
+  targets = discovery.kubernetes.pods.targets
+
+  rule {
+    source_labels = [
+      "__meta_kubernetes_pod_container_name",
+      "__meta_kubernetes_pod_container_port_name",
+      "__meta_kubernetes_pod_label_linkerd_io_control_plane_ns",
+    ]
+    action = "keep"
+    regex  = "^linkerd-proxy;linkerd-admin;linkerd$"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    action        = "replace"
+    target_label  = "namespace"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    action        = "replace"
+    target_label  = "pod"
+  }
+
+  // Promote proxy_job → k8s_job, then drop the source
+  rule {
+    source_labels = ["__meta_kubernetes_pod_label_linkerd_io_proxy_job"]
+    action        = "replace"
+    target_label  = "k8s_job"
+  }
+
+  rule {
+    action = "labeldrop"
+    regex  = "__meta_kubernetes_pod_label_linkerd_io_proxy_job"
+  }
+
+  // Map linkerd.io/proxy-* labels, then drop originals
+  rule {
+    action = "labelmap"
+    regex  = "__meta_kubernetes_pod_label_linkerd_io_proxy_(.+)"
+  }
+
+  rule {
+    action = "labeldrop"
+    regex  = "__meta_kubernetes_pod_label_linkerd_io_proxy_(.+)"
+  }
+
+  // Map remaining linkerd.io/* labels
+  rule {
+    action = "labelmap"
+    regex  = "__meta_kubernetes_pod_label_linkerd_io_(.+)"
+  }
+
+  // Flatten pod labels through a temp namespace to resolve
+  // linkerd_io_ prefix conflicts with the labels mapped above
+  rule {
+    action      = "labelmap"
+    regex       = "__meta_kubernetes_pod_label_(.+)"
+    replacement = "__tmp_pod_label_$1"
+  }
+
+  rule {
+    action      = "labelmap"
+    regex       = "__tmp_pod_label_linkerd_io_(.+)"
+    replacement = "__tmp_pod_label_$1"
+  }
+
+  rule {
+    action = "labeldrop"
+    regex  = "__tmp_pod_label_linkerd_io_(.+)"
+  }
+
+  rule {
+    action = "labelmap"
+    regex  = "__tmp_pod_label_(.+)"
+  }
+}
+
+prometheus.scrape "linkerd_proxy" {
+  targets    = discovery.relabel.linkerd_proxy.output
+  job_name   = "linkerd-proxy"
+  forward_to = [prometheus.remote_write.amp.receiver]
+}
+
+// ============================================================
+// Remote write → Amazon Managed Prometheus
+// ============================================================
+
+prometheus.remote_write "amp" {
+  endpoint {
+    url = "${remote_write_url}"
+
+    sigv4 {
+      region = "${aws_region}"
+    }
+
+    queue_config {
+      max_samples_per_send = 1000
+      batch_send_deadline  = "5s"
+      capacity             = 10000
+    }
+  }
+}
+
+// ============================================================
+// Log shipping: emojivoto + linkerd → CloudWatch
+// ============================================================
+
+// Filter emojivoto pods for log collection
+discovery.relabel "emojivoto_logs" {
+  targets = discovery.kubernetes.pods.targets
+
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    action        = "keep"
+    regex         = "emojivoto"
+  }
+
+  // Promote Kubernetes metadata to labels so they flow through Loki → OTLP.
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    action        = "replace"
+    target_label  = "namespace"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    action        = "replace"
+    target_label  = "pod"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_name"]
+    action        = "replace"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_node_name"]
+    action        = "replace"
+    target_label  = "node"
+  }
+}
+
+// Filter linkerd pods for log collection
+discovery.relabel "linkerd_logs" {
+  targets = discovery.kubernetes.pods.targets
+
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    action        = "keep"
+    regex         = "linkerd|linkerd-viz|linkerd-multicluster"
+  }
+
+  // Promote Kubernetes metadata to labels so they flow through Loki → OTLP.
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    action        = "replace"
+    target_label  = "namespace"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    action        = "replace"
+    target_label  = "pod"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_name"]
+    action        = "replace"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_kubernetes_node_name"]
+    action        = "replace"
+    target_label  = "node"
+  }
+}
+
+// Tail logs from emojivoto pods via the Kubernetes API
+loki.source.kubernetes "emojivoto" {
+  targets    = discovery.relabel.emojivoto_logs.output
+  forward_to = [otelcol.receiver.loki.emojivoto.receiver]
+
+  clustering {
+    enabled = true
+  }
+}
+
+// Tail logs from linkerd pods via the Kubernetes API
+loki.source.kubernetes "linkerd" {
+  targets    = discovery.relabel.linkerd_logs.output
+  forward_to = [otelcol.receiver.loki.linkerd.receiver]
+
+  clustering {
+    enabled = true
+  }
+}
+
+// Convert Loki log entries → OTLP
+otelcol.receiver.loki "emojivoto" {
+  output {
+    logs = [
+      otelcol.processor.filter.emojivoto_app_only.input,
+      otelcol.processor.filter.emojivoto_linkerd_proxy.input,
+    ]
+  }
+}
+
+otelcol.receiver.loki "linkerd" {
+  output {
+    logs = [otelcol.exporter.otlphttp.linkerd.input]
+  }
+}
+
+// Split emojivoto pod logs so application logs stay in the emojivoto group
+// while injected linkerd-proxy sidecar logs are routed to the linkerd group.
+// Drop linkerd-proxy sidecar logs so only application logs remain.
+otelcol.processor.filter "emojivoto_app_only" {
+  logs {
+    log_record = [
+      "resource.attributes[\"container\"] == \"linkerd-proxy\"",
+      "resource.attributes[\"k8s.container.name\"] == \"linkerd-proxy\"",
+    ]
+  }
+
+  output {
+    logs = [otelcol.exporter.otlphttp.emojivoto.input]
+  }
+}
+
+// Drop everything that is NOT linkerd-proxy, keeping only sidecar logs.
+otelcol.processor.filter "emojivoto_linkerd_proxy" {
+  logs {
+    log_record = [
+      "not (resource.attributes[\"container\"] == \"linkerd-proxy\" or resource.attributes[\"k8s.container.name\"] == \"linkerd-proxy\")",
+    ]
+  }
+
+  output {
+    logs = [otelcol.exporter.otlphttp.linkerd.input]
+  }
+}
+
+// SigV4 authentication for CloudWatch Logs OTLP endpoint
+otelcol.auth.sigv4 "cloudwatch" {
+  region  = "${aws_region}"
+  service = "logs"
+}
+
+// Export emojivoto logs to CloudWatch
+otelcol.exporter.otlphttp "emojivoto" {
+  client {
+    endpoint    = "https://logs.${aws_region}.amazonaws.com"
+    auth        = otelcol.auth.sigv4.cloudwatch.handler
+    compression = "gzip"
+    headers     = {
+      "x-aws-log-group"  = "${cw_log_group_emojivoto}",
+      "x-aws-log-stream" = "alloy",
+    }
+  }
+}
+
+// Export linkerd logs to CloudWatch
+otelcol.exporter.otlphttp "linkerd" {
+  client {
+    endpoint    = "https://logs.${aws_region}.amazonaws.com"
+    auth        = otelcol.auth.sigv4.cloudwatch.handler
+    compression = "gzip"
+    headers     = {
+      "x-aws-log-group"  = "${cw_log_group_linkerd}",
+      "x-aws-log-stream" = "alloy",
+    }
+  }
+}
