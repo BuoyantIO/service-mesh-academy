@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-identity-issuer
+  namespace: linkerd
+spec:
+  secretName: linkerd-identity-issuer
+  isCA: true
+  commonName: identity.linkerd.cluster.local
+  duration: 24h
+  renewBefore: 59m
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    group: awspca.cert-manager.io
+    kind: AWSPCAClusterIssuer
+    name: linkerd-identity-issuer

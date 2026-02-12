@@ -1,0 +1,7 @@
+apiVersion: awspca.cert-manager.io/v1beta1
+kind: AWSPCAClusterIssuer
+metadata:
+  name: linkerd-trust-anchor
+spec:
+  arn: ${pca_root_ca_arn}
+  region: ${region}
