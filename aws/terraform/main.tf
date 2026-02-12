@@ -124,12 +124,10 @@ module "grafana_dashboards" {
 # emojivoto – Linkerd demo application
 # ============================================================
 
-# module "emojivoto" {
-#   source     = "./emojivoto"
-#   depends_on = [module.linkerd]
-#   providers = {
-#     kubernetes = kubernetes.sma_eks_1
-#   }
-
-#   ecr_repository_url = module.aws_infrastructure.ecr_repository_url
-# }
+module "emojivoto" {
+  source     = "./emojivoto"
+  depends_on = [module.linkerd]
+  providers = {
+    kubernetes = kubernetes.sma_eks_1
+  }
+}

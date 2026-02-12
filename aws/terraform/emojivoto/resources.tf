@@ -4,8 +4,9 @@
 # ============================================================
 
 locals {
-  namespace = "emojivoto"
-  image_tag = "v11"
+  namespace      = "emojivoto"
+  image_registry = "docker.l5d.io/buoyantio"
+  image_tag      = "v11"
   labels = {
     "app.kubernetes.io/part-of" = "emojivoto"
     "app.kubernetes.io/version" = local.image_tag
@@ -56,7 +57,7 @@ resource "kubernetes_deployment_v1" "emoji" {
         service_account_name = kubernetes_service_account_v1.emoji.metadata[0].name
         container {
           name  = "emoji-svc"
-          image = "${var.ecr_repository_url}:emojivoto-emoji-svc-${local.image_tag}"
+          image = "${local.image_registry}/emojivoto-emoji-svc:${local.image_tag}"
           port {
             container_port = 8080
             name           = "grpc"
@@ -134,7 +135,7 @@ resource "kubernetes_deployment_v1" "voting" {
         service_account_name = kubernetes_service_account_v1.voting.metadata[0].name
         container {
           name  = "voting-svc"
-          image = "${var.ecr_repository_url}:emojivoto-voting-svc-${local.image_tag}"
+          image = "${local.image_registry}/emojivoto-voting-svc:${local.image_tag}"
           port {
             container_port = 8080
             name           = "grpc"
@@ -212,7 +213,7 @@ resource "kubernetes_deployment_v1" "web" {
         service_account_name = kubernetes_service_account_v1.web.metadata[0].name
         container {
           name  = "web-svc"
-          image = "${var.ecr_repository_url}:emojivoto-web-${local.image_tag}"
+          image = "${local.image_registry}/emojivoto-web:${local.image_tag}"
           port {
             container_port = 8080
             name           = "http"
@@ -280,7 +281,7 @@ resource "kubernetes_deployment_v1" "vote_bot" {
       spec {
         container {
           name    = "vote-bot"
-          image   = "${var.ecr_repository_url}:emojivoto-web-${local.image_tag}"
+          image   = "${local.image_registry}/emojivoto-web:${local.image_tag}"
           command = ["emojivoto-vote-bot"]
           env {
             name  = "WEB_HOST"
