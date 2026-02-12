@@ -280,7 +280,15 @@ Key defaults defined in `terraform/locals.tf`:
    kubectl get pods -n linkerd
    ```
 
-7. **Verify observability:**
+7. **Access emojivoto:**
+
+   ```bash
+   kubectl port-forward -n emojivoto svc/web-svc 8081:80
+   ```
+
+   Then open [http://localhost:8081](http://localhost:8081) in your browser. The vote-bot deployment automatically generates traffic, so you should see live activity in the Linkerd dashboards.
+
+8. **Verify observability:**
 
    ```bash
    # Check Alloy is running
