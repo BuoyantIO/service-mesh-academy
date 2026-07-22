@@ -1,33 +1,20 @@
-<!--
-SPDX-FileCopyrightText: 2026 Buoyant Inc.
-SPDX-License-Identifier: Apache-2.0
-
-SMA-Description: Expanding a Linkerd Enterprise mesh to Windows workloads with the BEL Windows Mesh Expansion installer
--->
-
-# Windows Mesh Expansion with Linkerd
-
-> **Status: first-pass draft.** The demo flow below is being validated end-to-end
-> on Azure (AKS + three Windows VMs) before the session. Treat the exact manifests
-> and ports as provisional until that dry run is complete.
+# Windows Mesh Expansion with Buoyant Enterprise for Linkerd
 
 Mesh expansion lets workloads *outside* your Kubernetes cluster join the same
 Linkerd mesh as the workloads inside it - same mTLS identity, same policy, same
 observability - so a service running on a VM is a first-class mesh member rather
 than an opaque external dependency.
 
-Buoyant Enterprise for Linkerd (BEL) **Windows Mesh Expansion (WME)** brings
-**Windows** workloads into the mesh. On each Windows VM it installs:
+Buoyant Enterprise for Linkerd (BEL) **Windows Mesh Expansion (WME)** brings **Windows**
+workloads into the mesh. On each VM the MSI installs the **`linkerd-proxy-harness`** service
+(`harness.exe` - supervises the linkerd2-proxy and auto-registers the VM as an
+ExternalWorkload), the **`linkerd-tcp-redirect.sys`** WFP kernel driver (redirects the VM's
+**outbound** TCP into the proxy - the Windows analog of Linkerd's iptables; inbound needs no
+redirect, the cluster hits the proxy's inbound port directly), an ETW logging session, and
+the **`harnessctl.exe`** CLI. **SPIRE and DNS are prerequisites, not installed by the MSI.**
 
-- the **linkerd2-proxy** and a **harness** that manages it and auto-registers the
-  VM with the cluster, and
-- **`linkerd-tcp-redirect.sys`**, a WFP (Windows Filtering Platform) kernel
-  driver that transparently redirects the VM's **outbound** TCP through the proxy
-  - the Windows equivalent of the iptables rules Linkerd uses inside Kubernetes.
-
-This session expands a mesh to three Windows VMs and shows both directions
-traffic can flow, why the driver matters, and how policy is enforced across the
-cluster boundary.
+This session expands a mesh to three Windows VMs, showing both traffic directions, why the
+driver matters, and how policy is enforced across the cluster boundary.
 
 For the product install reference (supported platforms, prerequisites, the MSI
 and its properties, verification, uninstall, troubleshooting) we defer to the
@@ -37,255 +24,247 @@ official guide throughout:
 
 ---
 
-## The two directions - and why the driver is the thing to prove
+## What we're demoing: Faces across a cluster and three VMs
 
-BEL WME bridges a VM into the mesh in **two independent directions**. They
-exercise different parts of the stack, so a complete demo shows **both**:
+We use the [**Faces**](https://github.com/BuoyantIO/faces-demo) app: the browser loads a
+grid of cells, each a face (`smiley`) on a colored background (`color`), assembled by
+`face` and served by `faces-gui`. We keep the Linkerd control plane and `face` in the
+cluster and move the other three workloads onto three Windows VMs - one each, covering
+all three supported platforms and both inbound protocols:
 
-| Direction | Path | What it proves | Driver? |
-|---|---|---|---|
-| **Inbound** (cluster → VM) | a cluster workload → the VM's proxy inbound port `:4143` (mTLS terminated) → the app on the VM | proxy + harness + identity | **No** - the driver is outbound-only |
-| **Outbound** (VM → cluster) | app on the VM → **driver redirect** → proxy `:4140` → mTLS → destination pod `:4143` | the **WFP driver** (its whole reason to exist) + outbound mTLS | **Yes** |
+| VM | OS | Faces workload |
+|---|---|---|
+| **VM1** | Server 2025 | `smiley` |
+| **VM2** | Server 2022 | `faces-gui` |
+| **VM3** | Windows 11 | `color` |
 
-Inbound mTLS arrives *directly* at the proxy, so the driver is never in that
-path - a demo that only shows inbound proves nothing about the driver. The
-**outbound** call is the one the driver makes possible, and it's where the
-security story lands: require mTLS on the destination, turn the driver **off**,
-and the outbound path disappears. No driver, no mesh identity, traffic denied.
+The browser points at **VM2's GUI**, so one page load exercises every path at once. The
+**outbound** call (`gui → face`) is the only one that needs the **WFP driver** - it
+redirects the VM's outbound TCP into the proxy for mTLS - and it's where the security
+story lands (require mTLS on `face` and turn the driver off on VM2 - the path
+disappears, the demo's payoff). The **inbound** calls (`face → smiley` over HTTP, `face → color` over gRPC)
+never touch the driver; the cluster connects straight to each VM's proxy `:4143`. If
+every cell renders, all three hops are meshed.
 
-The outbound path has two requirements the inbound path doesn't:
-
-1. **The cluster pod CIDR must be routable from the VM** - the proxy completes
-   the meshed hop to the *destination pod's* `:4143` at its pod IP. On AKS this
-   comes from **VNet peering** between the VM's VNet and the AKS VNet.
-2. **The VM must target a meshable cluster address** - a Service name (resolved
-   by cluster DNS) or ClusterIP, **never a NodePort**. The proxy can't mesh a
-   NodePort and would forward it as plaintext.
-
----
-
-## What we're demoing: Faces on three VMs
-
-We use the [**Faces**](https://github.com/BuoyantIO/faces-demo) demo app. Faces
-renders a grid of cells in the browser; each healthy cell shows a grinning face
-(from `smiley`) on a colored background (from `color`). Its call graph is a short
-chain:
-
-```
-browser ──HTTP──▶ faces-gui ──HTTP──▶ face ──HTTP──▶ smiley
-                                        └──gRPC──▶ color
-```
-
-- **faces-gui** - the front end the browser hits; calls `face`.
-- **face** - fans out to two back ends per cell: `smiley` (HTTP) and `color` (gRPC).
-- **smiley** / **color** - leaf back ends returning the emoji and the color.
-
-We split Faces across the cluster and **three** Windows VMs so each VM
-demonstrates one thing and runs **one** workload. This covers all three
-supported Windows platforms - **Server 2025, Server 2022, and Windows 11** - and
-shows the two inbound protocols (HTTP and gRPC) alongside the outbound path.
-
-| VM | OS | Faces workload | Direction | Protocol | Driver? | Path |
-|---|---|---|---|---|---|---|
-| **VM1** | Windows Server 2025 | **`smiley`** | **Inbound** | HTTP | No | cluster `face` → VM1 proxy `:4143` → `smiley` |
-| **VM2** | Windows Server 2022 | **`faces-gui`** | **Outbound** | HTTP | **Yes** | `faces-gui` → **driver** → proxy `:4140` → mTLS → cluster `face :4143` |
-| **VM3** | Windows 11 | **`color`** | **Inbound** | **gRPC** | No | cluster `face` → VM3 proxy `:4143` → `color` |
-
-The cluster runs the Linkerd control plane and **`face`** - the hub that fans
-out to the two back ends. Every other Faces workload lives on a VM. The browser
-points at **VM2's** GUI, so a single page load exercises every direction at once:
-
-```
-browser ─▶ faces-gui (VM2) ─[driver ▶ proxy ▶ mTLS]─▶ face (cluster) ─[mTLS, HTTP]─▶ smiley (VM1)
-                                                           └─────────[mTLS, gRPC]──▶ color  (VM3)
-```
-
-If the cells render, the outbound driver path (gui→face) **and** both inbound
-paths (face→smiley over HTTP on VM1, face→color over gRPC on VM3) are all working.
-
-> **Both inbound protocols.** `smiley` is plain HTTP and the simplest to reason
-> about live; `color` is gRPC - the direct analog of the gRPC service we meshed
-> inbound in the emojivoto demos. The gRPC inbound-policy pattern differs
-> slightly (authorize at the `Server`, `proxyProtocol: unknown`) and is shown in
-> Part 5.
+The outbound path has two requirements inbound doesn't:
+1. **the cluster pod CIDR routable from the VM** - the proxy meshes to the destination
+   *pod IP* on `:4143`; on AKS this comes from VNet peering;
+2. **a meshable target** - a Service name or ClusterIP, never a NodePort (the proxy
+   can't mesh a NodePort and would forward it plaintext).
 
 ---
 
 ## Prerequisites
 
-- An **AKS** cluster running **Linkerd Enterprise** with external-workload
-  support, its control plane reachable from the VM subnet, and the pod CIDR
-  routable from the VMs (VNet peering). Cluster bring-up (BEL install,
-  certificates, the SPIRE upstream CA, internal load balancers, VNet peering, NSG
-  rules) is the standard one-time setup for WME.
+- An **AKS** cluster running **Linkerd Enterprise (BEL 2.20.0)** with external-workload
+  support, its VNet **peered** to the VMs'. Peering routes real VNet addresses, so the
+  outbound data path (**pod IPs**) reaches the VM directly - but the control-plane
+  **ClusterIP** services don't route over peering, so they're published to the VMs as
+  **internal load balancers** (autoregistration, destination, policy, kube-dns). Cluster
+  bring-up - BEL install, certs, SPIRE upstream CA, those ILBs, peering, NSG rules - is
+  the standard one-time WME setup.
 - Three **Windows** VMs - Server 2025, Server 2022, and Windows 11 - in a VNet
   peered with the AKS VNet.
 - On each VM, in the order the official guide requires: a **SPIRE agent**, **DNS
   resolution** for `*.cluster.local`, then the **BEL WME MSI**. The helper
   scripts in this folder cover SPIRE and DNS; the MSI itself follows the
   [official guide](https://docs.buoyant.io/buoyant-enterprise-linkerd/latest/guides/installing-windows-mesh-expansion/).
-- The **Faces Windows binaries** (`faces-gui`, `smiley`, ...) from the
-  [faces-demo releases](https://github.com/BuoyantIO/faces-demo/releases)
-  (x64 / AMD64), or built from source. The repo's
-  `tools/Faces-Demo-Windows-Manager.ps1` can build and run a single component as
-  a Windows service - we use it to run **one** component per VM.
+  The MSI does **not** touch Windows Firewall - inbound-serving VMs need the proxy ports
+  opened to the cluster (Part 4), which is also the workload-isolation control.
+- The **Faces Windows binaries** (`faces-gui`, `smiley`, ...) at **v2.1.0-rc.2**,
+  from the [faces-demo v2.1.0-rc.2 release](https://github.com/BuoyantIO/faces-demo/releases/tag/v2.1.0-rc.2)
+  (asset `faces-demo_generic_2.1.0-rc.2_windows_amd64.zip`, x64 / AMD64), or built
+  from source (`tools/Faces-Demo-Windows-Manager.ps1 Build`). This **must** match
+  the in-cluster Faces chart version installed in Part 1. We run **one** component per VM,
+  registered as an SCM service by `install-faces-service.ps1` (see Part 5).
 
 ---
 
 ## Part 1 - Deploy Faces to the cluster
 
-Install Faces into a Linkerd-injected `faces` namespace, then hand two of its
-workloads off to the VMs.
+Install the Faces chart into a Linkerd-injected `faces` namespace (the `inject=enabled`
+annotation is what meshes the pods), then scale the VM-bound workloads to zero so their
+Services resolve to the VMs. The two value overrides expose the GUI on a public
+LoadBalancer (to watch the grid before the VMs exist) and zero Faces' built-in
+error/latency injection for a clean baseline.
 
-```powershell
+**On the cluster** (PowerShell → `kubectl`/`helm`):
+```text
 kubectl create namespace faces
 kubectl annotate namespace faces linkerd.io/inject=enabled
 
-helm install faces -n faces oci://ghcr.io/buoyantio/faces-chart --version 2.0.0
+@'
+gui:     { serviceType: LoadBalancer }
+face:    { errorFraction: "0", delayBuckets: "" }
+backend: { errorFraction: "0", delayBuckets: "" }
+'@ | helm install faces -n faces oci://ghcr.io/buoyantio/faces-chart --version 2.1.0-rc.2 -f -
 kubectl rollout status -n faces deploy
-```
+kubectl get svc faces-gui -n faces    # EXTERNAL-IP = demo URL until the GUI moves to VM2
 
-Move `smiley`, `color`, and the GUI off-cluster - scale their in-cluster
-Deployments to zero. Their **Services stay**: `smiley` and `color` will resolve
-to their VMs via ExternalWorkloads, and the browser will hit VM2's GUI directly.
-
-```powershell
+# after you've eyeballed the grid, hand the VM-bound workloads off (their Services stay):
 kubectl scale deployment smiley color faces-gui -n faces --replicas=0
 ```
-
-`face` keeps running in the cluster with its default wiring
-(`SMILEY_SERVICE=smiley`, `COLOR_SERVICE=color`), so no cluster-side env changes
-are needed - it finds both back ends through the same Service names once the VMs
-are registered.
 
 ---
 
 ## Part 2 - Give each VM its own identity (SPIRE)
 
-Every VM joins the mesh as an **ExternalWorkload** with a SPIFFE identity issued
-by SPIRE. The production-ready pattern is a **shared intermediate**: a dedicated
-**SPIRE upstream CA** (chained to the Linkerd root, stored once in the cluster)
-that every VM pulls. Each VM runs its own SPIRE server, which uses that
-intermediate to mint a local sub-CA and issue that VM's SVIDs. The result:
+Every VM joins as an **ExternalWorkload** with its own SPIFFE identity. Each VM runs a
+local SPIRE server backed by a shared **upstream CA** - a `pathlen:1` intermediate
+chained to the Linkerd root and stored once in the cluster - so every VM's SVIDs chain to
+the same root **without the root key ever leaving the cluster**. Each VM gets a distinct
+SPIFFE ID (`.../smiley`, `.../faces-gui`, `.../color`) that cluster policy can authorize.
 
-- **distinct identities per VM**, so cluster policy can name each one precisely, and
-- **one shared trust chain** up to the Linkerd root - the root private key never
-  lands on a VM.
+**On a machine with `kubectl`**, pull the upstream CA (from the secret) and the Linkerd root
+(from the trust-roots configmap), and build the trust bundle (upstream CA **+** root - the
+proxy needs the root to verify the control plane's TLS):
 
-Run the SPIRE setup script on each VM (it's in this folder's `spire/`), giving
-each a **different** workload SPIFFE ID:
-
-```powershell
-# On VM1 (smiley)
-powershell.exe -ExecutionPolicy Bypass -File C:\spire\setup-spire.ps1 `
-  -CACert     C:\spire\certs\spire-issuer.crt `
-  -CAKey      C:\spire\certs\spire-issuer.key `
-  -BundleCert C:\spire\certs\bundle.crt `
-  -WorkloadSpiffeId spiffe://cluster.local/smiley
-
-# On VM2 (faces-gui)
-powershell.exe -ExecutionPolicy Bypass -File C:\spire\setup-spire.ps1 `
-  -CACert     C:\spire\certs\spire-issuer.crt `
-  -CAKey      C:\spire\certs\spire-issuer.key `
-  -BundleCert C:\spire\certs\bundle.crt `
-  -WorkloadSpiffeId spiffe://cluster.local/faces-gui
-
-# On VM3 (color)
-powershell.exe -ExecutionPolicy Bypass -File C:\spire\setup-spire.ps1 `
-  -CACert     C:\spire\certs\spire-issuer.crt `
-  -CAKey      C:\spire\certs\spire-issuer.key `
-  -BundleCert C:\spire\certs\bundle.crt `
-  -WorkloadSpiffeId spiffe://cluster.local/color
+```text
+$stage = "C:\temp\spire\certs"; New-Item -ItemType Directory -Force $stage | Out-Null
+$b64 = kubectl get secret spire-upstream-ca -n linkerd -o jsonpath='{.data.ca\.crt}'
+[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($b64)) | Out-File -Encoding ascii "$stage\spire-issuer.crt"
+$b64 = kubectl get secret spire-upstream-ca -n linkerd -o jsonpath='{.data.ca\.key}'
+[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($b64)) | Out-File -Encoding ascii "$stage\spire-issuer.key"
+kubectl get configmap linkerd-identity-trust-roots -n linkerd -o jsonpath='{.data.ca-bundle\.crt}' | Out-File -Encoding ascii "$stage\root-ca.crt"
+Get-Content "$stage\spire-issuer.crt", "$stage\root-ca.crt" | Out-File -Encoding ascii "$stage\bundle.crt"
 ```
 
-`-WorkloadSpiffeId` defaults to `spiffe://cluster.local/external-workload`; we
-override it so the three VMs get separate identities. These are the identities
-the policies in Part 5 authorize.
+Copy this folder's `spire\` scripts **and** the three certs (`spire-issuer.crt`,
+`spire-issuer.key`, `bundle.crt`) to the VM under `C:\temp\spire\`, then run as
+Administrator - giving **each VM its own identity** (VM1 `smiley`, VM2 `faces-gui`,
+VM3 `color`). The script downloads SPIRE, bootstraps a local server, registers the
+workload, and installs auto-start services:
 
-> A single central SPIRE server shared across VMs is architecturally valid but is
-> not the tested BEL WME topology - the per-VM server with a shared upstream CA
-> is what we run here.
+**On the VM** (PowerShell, as admin):
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\temp\spire\setup-spire.ps1 `
+  -CACert     C:\temp\spire\certs\spire-issuer.crt `
+  -CAKey      C:\temp\spire\certs\spire-issuer.key `
+  -BundleCert C:\temp\spire\certs\bundle.crt `
+  -WorkloadSpiffeId spiffe://cluster.local/smiley
+```
+
+Verify, then remove the staging copy (the certs are now installed under `C:\spire\certs`):
+
+**On the VM** (PowerShell):
+```powershell
+sc.exe query spire-agent                       # STATE : RUNNING
+Test-Path "\\.\pipe\spire-agent\public\api"     # True
+Remove-Item C:\temp\spire -Recurse -Force
+```
 
 ---
 
 ## Part 3 - DNS on each VM (CoreDNS)
 
-The VM's proxy and harness address in-cluster services by **DNS name**
-(`*.cluster.local`), so each VM needs to resolve cluster names. `setup-coredns-azure.ps1`
-in this folder installs CoreDNS as a Windows service that maps the three Linkerd
-control-plane services to their internal-load-balancer IPs and forwards
-everything else `*.cluster.local` to kube-dns.
+A VM's harness and proxy reach the control plane by **DNS name**. Because the control-plane
+Services are ClusterIPs (which don't route over the VNet peering), cluster setup publishes
+them - and kube-dns - as **internal LoadBalancers** (see [Prerequisites](#prerequisites));
+CoreDNS on each VM maps the control-plane names to those ILB IPs and forwards the rest of
+`*.cluster.local` to the kube-dns ILB.
 
+First confirm the four ILBs are reachable from the VM (peering + LBs in place):
+
+**On the VM** (PowerShell):
 ```powershell
-powershell.exe -ExecutionPolicy Bypass -File C:\temp\scripts\setup-coredns-azure.ps1 `
-  -AutoregIP     <AUTOREG_ILB_IP> `
-  -DestinationIP <DEST_ILB_IP> `
-  -PolicyIP      <POLICY_ILB_IP> `
-  -KubeDnsIP     <DNS_ILB_IP>
+Test-NetConnection <autoreg-ilb-ip> -Port 8081 -InformationLevel Quiet
+Test-NetConnection <dest-ilb-ip>    -Port 8086 -InformationLevel Quiet
+Test-NetConnection <policy-ilb-ip>  -Port 8090 -InformationLevel Quiet
+Test-NetConnection <kubedns-ilb-ip> -Port 53   -InformationLevel Quiet
 ```
 
-VM2's `faces-gui` also relies on this to resolve `face.faces.svc.cluster.local`
-for its outbound call.
+All `True`, then install CoreDNS (`setup-coredns-azure.ps1` from this folder, staged under
+`C:\temp\coredns\`), passing the four ILB IPs:
 
-### Matching DNS to non-default installs
-
-The service **names** CoreDNS resolves must match what the harness and proxy
-actually look up. Those come from the harness config the MSI generates, and each
-is overridable at install time (`CONTROL_ADDRESS`, `DESTINATION_SVC_ADDR`,
-`POLICY_SVC_ADDR`; see the official guide's property reference). We use the
-defaults in this session, so nothing extra is needed. **If you override those in
-your environment**, pass the matching host names to CoreDNS so the two stay in
-lockstep:
-
+**On the VM** (PowerShell, as admin):
 ```powershell
-setup-coredns-azure.ps1 ... `
-  -AutoregName     linkerd-autoregistration.<ns>.svc.<domain> `
-  -DestinationName linkerd-dst.<ns>.svc.<domain> `
-  -PolicyName      linkerd-policy.<ns>.svc.<domain>
+powershell -ExecutionPolicy Bypass -File C:\temp\coredns\setup-coredns-azure.ps1 -AutoregIP <autoreg-ilb-ip> -DestinationIP <dest-ilb-ip> -PolicyIP <policy-ilb-ip> -KubeDnsIP <kubedns-ilb-ip>
 ```
 
-These default to the standard `linkerd-*.linkerd.svc.<ClusterDomain>` names - the
-same defaults the installer derives - so overriding is only necessary when your
-install does.
+Verify the control-plane names resolve to the ILB IPs:
+
+**On the VM** (PowerShell):
+```powershell
+Resolve-DnsName linkerd-autoregistration.linkerd.svc.cluster.local -Server 127.0.0.1
+Resolve-DnsName linkerd-dst.linkerd.svc.cluster.local -Server 127.0.0.1
+Resolve-DnsName linkerd-policy.linkerd.svc.cluster.local -Server 127.0.0.1
+```
+
+VM2's `faces-gui` also uses this to resolve `face.faces.svc.cluster.local`. (Non-default
+control-plane namespace/domain? Pass `-AutoregName/-DestinationName/-PolicyName` to match
+the MSI's `CONTROL_ADDRESS`/`DESTINATION_SVC_ADDR`/`POLICY_SVC_ADDR`.)
 
 ---
 
-## Part 4 - Install BEL WME and run the workloads
+## Part 4 - Install BEL WME on each VM
 
-On **each** VM, with SPIRE running and DNS resolving, install the MSI following
-the [official guide](https://docs.buoyant.io/buoyant-enterprise-linkerd/latest/guides/installing-windows-mesh-expansion/).
-The session-specific properties are the VM's private IP and its workload group:
+With SPIRE running and DNS resolving, install the MSI. The only per-VM properties are the
+private IP and workload group - the control-plane addresses, SPIRE socket, and cluster
+domain all default to what our cluster + CoreDNS already use.
 
-```powershell
-# VM1
-msiexec /i C:\temp\bel_wme_installer.msi /quiet /l*vx C:\temp\install.log `
-  INBOUND_NETWORK_ADDRESS="<VM1_PRIVATE_IP>" `
-  WORKLOAD_GROUP_NAME="smiley-vm" `
-  WORKLOAD_GROUP_NAMESPACE="faces"
+**On each VM** (PowerShell, as admin):
+```text
+# download the BEL WME MSI (2.20.0)
+curl.exe -L -o C:\temp\bel_wme.msi "https://github.com/BuoyantIO/linkerd-buoyant/releases/download/enterprise-2.20.0/bel_wme_installer-enterprise-2.20.0.msi"
 
-# VM2
-msiexec /i C:\temp\bel_wme_installer.msi /quiet /l*vx C:\temp\install.log `
-  INBOUND_NETWORK_ADDRESS="<VM2_PRIVATE_IP>" `
-  WORKLOAD_GROUP_NAME="faces-gui-vm" `
-  WORKLOAD_GROUP_NAMESPACE="faces"
+# install. <VM_PRIVATE_IP> = this VM's IP; <WORKLOAD_GROUP> = smiley-vm | faces-gui-vm | color-vm (the <NAME> column below).
+msiexec /i C:\temp\bel_wme.msi /quiet /l*vx C:\temp\wme-install.log INBOUND_NETWORK_ADDRESS="<VM_PRIVATE_IP>" WORKLOAD_GROUP_NAME="<WORKLOAD_GROUP>" WORKLOAD_GROUP_NAMESPACE="faces"
 
-# VM3
-msiexec /i C:\temp\bel_wme_installer.msi /quiet /l*vx C:\temp\install.log `
-  INBOUND_NETWORK_ADDRESS="<VM3_PRIVATE_IP>" `
-  WORKLOAD_GROUP_NAME="color-vm" `
-  WORKLOAD_GROUP_NAMESPACE="faces"
+# verify: both services RUNNING, and the harness certified its identity
+sc.exe query linkerd-proxy-harness   # RUNNING
+sc.exe query linkerdtcpredirect      # RUNNING - the WFP driver (loads under Secure Boot; it's WHQL-signed)
+Get-Content "C:\Program Files\Buoyant\Linkerd\harness.log" -Tail 30
 ```
 
-Create an **ExternalGroup** per VM in the `faces` namespace so the harness can
-auto-register. VM1's template carries the label the `smiley` Service selects, so
-the Service resolves to the VM:
+`harness.log` should show `Certified identity id=spiffe://cluster.local/<component>`, the
+three control-plane endpoints resolving to their ILB IPs, and no `UnknownIssuer`/connection
+errors. If the install itself fails, the verbose log is at `C:\temp\wme-install.log`.
+
+The **WFP driver** logs to a WPP ETW trace at `C:\Program Files\Buoyant\Linkerd\linkerd-tcp-redirect-driver.etl`
+(a 50 MB circular file, capturing from boot). `sc.exe query linkerdtcpredirect` = `RUNNING` above is the
+quick proof it loaded; for driver-level detail, decode the ETL with `tracefmt` (from the Windows Driver Kit)
+against the installed symbols:
+
+**On the VM** (PowerShell; needs the WDK's `tracefmt`):
+```powershell
+$d = "$env:ProgramFiles\Buoyant\Linkerd"
+tracefmt -p "$d\driver" -o "$d\driver.log" "$d\linkerd-tcp-redirect-driver.etl"
+# in driver.log, look for: CONNECT_REDIRECT_V4 Filter added   (the outbound callout registered)
+```
+
+`tracefmt` isn't on a stock VM, so treat the ETL decode as troubleshooting, not a required step.
+
+### Lock the workloads to cluster-only access (Windows Firewall)
+
+Inbound-serving VMs (VM1 `smiley`, VM3 `color`) need the proxy's inbound + metrics ports
+opened **only to the AKS pod CIDR**, with the app port left closed - the MSI adds no firewall
+rules.
+
+**On inbound VMs** (PowerShell, as admin):
+```powershell
+# scope to the AKS VNet address space (10.224.0.0/12 in this session)
+New-NetFirewallRule -DisplayName "Linkerd mesh inbound (4143)"  -Direction Inbound -Action Allow -Protocol TCP -LocalPort 4143 -RemoteAddress 10.224.0.0/12
+New-NetFirewallRule -DisplayName "Linkerd proxy metrics (4191)" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 4191 -RemoteAddress 10.224.0.0/12
+```
+
+With the app port (`smiley` :8080 / `color` :8081) closed, the workload is reachable **only
+through the mesh** (cluster → proxy `:4143`, mTLS, from the AKS range) - never directly from
+other VMs or the VNet. That firewall-plus-mesh isolation is the production-lockdown property.
+VM2 (`faces-gui`, outbound-only) needs no inbound rules. (No tap port - tap is deprecated.)
+
+### Register each VM as an ExternalWorkload
+
+Apply one **ExternalGroup** per VM so the harness auto-registers; the labels match that
+component's Service selector, so the Service resolves to the VM.
+
+**On the cluster** (kubectl):
 
 ```yaml
-# VM1 - smiley (inbound). Labels match the smiley Service selector.
+# One per VM - fill <NAME>, <COMPONENT>, <PORT> from the table below.
 apiVersion: workload.buoyant.io/v1alpha1
 kind: ExternalGroup
 metadata:
-  name: smiley-vm
+  name: <NAME>
   namespace: faces
 spec:
   probes:
@@ -299,243 +278,65 @@ spec:
     metadata:
       labels:
         buoyant.io/application: faces
-        faces.buoyant.io/component-type: backend
-        faces.buoyant.io/component: smiley
+        faces.buoyant.io/component-type: backend    # backends only; OMIT for faces-gui (outbound-only)
+        faces.buoyant.io/component: <COMPONENT>
     ports:
-    - name: http      # smiley Service targetPort is the named port "http"
-      port: 8080      # the port smiley listens on, on the VM
----
-# VM2 - faces-gui (outbound only). Registers for identity; serves no cluster traffic.
-apiVersion: workload.buoyant.io/v1alpha1
-kind: ExternalGroup
-metadata:
-  name: faces-gui-vm
-  namespace: faces
-spec:
-  probes:
-  - httpGet: { path: /ready, port: 4192, scheme: HTTP, host: 127.0.0.1 }
-    initialDelaySeconds: 5
-    periodSeconds: 10
-    failureThreshold: 3
-    successThreshold: 1
-    timeoutSeconds: 2
-  template:
-    metadata:
-      labels:
-        buoyant.io/application: faces
-        faces.buoyant.io/component: faces-gui
-    ports:
-    - name: http
-      port: 8083
----
-# VM3 - color (gRPC inbound). Labels match the color Service selector.
-apiVersion: workload.buoyant.io/v1alpha1
-kind: ExternalGroup
-metadata:
-  name: color-vm
-  namespace: faces
-spec:
-  probes:
-  - httpGet: { path: /ready, port: 4192, scheme: HTTP, host: 127.0.0.1 }
-    initialDelaySeconds: 5
-    periodSeconds: 10
-    failureThreshold: 3
-    successThreshold: 1
-    timeoutSeconds: 2
-  template:
-    metadata:
-      labels:
-        buoyant.io/application: faces
-        faces.buoyant.io/component-type: backend
-        faces.buoyant.io/component: color
-    ports:
-    - name: http      # color Service targetPort is the named port "http" (gRPC rides it)
-      port: 8081      # the port color listens on, on the VM
+    - { name: http, port: <PORT> }
 ```
 
-Then run the one Faces component on each VM (via the faces-demo Windows manager,
-or the binary directly). VM2's GUI points at the in-cluster `face` Service:
+| VM | `<NAME>` | `<COMPONENT>` | `<PORT>` | notes |
+|---|---|---|---|---|
+| VM1 | `smiley-vm` | `smiley` | 8080 | backend |
+| VM2 | `faces-gui-vm` | `faces-gui` | 8083 | outbound-only - **omit** the `component-type` label |
+| VM3 | `color-vm` | `color` | 8081 | backend (gRPC rides the named `http` port) |
 
+Confirm registration:
+
+**On the cluster** (kubectl):
+```text
+kubectl get externalworkload -n faces -o wide   # one per VM, each with its own spiffe:// identity
+```
+
+---
+
+## Part 5 - Run the Faces workloads
+
+Run the one Faces component per VM as an SCM service with `install-faces-service.ps1`. The
+Faces binaries are plain console apps, so the script wraps each in
+[WinSW](https://github.com/winsw/winsw) - a real service that starts after the mesh is up
+(depends on `linkerd-proxy-harness`), restarts on failure, and rolls logs to
+`C:\faces-demo\logs\<component>\`. It downloads the pinned Faces binary for the component,
+so you just pass `-Component`.
+
+**On each VM** (PowerShell, as admin):
 ```powershell
-# VM1 - smiley on :8080 (default)
-.\Faces-Demo-Windows-Manager.ps1 Install -Component smiley
+# VM1 - smiley (:8080)
+.\install-faces-service.ps1 -Component smiley
 
-# VM2 - GUI on :8083, calling the in-cluster face Service (meshable name, not a NodePort)
-#   set FACE_SERVICE=face.faces.svc.cluster.local in the gui env file, then:
-.\Faces-Demo-Windows-Manager.ps1 Install -Component gui
+# VM2 - GUI (:8083), calling the in-cluster face Service by its meshable name
+.\install-faces-service.ps1 -Component gui -EnvVars @{ FACE_SERVICE = "face.faces.svc.cluster.local" }
 
-# VM3 - color on :8081 (default), gRPC
-.\Faces-Demo-Windows-Manager.ps1 Install -Component color
+# VM3 - color (:8081, gRPC)
+.\install-faces-service.ps1 -Component color
 ```
 
-**Verify registration** (from a machine with `kubectl`):
+### smiley and color: they just appear in the grid
 
-```powershell
-kubectl get externalworkload -n faces -o wide
-# Expect one per VM, each with its own IDENTITY:
-#   spiffe://cluster.local/smiley      (VM1)
-#   spiffe://cluster.local/faces-gui   (VM2)
-#   spiffe://cluster.local/color       (VM3)
-```
+`smiley` and `color` are back ends - each is one cell in whatever grid you're already
+watching. With the component running on its VM and its in-cluster Deployment at 0 (Part 1),
+the `smiley` / `color` Service resolves to the VM (via the `linkerd-external-<svc>-*`
+EndpointSlice), so the emoji and its background now come from Windows over inbound mTLS.
+There's no new address to visit - the cells just change source.
 
----
+### The GUI is the front door: it moves off the cluster onto VM2
 
-## Part 5 - The demo
+The GUI is different - it's the page you view, not a cell in it. Part 1 scaled the in-cluster
+`faces-gui` to 0 along with the back ends, so the LoadBalancer URL from Part 1
+(`kubectl get svc faces-gui -n faces`) now has no backing pod and goes dark. The live GUI is
+the one on **VM2**, served on VM2's own address - not the cluster LB.
 
-**Base flow.** Browse to VM2's GUI (`http://<VM2_PRIVATE_IP>:8083`). Cells should
-render grinning faces on colored backgrounds. That single page proves all three
-mesh hops at once:
+Reach it over VM2's public IP: open inbound TCP `:8083` and browse `http://<VM2_PUBLIC_IP>:8083`.
+That's the GUI app port only - the mesh ports stay locked down as in Part 4.
 
-- **outbound / driver**: the GUI's call to `face` left VM2 through the WFP
-  driver, was meshed by the proxy, and reached the cluster over mTLS;
-- **inbound, HTTP**: `face` reached `smiley` **on VM1** over mTLS (the emoji); and
-- **inbound, gRPC**: `face` reached `color` **on VM3** over mTLS (the background).
-
-**Enforce mTLS - and show the driver is required (the payoff).**
-
-Put a policy on the in-cluster `face` Service that requires the caller to be
-meshed and authorizes **exactly VM2's identity**. Because the browser talks to
-the GUI (not to `face`), we can require mTLS on all of `face` - no read/write
-route split is needed.
-
-```bash
-cat <<'EOF' | kubectl apply -f -
-apiVersion: policy.linkerd.io/v1beta3
-kind: Server
-metadata: { name: face-require-mtls, namespace: faces }
-spec:
-  podSelector: { matchLabels: { faces.buoyant.io/component: face } }
-  port: http
-  proxyProtocol: HTTP/1
----
-apiVersion: policy.linkerd.io/v1alpha1
-kind: MeshTLSAuthentication
-metadata: { name: faces-gui-vm-mtls, namespace: faces }
-spec:
-  identities: ["spiffe://cluster.local/faces-gui"]   # VM2's SPIRE identity
----
-apiVersion: policy.linkerd.io/v1alpha1
-kind: AuthorizationPolicy
-metadata: { name: face-allow-gui-vm, namespace: faces }
-spec:
-  targetRef: { group: policy.linkerd.io, kind: Server, name: face-require-mtls }
-  requiredAuthenticationRefs:
-    - { group: policy.linkerd.io, kind: MeshTLSAuthentication, name: faces-gui-vm-mtls }
-EOF
-```
-
-Now toggle the driver on VM2:
-
-- **driver on** → GUI's outbound call to `face` is meshed as `faces-gui` → authorized → **cells render**.
-- **driver off** → no meshed path → `face` denies the (now unmeshed) call → **cells break**.
-
-```powershell
-# On VM2 - stop the redirect driver, watch the browser cells fail, then restore
-sc.exe stop linkerdtcpredirect
-# ... cells break in the browser ...
-sc.exe start linkerdtcpredirect
-# ... cells recover ...
-```
-
-That is the security property: without the driver there is no mesh identity on
-the VM's outbound traffic, so policy denies it.
-
-**Inbound enforcement (optional, on the VM back ends).** A default-deny `Server`
-plus an `AuthorizationPolicy` authorizing `face`'s in-cluster identity shows the
-same story on the inbound side: a direct, unmeshed call to the back end on the
-VM is denied, while `face`'s meshed call is allowed. The only difference between
-the two back ends is the `Server` protocol - **`smiley` is HTTP**
-(`proxyProtocol: HTTP/1`), **`color` is gRPC**, which the proxy treats opaquely
-(`proxyProtocol: unknown`), so authorize at the `Server`, not a route.
-
-```bash
-cat <<'EOF' | kubectl apply -f -
-# --- smiley (HTTP) on VM1 ---
-apiVersion: policy.linkerd.io/v1beta3
-kind: Server
-metadata: { name: smiley-require-mtls, namespace: faces }
-spec:
-  externalWorkloadSelector: { matchLabels: { faces.buoyant.io/component: smiley } }
-  port: http
-  proxyProtocol: HTTP/1
----
-# --- color (gRPC) on VM3 ---
-apiVersion: policy.linkerd.io/v1beta3
-kind: Server
-metadata: { name: color-require-mtls, namespace: faces }
-spec:
-  externalWorkloadSelector: { matchLabels: { faces.buoyant.io/component: color } }
-  port: http
-  proxyProtocol: unknown   # gRPC treated opaquely; authorize at the Server
----
-apiVersion: policy.linkerd.io/v1alpha1
-kind: MeshTLSAuthentication
-metadata: { name: backend-callers, namespace: faces }
-spec:
-  identities: ["face.faces.serviceaccount.identity.linkerd.cluster.local"]
----
-apiVersion: policy.linkerd.io/v1alpha1
-kind: AuthorizationPolicy
-metadata: { name: smiley-allow-face, namespace: faces }
-spec:
-  targetRef: { group: policy.linkerd.io, kind: Server, name: smiley-require-mtls }
-  requiredAuthenticationRefs:
-    - { group: policy.linkerd.io, kind: MeshTLSAuthentication, name: backend-callers }
----
-apiVersion: policy.linkerd.io/v1alpha1
-kind: AuthorizationPolicy
-metadata: { name: color-allow-face, namespace: faces }
-spec:
-  targetRef: { group: policy.linkerd.io, kind: Server, name: color-require-mtls }
-  requiredAuthenticationRefs:
-    - { group: policy.linkerd.io, kind: MeshTLSAuthentication, name: backend-callers }
-EOF
-```
-
-Remove policies when done:
-
-```bash
-kubectl delete -n faces server/face-require-mtls authorizationpolicy/face-allow-gui-vm meshtlsauthentication/faces-gui-vm-mtls
-kubectl delete -n faces server/smiley-require-mtls server/color-require-mtls authorizationpolicy/smiley-allow-face authorizationpolicy/color-allow-face meshtlsauthentication/backend-callers
-```
-
-> **On `AuthorizationPolicy` vs `ServerAuthorization`.** Authorizing an external
-> workload keys off its **SPIFFE identity**, so we use `AuthorizationPolicy` +
-> `MeshTLSAuthentication` naming that identity. The enterprise build ignores the
-> legacy `ServerAuthorization` under its per-route authz model, and `["*"]`
-> does not match a SPIFFE id - name the identity explicitly.
-
----
-
-## Configuring for your environment
-
-Everything above uses defaults so the demo stays simple. The pieces that a real
-deployment overrides, and where:
-
-| Setting | Demo value | Where to change it |
-|---|---|---|
-| Cluster domain / control-plane addresses | defaults (`cluster.local`, `linkerd-*` names) | MSI properties `CLUSTER_DOMAIN`, `CONTROL_ADDRESS`, `DESTINATION_SVC_ADDR`, `POLICY_SVC_ADDR` (official guide) |
-| CoreDNS service names | defaults | `setup-coredns-azure.ps1 -AutoregName/-DestinationName/-PolicyName` (must match the MSI addresses above) |
-| VM workload identity | per-VM SPIFFE id | `setup-spire.ps1 -WorkloadSpiffeId` |
-| Faces service wiring | `FACE_SERVICE`, `SMILEY_SERVICE`, `COLOR_SERVICE` | Faces component env files |
-
----
-
-## Cleanup
-
-```powershell
-# On each VM: uninstall BEL WME (see the official guide), then remove Faces
-.\Faces-Demo-Windows-Manager.ps1 Uninstall -Force
-
-# In the cluster
-helm uninstall faces -n faces
-kubectl delete namespace faces
-```
-
----
-
-## References
-
-- Official install guide:
-  https://docs.buoyant.io/buoyant-enterprise-linkerd/latest/guides/installing-windows-mesh-expansion/
-- Faces demo: https://github.com/BuoyantIO/faces-demo
+VM2's GUI then renders the full grid - `face` (in-cluster) fanning out to `smiley` on VM1 and
+`color` on VM3, all over mTLS - the whole mesh spanning the cluster and three Windows VMs.
