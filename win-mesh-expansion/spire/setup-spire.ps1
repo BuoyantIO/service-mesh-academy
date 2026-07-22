@@ -1,121 +1,87 @@
 #Requires -RunAsAdministrator
+# Sets up SPIRE (server + agent) on a Windows VM for BEL Windows Mesh Expansion:
+# downloads the pinned SPIRE release, bootstraps a per-VM server backed by the
+# upstream CA, registers this VM's workload SPIFFE ID, and installs SCM services
+# that bring SPIRE up at boot.
 param(
-    [string]$Namespace = "linkerd",
-    [Parameter(Mandatory)][string]$CACert,
-    [Parameter(Mandatory)][string]$CAKey,
-    [Parameter(Mandatory)][string]$BundleCert,
-    # SPIFFE ID registered for this VM's workload. Give each VM its own identity
-    # (e.g. spiffe://cluster.local/smiley, .../faces-gui) so cluster policy can
-    # authorize each VM precisely. All VMs still share the upstream CA
-    # intermediate, so every SVID chains to the same root (see docs/spire.md).
-    [string]$WorkloadSpiffeId = "spiffe://cluster.local/external-workload"
+    [Parameter(Mandatory)][string]$CACert,      # SPIRE upstream CA cert (chains to the cluster root)
+    [Parameter(Mandatory)][string]$CAKey,       #   ...its private key
+    [Parameter(Mandatory)][string]$BundleCert,  # upstream CA cert + cluster root CA, concatenated
+    # Give each VM its own identity (e.g. .../smiley, .../faces-gui) so cluster
+    # policy can authorize each precisely; all VMs share the upstream CA.
+    [string]$WorkloadSpiffeId = "spiffe://cluster.local/external-workload",
+    [string]$SpireVersion     = "1.15.2"
 )
 
 $ErrorActionPreference = 'Stop'
 
-# 1. Verify SPIRE binaries are present — copy the spire folder from the repo and
-#    the bin\ directory from a prior SUT before running this script.
-foreach ($bin in @("C:\spire\bin\spire-server.exe", "C:\spire\bin\spire-agent.exe")) {
-    if (-not (Test-Path $bin)) { throw "Missing binary: $bin - copy bin\ from a prior SUT before running setup." }
+# 0. Install the configs to C:\spire so it stays self-contained after the
+#    staging folder (e.g. C:\temp\spire) is deleted.
+New-Item -ItemType Directory -Force C:\spire | Out-Null
+foreach ($f in "server.cfg", "agent.cfg") {
+    if ((Resolve-Path "$PSScriptRoot\$f").Path -ne "C:\spire\$f") { Copy-Item "$PSScriptRoot\$f" "C:\spire\$f" -Force }
 }
 
-# 2. Verify required cert files are present and copy to canonical locations.
-#    CACert / CAKey  = SPIRE upstream CA (chained to cluster root for AKS, self-signed for k3d).
-#    BundleCert      = CACert + root-ca.crt concatenated (see docs/spire.md).
+# 1. SPIRE binaries - download the pinned release if not already present.
+$bin = "C:\spire\bin"
+New-Item -ItemType Directory -Force $bin | Out-Null
+if (-not (Test-Path "$bin\spire-server.exe") -or -not (Test-Path "$bin\spire-agent.exe")) {
+    Write-Host "Downloading SPIRE $SpireVersion..."
+    $url = "https://github.com/spiffe/spire/releases/download/v$SpireVersion/spire-$SpireVersion-windows-amd64.zip"
+    $zip = "$env:TEMP\spire-$SpireVersion.zip"
+    $tmp = "$env:TEMP\spire-$SpireVersion"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri $url -OutFile $zip
+    Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
+    Expand-Archive $zip -DestinationPath $tmp -Force
+    Copy-Item (Get-ChildItem $tmp -Recurse -Filter spire-server.exe)[0].FullName "$bin\spire-server.exe" -Force
+    Copy-Item (Get-ChildItem $tmp -Recurse -Filter spire-agent.exe)[0].FullName  "$bin\spire-agent.exe"  -Force
+    Remove-Item $zip, $tmp -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+# 2. Stage the cert files at the paths server.cfg expects (skip if already there).
 New-Item -ItemType Directory -Force C:\spire\certs | Out-Null
-if (-not (Test-Path $CACert))     { throw "Missing CACert: $CACert" }
-if (-not (Test-Path $CAKey))      { throw "Missing CAKey: $CAKey" }
-if (-not (Test-Path $BundleCert)) { throw "Missing BundleCert: $BundleCert" }
+if ((Resolve-Path $CACert).Path     -ne "C:\spire\certs\ca.crt")     { Copy-Item $CACert     C:\spire\certs\ca.crt     -Force }
+if ((Resolve-Path $CAKey).Path      -ne "C:\spire\certs\ca.key")     { Copy-Item $CAKey      C:\spire\certs\ca.key     -Force }
+if ((Resolve-Path $BundleCert).Path -ne "C:\spire\certs\bundle.crt") { Copy-Item $BundleCert C:\spire\certs\bundle.crt -Force }
 
-if ($CACert     -ne "C:\spire\certs\ca.crt")     { Copy-Item $CACert     "C:\spire\certs\ca.crt"    -Force }
-if ($CAKey      -ne "C:\spire\certs\ca.key")      { Copy-Item $CAKey      "C:\spire\certs\ca.key"    -Force }
-if ($BundleCert -ne "C:\spire\certs\bundle.crt")  { Copy-Item $BundleCert "C:\spire\certs\bundle.crt" -Force }
-Write-Host "SPIRE certs verified."
+# 3. Data/log dirs, writable by SYSTEM (SPIRE runs as LocalSystem).
+New-Item -ItemType Directory -Force C:\spire\logs, C:\spire\data\server, C:\spire\data\agent | Out-Null
+icacls C:\spire\data /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /grant "Administrators:(OI)(CI)F" /T /C | Out-Null
 
-# 3. Create required directories and fix permissions so SYSTEM can write data/logs.
-New-Item -ItemType Directory -Force C:\spire\logs        | Out-Null
-New-Item -ItemType Directory -Force C:\spire\data\server | Out-Null
-New-Item -ItemType Directory -Force C:\spire\data\agent  | Out-Null
-icacls "C:\spire\data" /grant "Administrators:(OI)(CI)F" /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /T /C | Out-Null
-
-# 4. Bootstrap — start server, create join token, start agent, register workload entry, then stop.
-#    After this the agent re-attests on each subsequent start without a new token.
+# 4. One-time bootstrap: start server, mint a join token, attest the agent,
+#    register the workload entry, then stop (the SCM services take over from here).
 Write-Host "Bootstrapping SPIRE..."
-
-$serverProc = Start-Process -NoNewWindow -PassThru `
-    -FilePath "C:\spire\bin\spire-server.exe" `
-    -ArgumentList "run", "-config", "C:\spire\server.cfg"
-
-Write-Host "Waiting for server..."
+$server = Start-Process -NoNewWindow -PassThru C:\spire\bin\spire-server.exe -ArgumentList run,-config,C:\spire\server.cfg
 Start-Sleep 10
-
-$tokenJson = & "C:\spire\bin\spire-server.exe" token generate `
-    -spiffeID spiffe://cluster.local/agent -output json | ConvertFrom-Json
-$token = $tokenJson.value
+$token = (& C:\spire\bin\spire-server.exe token generate -spiffeID spiffe://cluster.local/agent -output json | ConvertFrom-Json).value
 if (-not $token) { throw "Failed to generate SPIRE join token" }
-
-$agentProc = Start-Process -NoNewWindow -PassThru `
-    -FilePath "C:\spire\bin\spire-agent.exe" `
-    -ArgumentList "run", "-config", "C:\spire\agent.cfg", "-joinToken", $token
-
-Write-Host "Waiting for agent to attest..."
+$agent = Start-Process -NoNewWindow -PassThru C:\spire\bin\spire-agent.exe -ArgumentList run,-config,C:\spire\agent.cfg,-joinToken,$token
 Start-Sleep 15
-
-& "C:\spire\bin\spire-server.exe" entry create `
-    -parentID spiffe://cluster.local/agent `
-    -spiffeID $WorkloadSpiffeId `
-    -selector "windows:user_name:NT AUTHORITY\SYSTEM"
-
-Write-Host "Registered workload SPIFFE ID: $WorkloadSpiffeId"
-
-Write-Host "Stopping server and agent (SCM services manage startup from here)..."
-Stop-Process -Id $serverProc.Id -Force -ErrorAction SilentlyContinue
-Stop-Process -Id $agentProc.Id  -Force -ErrorAction SilentlyContinue
+& C:\spire\bin\spire-server.exe entry create -parentID spiffe://cluster.local/agent -spiffeID $WorkloadSpiffeId -selector "windows:user_name:NT AUTHORITY\SYSTEM"
+Stop-Process -Id $server.Id, $agent.Id -Force -ErrorAction SilentlyContinue
 Start-Sleep 2
 
-# 5. Register SCM services (clean up any prior install first)
-Write-Host "Registering SCM services..."
-$null = sc.exe stop spire-agent  2>&1; $null = sc.exe delete spire-agent  2>&1
-$null = sc.exe stop spire-server 2>&1; $null = sc.exe delete spire-server 2>&1
+# 5. Install SCM services (idempotent). Args are baked into binPath, start is
+#    'auto', and the agent depends on the server - so SCM brings both up in
+#    dependency order at every boot, with no scheduled task or boot script.
+sc.exe stop spire-agent  2>&1 | Out-Null; sc.exe delete spire-agent  2>&1 | Out-Null
+sc.exe stop spire-server 2>&1 | Out-Null; sc.exe delete spire-server 2>&1 | Out-Null
+sc.exe create spire-server binPath= "C:\spire\bin\spire-server.exe run -config C:\spire\server.cfg" start= auto obj= LocalSystem DisplayName= "SPIRE Server" | Out-Null
+sc.exe failure spire-server reset= 86400 actions= restart/5000/restart/15000/restart/60000 | Out-Null
+sc.exe create spire-agent binPath= "C:\spire\bin\spire-agent.exe run -config C:\spire\agent.cfg" start= auto depend= spire-server obj= LocalSystem DisplayName= "SPIRE Agent" | Out-Null
+sc.exe failure spire-agent reset= 86400 actions= restart/5000/restart/15000/restart/60000 | Out-Null
 
-sc.exe create spire-server binPath= "C:\spire\bin\spire-server.exe" start= demand obj= LocalSystem DisplayName= "SPIRE Server"
-sc.exe failure spire-server reset= 86400 actions= run/5000/run/15000/run/60000 command= "C:\Windows\System32\sc.exe start spire-server run -config C:\spire\server.cfg"
+# 6. Start now (start= auto brings them back on later boots); wait for the agent pipe.
+sc.exe start spire-server | Out-Null
+$srvDeadline = (Get-Date).AddSeconds(30)
+while (((sc.exe query spire-server) -notmatch "RUNNING") -and (Get-Date) -lt $srvDeadline) { Start-Sleep 2 }
+sc.exe start spire-agent | Out-Null
 
-sc.exe create spire-agent binPath= "C:\spire\bin\spire-agent.exe" start= demand depend= spire-server obj= LocalSystem DisplayName= "SPIRE Agent"
-sc.exe failure spire-agent reset= 86400 actions= run/5000/run/15000/run/60000 command= "C:\Windows\System32\sc.exe start spire-agent run -config C:\spire\agent.cfg -retryBootstrap"
-
-# 6. Register SpireStartup scheduled task
-Write-Host "Registering SpireStartup scheduled task..."
-$action    = New-ScheduledTaskAction -Execute "powershell.exe" `
-                 -Argument "-NonInteractive -ExecutionPolicy Bypass -File C:\spire\start-spire.ps1" `
-                 -WorkingDirectory "C:\spire"
-$trigger   = New-ScheduledTaskTrigger -AtStartup
-$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
-$settings  = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
-Register-ScheduledTask -TaskName "SpireStartup" -Action $action -Trigger $trigger `
-    -Principal $principal -Settings $settings -Force | Out-Null
-
-Write-Host "Starting SPIRE via SpireStartup task..."
-Start-ScheduledTask -TaskName SpireStartup
-
-Write-Host "Waiting for SPIRE agent pipe..."
 $deadline = (Get-Date).AddSeconds(60)
 while (-not (Test-Path "\\.\pipe\spire-agent\public\api")) {
-    if ((Get-Date) -gt $deadline) { throw "Timed out waiting for SPIRE agent pipe" }
+    if ((Get-Date) -gt $deadline) { throw "Timed out waiting for SPIRE agent pipe (check C:\spire\logs)" }
     Start-Sleep 2
 }
-Write-Host "SPIRE agent pipe ready."
-
-$serverRunning = (sc.exe query spire-server) -match "RUNNING"
-$agentRunning  = (sc.exe query spire-agent)  -match "RUNNING"
-$pipeReady     = Test-Path "\\.\pipe\spire-agent\public\api"
-
-if ($serverRunning -and $agentRunning -and $pipeReady) {
-    Write-Host "SPIRE setup complete and running."
-} else {
-    Write-Host "WARNING: SPIRE may not be fully running. Check logs:"
-    Write-Host "  C:\spire\logs\server.log"
-    Write-Host "  C:\spire\logs\agent.log"
-    sc.exe query spire-server
-    sc.exe query spire-agent
-}
+Write-Host "SPIRE ready: workload $WorkloadSpiffeId, agent pipe up."

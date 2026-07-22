@@ -92,13 +92,17 @@ if (-not $DestinationName) { $DestinationName = "linkerd-dst.linkerd.svc.$Cluste
 if (-not $PolicyName)      { $PolicyName      = "linkerd-policy.linkerd.svc.$ClusterDomain" }
 
 # ---------------------------------------------------------------------------
-# 1. Ensure the VM can reach the internet before we download anything.
-#    If a previous partial run already set DNS to 127.0.0.1 but CoreDNS is
-#    not yet running, DNS resolution is broken.  Reset to Azure DNS first.
+# 1. Re-run safety: only if a prior run already pointed the adapter at 127.0.0.1
+#    (local CoreDNS) and CoreDNS isn't serving, name resolution is dead and the
+#    download below can't resolve github.com. Reset to Azure DNS in that case.
+#    On a first run the adapter is already on Azure DNS, so this is a no-op.
 # ---------------------------------------------------------------------------
-Write-Host "Restoring Azure DNS (168.63.129.16) so downloads succeed..."
-Set-DnsClientServerAddress -InterfaceAlias $InterfaceAlias -ServerAddresses "168.63.129.16"
-Start-Sleep 2
+$currentDns = (Get-DnsClientServerAddress -InterfaceAlias $InterfaceAlias -AddressFamily IPv4).ServerAddresses
+if ($currentDns -contains "127.0.0.1") {
+    Write-Host "DNS points at local CoreDNS; resetting to Azure DNS (168.63.129.16) so the download can resolve..."
+    Set-DnsClientServerAddress -InterfaceAlias $InterfaceAlias -ServerAddresses "168.63.129.16"
+    Start-Sleep 2
+}
 
 # ---------------------------------------------------------------------------
 # 2. Download CoreDNS if not already present
