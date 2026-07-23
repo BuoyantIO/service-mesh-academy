@@ -78,6 +78,31 @@ The outbound path has two requirements inbound doesn't:
   the in-cluster Faces chart version installed in Part 1. We run **one** component per VM,
   registered as an SCM service by `install-faces-service.ps1` (see Part 5).
 
+### How identity is established on the cluster (one-time)
+
+Everything meshed - the control plane and every VM - derives its mTLS identity from a
+single **trust anchor**: the Linkerd **root CA** (`root.linkerd.cluster.local`), whose
+private key stays with the operator and never lands on a VM. Two intermediates chain
+under it and are loaded into the cluster as the Kubernetes objects the rest of the stack
+reads:
+
+- **Linkerd issuer** (`pathlen:0`) signs the control plane's own TLS certs. It's stored
+  as the `linkerd-identity-issuer` **TLS secret** - the issuer cert and key, with the
+  root's `ca.crt` merged into the secret's data - alongside the
+  `linkerd-identity-trust-roots` **configmap** holding the root bundle that proxies verify
+  peers against. BEL is installed pointing at these (`identity.externalCA=true`,
+  `identity.issuer.scheme=kubernetes.io/tls`) instead of self-generating an issuer.
+- **SPIRE upstream CA** (`pathlen:1`) is a second intermediate dedicated to VM identity,
+  generated once and stored as the `spire-upstream-ca` **secret**. Each VM's SPIRE server
+  pulls it in Part 2 to mint its own sub-CA and issue that VM's SVIDs, so every VM identity
+  chains back to the same root **while the root key never leaves the cluster**. Because
+  it's a dedicated intermediate, it can be rotated or revoked without touching the root -
+  using the root directly would work but would put the root key on every VM.
+
+This is the standard one-time WME cluster bring-up (BEL install plus these certs), done
+before any VM is onboarded; the ILBs, peering, and NSG rules noted in
+[Prerequisites](#prerequisites) are the rest of it.
+
 ---
 
 ## Part 1 - Deploy Faces to the cluster
