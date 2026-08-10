@@ -38,6 +38,10 @@ all three supported platforms and both inbound protocols:
 | **VM2** | Server 2022 | `faces-gui` |
 | **VM3** | Windows 11 | `color` |
 
+A fourth VM runs the **SPIRE server** and no Faces workload. Identity is infrastructure, not
+part of the app, and separating it is what lets the three workload VMs hold no CA key at all
+(Part 2).
+
 The browser points at **VM2's GUI**, so one page load exercises every path at once. The
 **outbound** call (`gui → face`) is the only one that needs the **WFP driver** - it
 redirects the VM's outbound TCP into the proxy for mTLS - and it's where the security
@@ -56,15 +60,17 @@ The outbound path has two requirements inbound doesn't:
 
 ## Prerequisites
 
-- An **AKS** cluster running **Linkerd Enterprise (BEL 2.20.0)** with external-workload
+- An **AKS** cluster running **Linkerd Enterprise (BEL 2.20.1)** with external-workload
   support, its VNet **peered** to the VMs'. Peering routes real VNet addresses, so the
   outbound data path (**pod IPs**) reaches the VM directly - but the control-plane
   **ClusterIP** services don't route over peering, so they're published to the VMs as
   **internal load balancers** (autoregistration, destination, policy, kube-dns). Cluster
   bring-up - BEL install, certs, SPIRE upstream CA, those ILBs, peering, NSG rules - is
   the standard one-time WME setup.
-- Three **Windows** VMs - Server 2025, Server 2022, and Windows 11 - in a VNet
-  peered with the AKS VNet.
+- Three **Windows** workload VMs - Server 2025, Server 2022, and Windows 11 - in a VNet
+  peered with the AKS VNet, plus one more VM running the **SPIRE server** (Part 2). The
+  SPIRE server VM needs no peering-dependent access of its own; it only has to be reachable
+  on `:8081` from the workload VMs' subnet.
 - On each VM, in the order the official guide requires: a **SPIRE agent**, **DNS
   resolution** for `*.cluster.local`, then the **BEL WME MSI**. The helper
   scripts in this folder cover SPIRE and DNS; the MSI itself follows the
@@ -77,6 +83,11 @@ The outbound path has two requirements inbound doesn't:
   from source (`tools/Faces-Demo-Windows-Manager.ps1 Build`). This **must** match
   the in-cluster Faces chart version installed in Part 1. We run **one** component per VM,
   registered as an SCM service by `install-faces-service.ps1` (see Part 5).
+  Note that archive holds **binaries only - no web assets**. The GUI serves its pages off
+  disk from `DATA_PATH`; the container image gets them from `COPY assets/html /app/data`,
+  so on Windows `install-faces-service.ps1` stages `assets/html` from the matching source
+  tag instead. Without that the GUI proxies `/face/` correctly and returns **404** for the
+  page itself - a confusing failure, since the mesh is working fine.
 
 ### How identity is established on the cluster (one-time)
 
@@ -93,11 +104,12 @@ reads:
   peers against. BEL is installed pointing at these (`identity.externalCA=true`,
   `identity.issuer.scheme=kubernetes.io/tls`) instead of self-generating an issuer.
 - **SPIRE upstream CA** (`pathlen:1`) is a second intermediate dedicated to VM identity,
-  generated once and stored as the `spire-upstream-ca` **secret**. Each VM's SPIRE server
-  pulls it in Part 2 to mint its own sub-CA and issue that VM's SVIDs, so every VM identity
-  chains back to the same root **while the root key never leaves the cluster**. Because
-  it's a dedicated intermediate, it can be rotated or revoked without touching the root -
-  using the root directly would work but would put the root key on every VM.
+  generated once and stored as the `spire-upstream-ca` **secret**. The **SPIRE server VM**
+  pulls it once in Part 2 to mint a sub-CA and issue SVIDs for every workload VM, so all VM
+  identities chain back to the same root **while the root key never leaves the cluster** -
+  and the upstream CA key lands on exactly **one** VM rather than all of them. Because it's
+  a dedicated intermediate, it can be rotated or revoked without touching the root - using
+  the root directly would work but would put the root key on a VM.
 
 This is the standard one-time WME cluster bring-up (BEL install plus these certs), done
 before any VM is onboarded; the ILBs, peering, and NSG rules noted in
@@ -134,11 +146,19 @@ kubectl scale deployment smiley color faces-gui -n faces --replicas=0
 
 ## Part 2 - Give each VM its own identity (SPIRE)
 
-Every VM joins as an **ExternalWorkload** with its own SPIFFE identity. Each VM runs a
-local SPIRE server backed by a shared **upstream CA** - a `pathlen:1` intermediate
-chained to the Linkerd root and stored once in the cluster - so every VM's SVIDs chain to
-the same root **without the root key ever leaving the cluster**. Each VM gets a distinct
-SPIFFE ID (`.../smiley`, `.../faces-gui`, `.../color`) that cluster policy can authorize.
+Every VM joins as an **ExternalWorkload** with its own SPIFFE identity. **One** VM runs the
+SPIRE **server**, backed by the shared `spire-upstream-ca` intermediate (see
+[How identity is established on the cluster](#how-identity-is-established-on-the-cluster-one-time));
+each workload VM runs only a SPIRE **agent** that attests to it. Every VM gets a distinct
+SPIFFE ID (`.../smiley`, `.../faces-gui`, `.../color`) that cluster policy can authorize, and
+all of them chain to the same root.
+
+Why split it out: the SPIRE server needs the upstream CA **private key** to mint its sub-CA.
+Running a server per VM means copying that key onto every machine that runs application code
+- so compromising any workload VM yields the ability to mint identities for the whole trust
+domain. With one server VM, the key sits on a machine that runs no application, and a
+workload VM holds nothing more sensitive than a public trust bundle. It's also less to set
+up per VM, and registrations live in one place instead of three.
 
 **On a machine with `kubectl`**, pull the upstream CA (from the secret) and the Linkerd root
 (from the trust-roots configmap), and build the trust bundle (upstream CA **+** root - the
@@ -154,29 +174,80 @@ kubectl get configmap linkerd-identity-trust-roots -n linkerd -o jsonpath='{.dat
 Get-Content "$stage\spire-issuer.crt", "$stage\root-ca.crt" | Out-File -Encoding ascii "$stage\bundle.crt"
 ```
 
-Copy this folder's `spire\` scripts **and** the three certs (`spire-issuer.crt`,
-`spire-issuer.key`, `bundle.crt`) to the VM under `C:\temp\spire\`, then run as
-Administrator - giving **each VM its own identity** (VM1 `smiley`, VM2 `faces-gui`,
-VM3 `color`). The script downloads SPIRE, bootstraps a local server, registers the
-workload, and installs auto-start services:
+Distribute those files carefully - this is where the security property lives:
 
-**On the VM** (PowerShell, as admin):
+| file | goes to | why |
+|---|---|---|
+| `spire-issuer.crt` + `spire-issuer.key` | **the SPIRE server VM only** | the CA key it mints its sub-CA from |
+| `bundle.crt` | **every** VM | public certs only; the agent verifies the server with it, the proxy verifies the control plane with it |
+
+### 2a. The SPIRE server VM
+
+Copy this folder's `spire\` scripts and all three certs to `C:\temp\spire\`, then run as
+Administrator. The script downloads SPIRE, bootstraps the server against the upstream CA,
+opens `:8081` to the workload subnet, and installs it as an auto-start service:
+
+**On the SPIRE server VM** (PowerShell, as admin):
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\temp\spire\setup-spire.ps1 `
+powershell -ExecutionPolicy Bypass -File C:\temp\spire\setup-spire.ps1 -Role Server `
   -CACert     C:\temp\spire\certs\spire-issuer.crt `
   -CAKey      C:\temp\spire\certs\spire-issuer.key `
   -BundleCert C:\temp\spire\certs\bundle.crt `
-  -WorkloadSpiffeId spiffe://cluster.local/smiley
+  -AllowFromCidr 10.20.0.0/24
 ```
 
-Verify, then remove the staging copy (the certs are now installed under `C:\spire\certs`):
+The server binds `0.0.0.0:8081`. `Get-NetTCPConnection -LocalPort 8081` reports `::` rather
+than `0.0.0.0` - that is Go rendering a wildcard bind as a dual-stack socket, not a failure.
 
-**On the VM** (PowerShell):
+### 2b. Each workload VM
+
+Two commands **on the server VM** per workload VM - register what identity that VM's
+workload may have, then mint its one-shot join token:
+
+**On the SPIRE server VM** (PowerShell, as admin):
+```powershell
+# <vm> is any stable label (smiley / faces-gui / color); <workload> is the Faces component.
+C:\spire\bin\spire-server.exe entry create `
+  -parentID spiffe://cluster.local/agent/<vm> `
+  -spiffeID spiffe://cluster.local/<workload> `
+  -selector "windows:user_name:NT AUTHORITY\SYSTEM"
+C:\spire\bin\spire-server.exe token generate -spiffeID spiffe://cluster.local/agent/<vm>
+```
+
+**Give every VM a distinct `-parentID`.** `token generate -spiffeID` creates a *node alias*
+for the attesting agent, and the workload entry hangs off that alias. Reuse one alias across
+VMs and they do not collide or error - they all match the first VM's workload entry, so the
+second VM silently comes up carrying the wrong identity, which then fails cluster policy for
+reasons that point nowhere near SPIRE.
+
+Then copy the `spire\` scripts and **`bundle.crt` only** to the workload VM and run as
+Administrator, pasting the token you just minted. The token is one-shot with a short TTL, so
+mint it immediately before this:
+
+**On the workload VM** (PowerShell, as admin):
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\temp\spire\setup-spire.ps1 -Role Agent `
+  -BundleCert    C:\temp\spire\certs\bundle.crt `
+  -ServerAddress 10.20.0.11 `
+  -JoinToken     <token-from-above>
+```
+
+The script refuses `-CACert`/`-CAKey` in this role, so a workload VM cannot accidentally be
+handed a CA key. It also installs the agent service with **no** `depend=`, since there is no
+local server - if the server VM or the network is not ready at boot, SCM's restart actions
+retry.
+
+Verify, then remove the staging copy (certs are now installed under `C:\spire\certs`):
+
+**On the workload VM** (PowerShell):
 ```powershell
 sc.exe query spire-agent                       # STATE : RUNNING
 Test-Path "\\.\pipe\spire-agent\public\api"     # True
 Remove-Item C:\temp\spire -Recurse -Force
 ```
+
+`C:\spire\logs\agent.log` should show `Bundle loaded` and a `Creating X509-SVID` line naming
+**this** VM's workload SPIFFE ID. If it shows a different VM's ID, the `-parentID` was reused.
 
 ---
 
@@ -229,8 +300,8 @@ domain all default to what our cluster + CoreDNS already use.
 
 **On each VM** (PowerShell, as admin):
 ```text
-# download the BEL WME MSI (2.20.0)
-curl.exe -L -o C:\temp\bel_wme.msi "https://github.com/BuoyantIO/linkerd-buoyant/releases/download/enterprise-2.20.0/bel_wme_installer-enterprise-2.20.0.msi"
+# download the BEL WME MSI (2.20.1 - see the driver-signing note below; do NOT use 2.20.0)
+curl.exe -L -o C:\temp\bel_wme.msi "https://github.com/BuoyantIO/linkerd-buoyant/releases/download/enterprise-2.20.1/bel_wme_installer-enterprise-2.20.1.msi"
 
 # install. <VM_PRIVATE_IP> = this VM's IP; <WORKLOAD_GROUP> = smiley-vm | faces-gui-vm | color-vm (the <NAME> column below).
 msiexec /i C:\temp\bel_wme.msi /quiet /l*vx C:\temp\wme-install.log INBOUND_NETWORK_ADDRESS="<VM_PRIVATE_IP>" WORKLOAD_GROUP_NAME="<WORKLOAD_GROUP>" WORKLOAD_GROUP_NAMESPACE="faces"
@@ -244,6 +315,14 @@ Get-Content "C:\Program Files\Buoyant\Linkerd\harness.log" -Tail 30
 `harness.log` should show `Certified identity id=spiffe://cluster.local/<component>`, the
 three control-plane endpoints resolving to their ILB IPs, and no `UnknownIssuer`/connection
 errors. If the install itself fails, the verbose log is at `C:\temp\wme-install.log`.
+
+> **Why 2.20.1, not 2.20.0.** The MSI carries the WFP driver, and the two releases carry
+> different builds of it: 2.20.0 ships driver `1.2.0.0`, WHQL-signed for Windows 11 and
+> Server 2025 only, while 2.20.1 ships `1.3.0.0`, the combined **Server 2022 + 2025**
+> signature. On VM2 - Server 2022 with Secure Boot - the 2.20.0 driver has no acceptable
+> signature and `linkerdtcpredirect` will not load, which breaks the one VM whose whole
+> story is the driver. `sc.exe query linkerdtcpredirect` returning `RUNNING` as a
+> `KERNEL_DRIVER` is the direct check that the right build is installed.
 
 The **WFP driver** logs to a WPP ETW trace at `C:\Program Files\Buoyant\Linkerd\linkerd-tcp-redirect-driver.etl`
 (a 50 MB circular file, capturing from boot). `sc.exe query linkerdtcpredirect` = `RUNNING` above is the
@@ -275,7 +354,27 @@ New-NetFirewallRule -DisplayName "Linkerd proxy metrics (4191)" -Direction Inbou
 With the app port (`smiley` :8080 / `color` :8081) closed, the workload is reachable **only
 through the mesh** (cluster → proxy `:4143`, mTLS, from the AKS range) - never directly from
 other VMs or the VNet. That firewall-plus-mesh isolation is the production-lockdown property.
-VM2 (`faces-gui`, outbound-only) needs no inbound rules. (No tap port - tap is deprecated.)
+(No tap port - tap is deprecated.)
+
+**VM2 is the exception, and it inverts the rule.** It needs no *mesh* inbound rules - nothing
+in the cluster dials it - but the GUI is a web page humans load, so its **app port `:8083`
+must be open**, which is the opposite of the lockdown above. That takes rules at *two* layers:
+Windows Firewall on the VM, and an Azure **NSG** rule, since `az vm create` attaches a NIC NSG
+that allows only RDP and the default `DenyAllInBound` drops everything else.
+
+**On VM2** (PowerShell, as admin):
+```powershell
+New-NetFirewallRule -DisplayName "Faces GUI app port (8083)" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8083
+```
+
+**On the cluster host** (az; `<NSG_NAME>` is the VM's NIC NSG, `<VM_NAME>NSG` by default):
+```powershell
+az network nsg rule create -g <RESOURCE_GROUP> --nsg-name <NSG_NAME> -n faces-gui-8083 `
+  --priority 1010 --direction Inbound --access Allow --protocol Tcp `
+  --destination-port-ranges 8083 --source-address-prefixes '*'
+```
+
+The mesh ports stay unexposed on VM2 - this opens only the page itself.
 
 ### Register each VM as an ExternalWorkload
 
@@ -331,7 +430,8 @@ Faces binaries are plain console apps, so the script wraps each in
 [WinSW](https://github.com/winsw/winsw) - a real service that starts after the mesh is up
 (depends on `linkerd-proxy-harness`), restarts on failure, and rolls logs to
 `C:\faces-demo\logs\<component>\`. It downloads the pinned Faces binary for the component,
-so you just pass `-Component`.
+so you just pass `-Component`. For `-Component gui` it also stages the web assets and sets
+`DATA_PATH`, since the Windows release ships none (see [Prerequisites](#prerequisites)).
 
 **On each VM** (PowerShell, as admin):
 ```powershell
@@ -360,8 +460,15 @@ The GUI is different - it's the page you view, not a cell in it. Part 1 scaled t
 (`kubectl get svc faces-gui -n faces`) now has no backing pod and goes dark. The live GUI is
 the one on **VM2**, served on VM2's own address - not the cluster LB.
 
-Reach it over VM2's public IP: open inbound TCP `:8083` and browse `http://<VM2_PUBLIC_IP>:8083`.
-That's the GUI app port only - the mesh ports stay locked down as in Part 4.
+Reach it over VM2's public IP: open inbound TCP `:8083` and browse `http://<VM2_PUBLIC_IP>:8083`
+(both the Windows Firewall rule and the NSG rule from Part 4). That's the GUI app port only -
+the mesh ports stay locked down as in Part 4.
+
+> **Close the old LB tab before you demo this.** "Goes dark" undersells what a stale tab does:
+> the page HTML is already loaded, so its JS keeps polling `/face/` through a LoadBalancer
+> that now has no endpoints, and every cell renders the **error face**. On a projector that
+> reads as "he broke it", not as "the front door moved to Windows". A hard refresh of that tab
+> just fails to connect, which is the honest picture - or close it and open VM2's URL fresh.
 
 VM2's GUI then renders the full grid - `face` (in-cluster) fanning out to `smiley` on VM1 and
 `color` on VM3, all over mTLS - the whole mesh spanning the cluster and three Windows VMs.

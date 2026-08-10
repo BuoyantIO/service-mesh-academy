@@ -92,16 +92,23 @@ if (-not $DestinationName) { $DestinationName = "linkerd-dst.linkerd.svc.$Cluste
 if (-not $PolicyName)      { $PolicyName      = "linkerd-policy.linkerd.svc.$ClusterDomain" }
 
 # ---------------------------------------------------------------------------
-# 1. Re-run safety: only if a prior run already pointed the adapter at 127.0.0.1
-#    (local CoreDNS) and CoreDNS isn't serving, name resolution is dead and the
-#    download below can't resolve github.com. Reset to Azure DNS in that case.
+# 1. Re-run safety: if a prior run pointed the adapter at 127.0.0.1 (local
+#    CoreDNS) and CoreDNS is NOT serving, name resolution is dead and the
+#    download below can't resolve github.com - so reset to Azure DNS.
+#    Both conditions matter. A healthy re-run must be left alone: the running
+#    Corefile already forwards non-cluster.local to Azure DNS, so github.com
+#    resolves fine through it, and flipping the adapter would break
+#    *.cluster.local for the meshed workload for as long as this script runs.
 #    On a first run the adapter is already on Azure DNS, so this is a no-op.
 # ---------------------------------------------------------------------------
 $currentDns = (Get-DnsClientServerAddress -InterfaceAlias $InterfaceAlias -AddressFamily IPv4).ServerAddresses
 if ($currentDns -contains "127.0.0.1") {
-    Write-Host "DNS points at local CoreDNS; resetting to Azure DNS (168.63.129.16) so the download can resolve..."
-    Set-DnsClientServerAddress -InterfaceAlias $InterfaceAlias -ServerAddresses "168.63.129.16"
-    Start-Sleep 2
+    $localDnsAlive = Test-NetConnection -ComputerName 127.0.0.1 -Port 53 -InformationLevel Quiet -ErrorAction SilentlyContinue
+    if (-not $localDnsAlive) {
+        Write-Host "DNS points at local CoreDNS but it isn't answering; resetting to Azure DNS (168.63.129.16) so the download can resolve..."
+        Set-DnsClientServerAddress -InterfaceAlias $InterfaceAlias -ServerAddresses "168.63.129.16"
+        Start-Sleep 2
+    }
 }
 
 # ---------------------------------------------------------------------------
