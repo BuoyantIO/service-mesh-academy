@@ -59,6 +59,17 @@ if ($Role -eq 'Agent') {
 $bin = "C:\spire\bin"
 $need = if ($Role -eq 'Server') { @("spire-server.exe", "spire-agent.exe") } else { @("spire-agent.exe") }
 New-Item -ItemType Directory -Force $bin | Out-Null
+
+# Re-run safety: a running SPIRE service holds its own .exe (and the datastore
+# and log), so replacing the binaries below fails with "being used by another
+# process" and leaves a half-updated install. Stop it first - step 6 deletes and
+# recreates the service regardless, so nothing is lost by stopping it here.
+$svcName = if ($Role -eq 'Server') { 'spire-server' } else { 'spire-agent' }
+if (Get-Service $svcName -ErrorAction SilentlyContinue) {
+    Write-Host "Stopping existing $svcName before replacing binaries..."
+    Stop-Service $svcName -Force -ErrorAction SilentlyContinue
+    Start-Sleep 3
+}
 if ($need | Where-Object { -not (Test-Path "$bin\$_") }) {
     Write-Host "Downloading SPIRE $SpireVersion..."
     $url = "https://github.com/spiffe/spire/releases/download/v$SpireVersion/spire-$SpireVersion-windows-amd64.zip"
@@ -77,16 +88,40 @@ if ($need | Where-Object { -not (Test-Path "$bin\$_") }) {
 
 # 3. Stage the cert files at the paths the configs expect (skip if already there).
 New-Item -ItemType Directory -Force C:\spire\certs | Out-Null
+
+# On the server VM this directory holds the upstream CA private key - the one
+# secret on any VM that could mint identities for the whole trust domain. Harden
+# the DIRECTORY first so the certs inherit the restricted ACL as they land.
+#
+# Do NOT add /T here. (OI)(CI) are container inheritance flags and mean nothing
+# on a file, so `icacls /inheritance:r /grant:r ... /T` strips each existing
+# file's inherited ACEs and grants it nothing in return - leaving an EMPTY DACL
+# that denies even SYSTEM. SPIRE then dies with
+# "unable to load upstream CA key: open C:\spire\certs\ca.key: Access is denied".
+# SIDs rather than names so this also works on non-English Windows.
+if ($Role -eq 'Server') {
+    icacls C:\spire\certs /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" | Out-Null
+
+    # /inheritance:r breaks inheritance but copies the previously-inherited ACEs
+    # in as EXPLICIT ones, and /grant:r only replaces ACEs for the principals it
+    # names - so Authenticated Users (S-1-5-11) and Users (S-1-5-32-545) survive
+    # unless removed by name, leaving the CA key world-readable on the box.
+    icacls C:\spire\certs /remove:g "*S-1-5-11" "*S-1-5-32-545" | Out-Null
+
+    # Verify rather than trust the exit code: icacls returns 0 and prints
+    # "processed file" even when it changed nothing at all.
+    $allowed = @('S-1-5-18', 'S-1-5-32-544')
+    $actual = (Get-Acl C:\spire\certs).Access |
+        ForEach-Object { $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value } |
+        Sort-Object -Unique
+    $extra = @($actual | Where-Object { $_ -notin $allowed })
+    if ($extra) { throw "C:\spire\certs still grants access to: $($extra -join ', ') - the CA key must be SYSTEM/Administrators only" }
+}
+
 if ((Resolve-Path $BundleCert).Path -ne "C:\spire\certs\bundle.crt") { Copy-Item $BundleCert C:\spire\certs\bundle.crt -Force }
 if ($Role -eq 'Server') {
     if ((Resolve-Path $CACert).Path -ne "C:\spire\certs\ca.crt") { Copy-Item $CACert C:\spire\certs\ca.crt -Force }
     if ((Resolve-Path $CAKey).Path  -ne "C:\spire\certs\ca.key") { Copy-Item $CAKey  C:\spire\certs\ca.key -Force }
-
-    # This directory now holds the upstream CA private key - the one secret on
-    # any VM that could mint identities for the whole trust domain. Drop
-    # inherited ACLs so only SYSTEM (which SPIRE runs as) and Administrators
-    # can read it, rather than whatever C:\ happens to grant.
-    icacls C:\spire\certs /inheritance:r /grant:r "NT AUTHORITY\SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" /T /C | Out-Null
 }
 
 # 4. Data/log dirs, writable by SYSTEM (SPIRE runs as LocalSystem). This must
@@ -112,9 +147,14 @@ if ($Role -eq 'Server') {
     sc.exe failure spire-server reset= 86400 actions= restart/5000/restart/15000/restart/60000 | Out-Null
     sc.exe start spire-server | Out-Null
 
+    # Get-Service, not `sc.exe query ... -notmatch "RUNNING"`: sc.exe emits an
+    # ARRAY of lines, and -notmatch on an array returns the non-matching lines
+    # rather than a boolean - always non-empty, so always truthy. That makes the
+    # wait never exit early and the check always fail, on a server that is in
+    # fact running and listening.
     $deadline = (Get-Date).AddSeconds(60)
-    while (((sc.exe query spire-server) -notmatch "RUNNING") -and (Get-Date) -lt $deadline) { Start-Sleep 2 }
-    if ((sc.exe query spire-server) -notmatch "RUNNING") { throw "SPIRE server did not start (check C:\spire\logs\server.log)" }
+    while ((Get-Service spire-server).Status -ne 'Running' -and (Get-Date) -lt $deadline) { Start-Sleep 2 }
+    if ((Get-Service spire-server).Status -ne 'Running') { throw "SPIRE server did not start (check C:\spire\logs\server.log)" }
 
     Write-Host "SPIRE server ready on 0.0.0.0:8081, reachable from $AllowFromCidr."
     Write-Host "For each workload VM, run here:"

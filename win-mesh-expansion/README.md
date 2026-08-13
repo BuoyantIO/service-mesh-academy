@@ -30,13 +30,18 @@ We use the [**Faces**](https://github.com/BuoyantIO/faces-demo) app: the browser
 grid of cells, each a face (`smiley`) on a colored background (`color`), assembled by
 `face` and served by `faces-gui`. We keep the Linkerd control plane and `face` in the
 cluster and move the other three workloads onto three Windows VMs - one each, covering
-all three supported platforms and both inbound protocols:
+both supported Server releases, a **headless Server Core** install, and both inbound
+protocols:
 
 | VM | OS | Faces workload |
 |---|---|---|
 | **VM1** | Server 2025 | `smiley` |
 | **VM2** | Server 2022 | `faces-gui` |
-| **VM3** | Windows 11 | `color` |
+| **VM3** | Server Core 2025 | `color` |
+
+Server Core is worth including deliberately: it is a common enterprise SKU, it has no
+desktop shell, and the whole stack - MSI, WHQL-signed driver under Secure Boot, SPIRE
+agent, CoreDNS, harness and workload - has been verified on it end to end.
 
 A fourth VM runs the **SPIRE server** and no Faces workload. Identity is infrastructure, not
 part of the app, and separating it is what lets the three workload VMs hold no CA key at all
@@ -45,8 +50,11 @@ part of the app, and separating it is what lets the three workload VMs hold no C
 The browser points at **VM2's GUI**, so one page load exercises every path at once. The
 **outbound** call (`gui → face`) is the only one that needs the **WFP driver** - it
 redirects the VM's outbound TCP into the proxy for mTLS - and it's where the security
-story lands (require mTLS on `face` and turn the driver off on VM2 - the path
-disappears, the demo's payoff). The **inbound** calls (`face → smiley` over HTTP, `face → color` over gRPC)
+story lands. Uninstall BEL WME on VM2 and the front door falls out of the mesh entirely:
+`face.faces.svc.cluster.local` resolves to a **ClusterIP**, ClusterIPs don't route over
+VNet peering, so without the driver pulling that connection into the proxy the VM is
+dialing an address with no route. It doesn't degrade, it fails. The **inbound** calls
+(`face → smiley` over HTTP, `face → color` over gRPC)
 never touch the driver; the cluster connects straight to each VM's proxy `:4143`. If
 every cell renders, all three hops are meshed.
 
@@ -67,8 +75,11 @@ The outbound path has two requirements inbound doesn't:
   **internal load balancers** (autoregistration, destination, policy, kube-dns). Cluster
   bring-up - BEL install, certs, SPIRE upstream CA, those ILBs, peering, NSG rules - is
   the standard one-time WME setup.
-- Three **Windows** workload VMs - Server 2025, Server 2022, and Windows 11 - in a VNet
-  peered with the AKS VNet, plus one more VM running the **SPIRE server** (Part 2). The
+- Three **Windows** workload VMs - Server 2025, Server 2022, and Server Core 2025 - in a
+  VNet peered with the AKS VNet, plus one more VM running the **SPIRE server** (Part 2).
+  On the Server Core VM, RDP lands you at `cmd`; type `powershell` before running anything
+  below. Everything else is identical - `\\tsclient` drive redirection works and the
+  adapter is still `Ethernet`. The
   SPIRE server VM needs no peering-dependent access of its own; it only has to be reachable
   on `:8081` from the workload VMs' subnet.
 - On each VM, in the order the official guide requires: a **SPIRE agent**, **DNS
@@ -294,51 +305,21 @@ the MSI's `CONTROL_ADDRESS`/`DESTINATION_SVC_ADDR`/`POLICY_SVC_ADDR`.)
 
 ## Part 4 - Install BEL WME on each VM
 
-With SPIRE running and DNS resolving, install the MSI. The only per-VM properties are the
-private IP and workload group - the control-plane addresses, SPIRE socket, and cluster
-domain all default to what our cluster + CoreDNS already use.
+With SPIRE running and DNS resolving, the VM is ready for the MSI. The only per-VM
+properties are the private IP and workload group - the control-plane addresses, SPIRE
+socket, and cluster domain all default to what our cluster + CoreDNS already use.
 
-**On each VM** (PowerShell, as admin):
-```text
-# download the BEL WME MSI (2.20.1 - see the driver-signing note below; do NOT use 2.20.0)
-curl.exe -L -o C:\temp\bel_wme.msi "https://github.com/BuoyantIO/linkerd-buoyant/releases/download/enterprise-2.20.1/bel_wme_installer-enterprise-2.20.1.msi"
+**Do these in order.** The firewall rules and the ExternalGroup both go *before* the
+install: the rules so there is never a window where the VM is registered but unreachable,
+and the group so the harness registers on its first attempt rather than logging
+`externalgroup ... not found` every 15 seconds until you create it.
 
-# install. <VM_PRIVATE_IP> = this VM's IP; <WORKLOAD_GROUP> = smiley-vm | faces-gui-vm | color-vm (the <NAME> column below).
-msiexec /i C:\temp\bel_wme.msi /quiet /l*vx C:\temp\wme-install.log INBOUND_NETWORK_ADDRESS="<VM_PRIVATE_IP>" WORKLOAD_GROUP_NAME="<WORKLOAD_GROUP>" WORKLOAD_GROUP_NAMESPACE="faces"
+1. open the proxy ports (Windows Firewall)
+2. register the ExternalGroup on the cluster
+3. install the MSI
+4. make boot deterministic
 
-# verify: both services RUNNING, and the harness certified its identity
-sc.exe query linkerd-proxy-harness   # RUNNING
-sc.exe query linkerdtcpredirect      # RUNNING - the WFP driver (loads under Secure Boot; it's WHQL-signed)
-Get-Content "C:\Program Files\Buoyant\Linkerd\harness.log" -Tail 30
-```
-
-`harness.log` should show `Certified identity id=spiffe://cluster.local/<component>`, the
-three control-plane endpoints resolving to their ILB IPs, and no `UnknownIssuer`/connection
-errors. If the install itself fails, the verbose log is at `C:\temp\wme-install.log`.
-
-> **Why 2.20.1, not 2.20.0.** The MSI carries the WFP driver, and the two releases carry
-> different builds of it: 2.20.0 ships driver `1.2.0.0`, WHQL-signed for Windows 11 and
-> Server 2025 only, while 2.20.1 ships `1.3.0.0`, the combined **Server 2022 + 2025**
-> signature. On VM2 - Server 2022 with Secure Boot - the 2.20.0 driver has no acceptable
-> signature and `linkerdtcpredirect` will not load, which breaks the one VM whose whole
-> story is the driver. `sc.exe query linkerdtcpredirect` returning `RUNNING` as a
-> `KERNEL_DRIVER` is the direct check that the right build is installed.
-
-The **WFP driver** logs to a WPP ETW trace at `C:\Program Files\Buoyant\Linkerd\linkerd-tcp-redirect-driver.etl`
-(a 50 MB circular file, capturing from boot). `sc.exe query linkerdtcpredirect` = `RUNNING` above is the
-quick proof it loaded; for driver-level detail, decode the ETL with `tracefmt` (from the Windows Driver Kit)
-against the installed symbols:
-
-**On the VM** (PowerShell; needs the WDK's `tracefmt`):
-```powershell
-$d = "$env:ProgramFiles\Buoyant\Linkerd"
-tracefmt -p "$d\driver" -o "$d\driver.log" "$d\linkerd-tcp-redirect-driver.etl"
-# in driver.log, look for: CONNECT_REDIRECT_V4 Filter added   (the outbound callout registered)
-```
-
-`tracefmt` isn't on a stock VM, so treat the ETL decode as troubleshooting, not a required step.
-
-### Lock the workloads to cluster-only access (Windows Firewall)
+### Step 1 - Lock the workloads to cluster-only access (Windows Firewall)
 
 Inbound-serving VMs (VM1 `smiley`, VM3 `color`) need the proxy's inbound + metrics ports
 opened **only to the AKS pod CIDR**, with the app port left closed - the MSI adds no firewall
@@ -376,7 +357,7 @@ az network nsg rule create -g <RESOURCE_GROUP> --nsg-name <NSG_NAME> -n faces-gu
 
 The mesh ports stay unexposed on VM2 - this opens only the page itself.
 
-### Register each VM as an ExternalWorkload
+### Step 2 - Register each VM as an ExternalWorkload
 
 Apply one **ExternalGroup** per VM so the harness auto-registers; the labels match that
 component's Service selector, so the Service resolves to the VM.
@@ -420,6 +401,68 @@ Confirm registration:
 ```text
 kubectl get externalworkload -n faces -o wide   # one per VM, each with its own spiffe:// identity
 ```
+
+### Step 3 - Install the MSI
+
+**On each VM** (PowerShell, as admin):
+```text
+# download the BEL WME MSI (2.20.1 - see the driver-signing note below; do NOT use 2.20.0)
+curl.exe -L -o C:\temp\bel_wme.msi "https://github.com/BuoyantIO/linkerd-buoyant/releases/download/enterprise-2.20.1/bel_wme_installer-enterprise-2.20.1.msi"
+
+# install. <VM_PRIVATE_IP> = this VM's IP; <WORKLOAD_GROUP> = smiley-vm | faces-gui-vm | color-vm (the <NAME> column above).
+msiexec /i C:\temp\bel_wme.msi /quiet /l*vx C:\temp\wme-install.log INBOUND_NETWORK_ADDRESS="<VM_PRIVATE_IP>" WORKLOAD_GROUP_NAME="<WORKLOAD_GROUP>" WORKLOAD_GROUP_NAMESPACE="faces"
+
+# verify: both services RUNNING, and the harness certified its identity
+sc.exe query linkerd-proxy-harness   # RUNNING
+sc.exe query linkerdtcpredirect      # RUNNING - the WFP driver (loads under Secure Boot; it's WHQL-signed)
+Get-Content "C:\Program Files\Buoyant\Linkerd\harness.log" -Tail 30
+```
+
+`harness.log` should show `Certified identity id=spiffe://cluster.local/<component>`, the
+three control-plane endpoints resolving to their ILB IPs, and no `UnknownIssuer`/connection
+errors. If the install itself fails, the verbose log is at `C:\temp\wme-install.log`.
+
+> **Why 2.20.1, not 2.20.0.** The MSI carries the WFP driver, and the two releases carry
+> different builds of it: 2.20.0 ships driver `1.2.0.0`, WHQL-signed for Windows 11 and
+> Server 2025 only, while 2.20.1 ships `1.3.0.0`, the combined **Server 2022 + 2025**
+> signature. On VM2 - Server 2022 with Secure Boot - the 2.20.0 driver has no acceptable
+> signature and `linkerdtcpredirect` will not load, which breaks the one VM whose whole
+> story is the driver. `sc.exe query linkerdtcpredirect` returning `RUNNING` as a
+> `KERNEL_DRIVER` is the direct check that the right build is installed.
+
+The **WFP driver** logs to a WPP ETW trace at `C:\Program Files\Buoyant\Linkerd\linkerd-tcp-redirect-driver.etl`
+(a 50 MB circular file, capturing from boot). `sc.exe query linkerdtcpredirect` = `RUNNING` above is the
+quick proof it loaded; for driver-level detail, decode the ETL with `tracefmt` (from the Windows Driver Kit)
+against the installed symbols:
+
+**On the VM** (PowerShell; needs the WDK's `tracefmt`):
+```powershell
+$d = "$env:ProgramFiles\Buoyant\Linkerd"
+tracefmt -p "$d\driver" -o "$d\driver.log" "$d\linkerd-tcp-redirect-driver.etl"
+# in driver.log, look for: CONNECT_REDIRECT_V4 Filter added   (the outbound callout registered)
+```
+
+`tracefmt` isn't on a stock VM, so treat the ETL decode as troubleshooting, not a required step.
+
+### Step 4 - Make boot deterministic
+
+**On each VM** (PowerShell, as admin):
+```powershell
+sc.exe config linkerd-proxy-harness depend= spire-agent/NlaSvc
+```
+
+The MSI installs `linkerd-proxy-harness` as `DEMAND_START` with no dependencies and no
+service trigger. It does come back after a reboot *if* something depends on it -
+`install-faces-service.ps1` wires the workload service that way by default, so SCM
+force-starts the harness to satisfy it. But nothing orders it after SPIRE, and the harness
+exits **0** on init failure, which SCM treats as a clean stop rather than a crash - so its
+failure/restart actions never fire. This one line removes both problems: `spire-agent` so
+identity is available before the harness looks for it, `NlaSvc` so Windows considers the
+network usable first.
+
+If your workload is not registered as a service that depends on the harness, also set
+`sc.exe config linkerd-proxy-harness start= auto` - otherwise nothing starts it at boot at
+all and the VM comes up silently unmeshed.
 
 ---
 
